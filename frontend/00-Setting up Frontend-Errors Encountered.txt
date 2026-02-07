@@ -1,0 +1,345 @@
+Setting up the Front-End: Errors Encountered.
+
+
+
+
+My Command (in Terminal): npm create vite@latest
+Error:
+npx: installed 1 in 2.252s
+/Users/David/.npm/_npx/39012/lib/node_modules/create-vite/index.js:3
+import './dist/index.js'
+       ^^^^^^^^^^^^^^^^^
+
+SyntaxError: Unexpected string
+    at new Script (vm.js:79:7)
+    at createScript (vm.js:251:10)
+    at Object.runInThisContext (vm.js:303:10)
+    at Module._compile (internal/modules/cjs/loader.js:657:28)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:283:19)
+
+Reason: My Node.JS is too old.
+Checking Node Version: node -v
+v10.15.0
+
+So I downloaded new version of Node.JS from Node.JS's website
+
+Now, I will try again:
+My Command (in Terminal): npm create vite@latest
+Error:
+
+Need to install the following packages:
+create-vite@8.2.0
+Ok to proceed? (y) y
+
+
+> npx
+> "create-vite"
+
+/Users/David/.npm/_npx/1415fee72ff6294b/node_modules/create-vite/index.js:3
+import './dist/index.js'
+       ^^^^^^^^^^^^^^^^^
+
+SyntaxError: Unexpected string
+    at new Script (vm.js:74:7)
+    at createScript (vm.js:246:10)
+    at Object.runInThisContext (vm.js:298:10)
+    at Module._compile (internal/modules/cjs/loader.js:657:28)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:266:19)
+npm error code 1
+npm error path /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/frontend
+npm error command failed
+npm error command sh -c "create-vite"
+npm notice
+npm notice New minor version of npm available! 11.6.2 -> 11.9.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.9.0
+npm notice To update run: npm install -g npm@11.9.0
+npm notice
+npm error A complete log of this run can be found in: /Users/David/.npm/_logs/2026-02-06T21_52_19_669Z-debug-0.log
+
+
+Clear Npx cache for the create command
+npx clear-npx-cache
+
+Updated Npm:
+ sudo npm install -g npm@latest
+
+
+
+
+Attempted Command:
+npm create vite@latest
+
+Error:
+
+> npx
+> "create-vite"
+
+/Users/David/.npm/_npx/1415fee72ff6294b/node_modules/create-vite/index.js:3
+import './dist/index.js'
+       ^^^^^^^^^^^^^^^^^
+
+SyntaxError: Unexpected string
+    at new Script (vm.js:74:7)
+    at createScript (vm.js:246:10)
+    at Object.runInThisContext (vm.js:298:10)
+    at Module._compile (internal/modules/cjs/loader.js:657:28)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:266:19)
+npm error code 1
+npm error path /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/frontend
+npm error command failed
+npm error command sh -c "create-vite"
+npm error A complete log of this run can be found in: /Users/David/.npm/_logs/2026-02-07T20_25_09_578Z-debug-0.log
+
+
+Error Log:
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@11.9.0
+2 info using node@v24.13.0
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/David/.npmrc
+5 silly config load:file:/usr/local/etc/npmrc
+6 verbose title npm create vite@latest
+7 verbose argv "create" "vite@latest"
+8 verbose logfile logs-max:10 dir:/Users/David/.npm/_logs/2026-02-07T20_25_09_578Z-
+9 verbose logfile /Users/David/.npm/_logs/2026-02-07T20_25_09_578Z-debug-0.log
+10 silly logfile start cleaning logs, removing 1 files
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+13 http fetch GET 200 https://registry.npmjs.org/create-vite 131ms (cache revalidated)
+14 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+15 verbose stack Error: command failed
+15 verbose stack     at promiseSpawn (/usr/local/lib/node_modules/npm/node_modules/@npmcli/promise-spawn/lib/index.js:22:22)
+15 verbose stack     at spawnWithShell (/usr/local/lib/node_modules/npm/node_modules/@npmcli/promise-spawn/lib/index.js:124:10)
+15 verbose stack     at promiseSpawn (/usr/local/lib/node_modules/npm/node_modules/@npmcli/promise-spawn/lib/index.js:12:12)
+15 verbose stack     at runScriptPkg (/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/run-script-pkg.js:79:13)
+15 verbose stack     at runScript (/usr/local/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/run-script.js:9:12)
+15 verbose stack     at run (/usr/local/lib/node_modules/npm/node_modules/libnpmexec/lib/run-script.js:60:10)
+15 verbose stack     at async exec (/usr/local/lib/node_modules/npm/node_modules/libnpmexec/lib/index.js:312:10)
+15 verbose stack     at async Init.execCreate (/usr/local/lib/node_modules/npm/lib/commands/init.js:143:5)
+15 verbose stack     at async Init.exec (/usr/local/lib/node_modules/npm/lib/commands/init.js:46:14)
+15 verbose stack     at async Npm.exec (/usr/local/lib/node_modules/npm/lib/npm.js:208:9)
+16 error code 1
+17 error path /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/frontend
+18 error command failed
+19 error command sh -c "create-vite"
+20 verbose cwd /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/frontend
+21 verbose os Darwin 25.2.0
+22 verbose node v24.13.0
+23 verbose npm  v11.9.0
+24 verbose exit 1
+25 verbose code 1
+26 error A complete log of this run can be found in: /Users/David/.npm/_logs/2026-02-07T20_25_09_578Z-debug-0.log
+
+
+Delete broken npx folder:
+rm -rf ~/.npm/_npx
+
+
+
+Then try a slightly different command:
+ npm init vite@latest
+
+> npx
+> "create-vite"
+
+/Users/David/.npm/_npx/1415fee72ff6294b/node_modules/create-vite/index.js:3
+import './dist/index.js'
+       ^^^^^^^^^^^^^^^^^
+
+SyntaxError: Unexpected string
+    at new Script (vm.js:74:7)
+    at createScript (vm.js:246:10)
+    at Object.runInThisContext (vm.js:298:10)
+    at Module._compile (internal/modules/cjs/loader.js:657:28)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:266:19)
+npm error code 1
+npm error path /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/frontend
+npm error command failed
+npm error command sh -c "create-vite"
+npm error A complete log of this run can be found in: /Users/David/.npm/_logs/2026-02-07T20_37_46_494Z-debug-0.log
+
+
+
+
+which npm
+/usr/local/bin/npm
+(base) David-MacBook-Pro:frontend David$ which npx
+/usr/local/bin/npx
+(base) David-MacBook-Pro:frontend David$ npm -v
+npx -v11.9.0
+(base) David-MacBook-Pro:frontend David$ npx -v
+11.9.0
+(base) David-MacBook-Pro:frontend David$ head -n 1 $(which npx)
+#!/usr/bin/env node
+
+
+Need to exit conda (I was using conda for a different project, for using Jupyter Notebooks for my Udemy Data Course).
+conda deactivate
+
+
+David-Schonfelds-MacBook-Pro:frontend David$ rm -rf ~/.npm/_npx
+David-Schonfelds-MacBook-Pro:frontend David$ ls ~/.npm
+
+
+
+David-Schonfelds-MacBook-Pro:frontend David$ sudo npm cache clean --force
+
+
+
+
+npm create vite@latest
+Need to install the following packages:
+create-vite@8.2.0
+Ok to proceed? (y) y
+
+> npx
+> "create-vite"
+
+/Users/David/.npm/_npx/1415fee72ff6294b/node_modules/create-vite/index.js:3
+import './dist/index.js'
+       ^^^^^^^^^^^^^^^^^
+
+SyntaxError: Unexpected string
+    at new Script (vm.js:74:7)
+    at createScript (vm.js:246:10)
+    at Object.runInThisContext (vm.js:298:10)
+    at Module._compile (internal/modules/cjs/loader.js:657:28)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:266:19)
+npm error code 1
+npm error path /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/frontend
+npm error command failed
+npm error command sh -c "create-vite"
+npm error A complete log of this run can be found in: /Users/David/.npm/_logs/2026-02-07T20_57_12_090Z-debug-0.log
+
+
+Try this:
+npm exec --yes create-vite@latest frontend -- --template react-ts
+
+
+David-MacBook-Pro:frontend David$ which node
+/usr/local/bin/node
+David-MacBook-Pro:frontend David$ which npm
+/usr/local/bin/npm
+David-MacBook-Pro:frontend David$ which npx
+/usr/local/bin/npx
+David-MacBook-Pro:frontend David$ Then run:
+-bash: Then: command not found
+David-MacBook-Pro:frontend David$ head -n 5 $(which npx)
+#!/usr/bin/env node
+
+const cli = require('../lib/cli.js')
+
+// run the resulting command as `npm exec ...args`
+David-MacBook-Pro:frontend David$ Also run:
+-bash: Also: command not found
+David-MacBook-Pro:frontend David$ node -p "process.version"
+npx -vv24.13.0
+David-MacBook-Pro:frontend David$ npx -v
+11.9.0
+
+
+
+David-MacBook-Pro:frontend David$ type node
+node is hashed (/usr/local/bin/node)
+David-MacBook-Pro:frontend David$ type npm
+npm is hashed (/usr/local/bin/npm)
+David-MacBook-Pro:frontend David$ type npx
+npx is hashed (/usr/local/bin/npx)
+David-MacBook-Pro:frontend David$ head -n 5 $(which npx)
+#!/usr/bin/env node
+
+const cli = require('../lib/cli.js')
+
+// run the resulting command as `npm exec ...args`
+David-MacBook-Pro:frontend David$ node -p "process.version"
+npx -vv24.13.0
+David-MacBook-Pro:frontend David$ npx -v
+11.9.0
+
+
+
+David-MacBook-Pro:frontend David$ node -v
+v24.13.0
+
+brew update
+brew upgrade node
+
+David-MacBook-Pro:frontend David$ node -v
+v24.13.0
+David-MacBook-Pro:frontend David$ npm -v
+11.9.0
+David-MacBook-Pro:frontend David$ npx -v
+11.9.0
+
+sudo npm cache clean --force
+
+
+
+
+
+For Step 1: I upgraded.
+Here is what I have now.
+ npx -v
+11.9.0
+David-MacBook-Pro:frontend David$ npm -v
+11.9.0
+David-MacBook-Pro:frontend David$ node -v
+v24.13.0
+
+I did step 2(rm -rf ~/.npm/_npx)
+
+I did Step 3 (npm create vite@latest frontend -- --template react-ts
+) and got this error:
+
+Need to install the following packages:
+create-vite@8.2.0
+Ok to proceed? (y) y
+
+> npx
+> "create-vite" frontend --template react-ts
+
+/Users/David/.npm/_npx/1415fee72ff6294b/node_modules/create-vite/index.js:3
+import './dist/index.js'
+       ^^^^^^^^^^^^^^^^^
+
+SyntaxError: Unexpected string
+    at new Script (vm.js:74:7)
+    at createScript (vm.js:246:10)
+    at Object.runInThisContext (vm.js:298:10)
+    at Module._compile (internal/modules/cjs/loader.js:657:28)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:266:19)
+npm error code 1
+npm error path /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/frontend
+npm error command failed
+npm error command sh -c "create-vite" frontend --template react-ts
+npm error A complete log of this run can be found in: /Users/David/.npm/_logs/2026-02-07T21_42_33_343Z-debug-0.log
