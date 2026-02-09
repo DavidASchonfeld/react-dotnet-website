@@ -541,10 +541,52 @@ Node.js v25.6.0
 So this:
 node package/dist/index.js ../frontend --template react-ts
 
-And this...works.
+And this...works... at least to beginning of vite prompt
 
+--
+Use with Vite 8 (Experimental) -> No
+Run with NPM and Start Now? -> Yes
 
+Now issues here:
+node package/dist/index.js ../frontend --template react-ts
+│
+◇  Use Vite 8 beta (Experimental)?:
+│  No
+│
+◇  Install with npm and start now?
+│  Yes
+│
+◇  Scaffolding project in /Users/David/frontend...
+│
+◇  Installing dependencies with npm...
 
+added 175 packages, and audited 176 packages in 15s
+
+45 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+│
+◇  Starting dev server...
+
+> frontend@0.0.0 dev
+> vite
+
+/Users/David/frontend/node_modules/vite/bin/vite.js:2
+import { performance } from 'node:perf_hooks'
+       ^
+
+SyntaxError: Unexpected token {
+    at new Script (vm.js:74:7)
+    at createScript (vm.js:246:10)
+    at Object.runInThisContext (vm.js:298:10)
+    at Module._compile (internal/modules/cjs/loader.js:657:28)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:266:19)
 
 
 
