@@ -197,12 +197,12 @@ Need to exit conda (I was using conda for a different project, for using Jupyter
 conda deactivate
 
 
-David-Schonfelds-MacBook-Pro:frontend David$ rm -rf ~/.npm/_npx
-David-Schonfelds-MacBook-Pro:frontend David$ ls ~/.npm
+David-MacBook-Pro:frontend David$ rm -rf ~/.npm/_npx
+David-MacBook-Pro:frontend David$ ls ~/.npm
 
 
 
-David-Schonfelds-MacBook-Pro:frontend David$ sudo npm cache clean --force
+David-MacBook-Pro:frontend David$ sudo npm cache clean --force
 
 
 
@@ -343,3 +343,231 @@ npm error path /Users/David/Documents/Programming/React and Dotnet/React and Dot
 npm error command failed
 npm error command sh -c "create-vite" frontend --template react-ts
 npm error A complete log of this run can be found in: /Users/David/.npm/_logs/2026-02-07T21_42_33_343Z-debug-0.log
+
+
+corepack enable
+David-MacBook-Pro:frontend David$ corepack prepare npm@latest --activate
+Preparing npm@latest for immediate activation...
+David-MacBook-Pro:frontend David$ npm -v
+11.9.0
+David-MacBook-Pro:frontend David$ npx -v
+11.9.0
+David-MacBook-Pro:frontend David$ rm -rf ~/.npm/_npx
+
+
+
+More attempts that did not work:
+
+corepack prepare create-vite frontend --template react-ts
+Unknown Syntax Error: Command not found; did you mean one of:
+
+  0. corepack prepare [--activate] [--json] [-o,--output] ...
+  1. corepack prepare [--activate] [--json] [-o,--output] ...
+  2. corepack prepare [--activate] [--json] [-o,--output] ...
+
+While running prepare create-vite frontend --template react-ts
+David-MacBook-Pro:frontend David$ npx --ignore-existing create-vite frontend --template react-ts
+npx: the --ignore-existing argument has been removed.
+See `npm help exec` for more information
+Need to install the following packages:
+create-vite@8.2.0
+Ok to proceed? (y) y
+/Users/David/.npm/_npx/2c4a09cdd3a6d615/node_modules/create-vite/index.js:3
+import './dist/index.js'
+       ^^^^^^^^^^^^^^^^^
+
+SyntaxError: Unexpected string
+    at new Script (vm.js:74:7)
+    at createScript (vm.js:246:10)
+    at Object.runInThisContext (vm.js:298:10)
+    at Module._compile (internal/modules/cjs/loader.js:657:28)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:266:19)
+
+
+does not work:
+npx --ignore-existing create-vite@latest frontend --template react-ts
+same error, does not work:
+npm init vite@latest frontend -- --template react-ts
+
+
+
+
+----
+Googling:  "vite create error 19 error command sh -c "create-vite" "
+Error not listed here:
+https://vite.dev/guide/troubleshooting
+https://stackoverflow.com/questions/73757640/syntax-error-while-running-vite-create-with-npm
+https://github.com/vitejs/vite/issues/11968
+https://stackoverflow.com/questions/79529447/when-i-press-enter-after-writing-npm-create-vitelatest-it-doesnt-show-any-fram/79529489
+https://github.com/vitejs/vite/issues/1215
+
+
+############
+These 2 commands to find Node versions give 2 node versions
+24.13.0 VS 10.8.0
+
+node -p "process.versions"
+{
+  node: '24.13.0',
+  acorn: '8.15.0',
+  ada: '3.3.0',
+  amaro: '1.1.5',
+  ares: '1.34.6',
+  brotli: '1.1.0',
+  cjs_module_lexer: '2.1.0',
+  cldr: '47.0',
+  icu: '77.1',
+  llhttp: '9.3.0',
+  modules: '137',
+  napi: '10',
+  nbytes: '0.1.1',
+  ncrypto: '0.0.1',
+  nghttp2: '1.67.1',
+  openssl: '3.5.4',
+  simdjson: '4.1.0',
+  simdutf: '6.4.0',
+  sqlite: '3.50.4',
+  tz: '2025b',
+  undici: '7.18.2',
+  unicode: '16.0',
+  uv: '1.51.0',
+  uvwasi: '0.0.23',
+  v8: '13.6.233.17-node.37',
+  zlib: '1.3.1-470d3a2',
+  zstd: '1.5.7'
+}
+
+ npm exec --yes node -- -p "process.version"
+ v10.8.0
+################
+
+So reinstall node via homebrew:
+brew reinstall node
+brew link --overwrite --force node
+hash -r  <-clears recently used commands, to make it easier for my Command Line/Terminal to realize to stop confusing the different node versions, and only use the newest node version.
+
+###
+Error when I tried this command:
+brew link --overwrite --force node
+Linking /usr/local/Cellar/node/25.6.0... 
+Error: Could not symlink include/node/cppgc/allocation.h
+/usr/local/include/node/cppgc is not writable.
+
+So let;s make that folder under my current (and only) Mac user's ownership
+sudo chown -R $(whoami):admin /usr/local/include/node
+
+Now, I'll try that command line again.
+And it worked.
+
+Now'ls let's finish with 
+hash -r
+
+Now let's see different versions of Node
+
+
+
+
+Sees where our v10 versino of Node is being run from:
+ which -a node
+/usr/local/bin/node
+David-MacBook-Pro:frontend David$ which -a npm
+/usr/local/bin/npm
+David-MacBook-Pro:frontend David$ which -a npx
+/usr/local/bin/npx
+
+brew uninstall --ignore-dependencies node
+brew install node
+sudo rm -rf /usr/local/lib/node_modules/npm
+sudo rm -rf /usr/local/lib/node_modules/npx
+brew reinstall node
+
+Now checking node/npm stuff:
+
+David-MacBook-Pro:frontend David$ node -v
+v25.6.0
+David-MacBook-Pro:frontend David$ npm -v
+11.8.0
+David-MacBook-Pro:frontend David$ npm exec --yes node -- -v
+v10.8.0
+
+Try removing old installs:
+sudo rm -rf /usr/local/bin/node
+sudo rm -rf /usr/local/bin/npm
+sudo rm -rf /usr/local/bin/npx
+sudo rm -rf /usr/local/lib/node_modules/npm
+sudo rm -rf ~/.npm/_npx
+
+brew update
+brew reinstall node
+brew link --overwrite --force node
+hash -r
+
+
+
+
+---
+mkdir ~/tmp-vite && cd ~/tmp-vite
+David-MacBook-Pro:tmp-vite David$ npm pack create-vite@latest
+create-vite-8.3.0.tgz
+David-MacBook-Pro:tmp-vite David$ tar -xzf create-vit-*.tgz
+tar: Error opening archive: Failed to open 'create-vit-*.tgz'
+David-MacBook-Pro:tmp-vite David$ tar -xzf create-vit-*.tgz
+tar: Error opening archive: Failed to open 'create-vit-*.tgz'
+David-MacBook-Pro:tmp-vite David$ tar -xzf create-vite-*.tgz
+David-MacBook-Pro:tmp-vite David$ node package/bin.js ../frontend --template react-ts
+node:internal/modules/cjs/loader:1456
+  throw err;
+  ^
+
+Error: Cannot find module '/Users/David/tmp-vite/package/bin.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1453:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1064:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1069:22)
+    at Module._load (node:internal/modules/cjs/loader:1239:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v25.6.0
+
+So this:
+node package/dist/index.js ../frontend --template react-ts
+
+And this...works.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
