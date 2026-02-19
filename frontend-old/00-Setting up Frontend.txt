@@ -1,0 +1,8 @@
+Setting up Front-End:
+
+
+
+npm create vite@latest
+
+
+
