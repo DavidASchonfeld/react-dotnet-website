@@ -595,7 +595,7 @@ SyntaxError: Unexpected token {
 Thursday, February 19, 2026
 
 
-
+Commnands to Find all versions of Node on my computer to learn more about the conflicting versions on my mac
 
 whereis node
 node: /usr/local/bin/node /usr/local/share/man/man1/node.1
@@ -632,21 +632,309 @@ node is /usr/local/bin/node
 
 
 
+----
+David$ rm -rf ~/.npm/_npx
+(base) MacBookPro:frontend David$ npm cache clean --force 
+
+create-vite@8.3.0
+Ok to proceed? (y) y
+
+> npx
+> "create-vite"
+
+/Users/David/.npm/_npx/1415fee72ff6294b/node_modules/create-vite/index.js:3
+import './dist/index.js'
+       ^^^^^^^^^^^^^^^^^
+
+SyntaxError: Unexpected string
+    at new Script (vm.js:74:7)
+    at createScript (vm.js:246:10)
+    at Object.runInThisContext (vm.js:298:10)
+    at Module._compile (internal/modules/cjs/loader.js:657:28)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:266:19)
+npm error code 1
+npm error path /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/frontend
+npm error command failed
+npm error command sh -c "create-vite"
+npm error A complete log of this run can be found in: /Users/David/.npm/_logs/2026-02-19T17_05_40_726Z-debug-0.log
 
 
 
 
 
 
+----
+Let's set Conda (which I use to run Jupyter Notebooks) to not run automatically run in the Terminal
+conda config --set auto_activate_base false
+
+When I want jupyter:
+"conda activate base" OR "conda activate myenv"
+jupyter notebook
+
+
+Next, uninstall node via homebrew
+brew uninstall node
+brew uninstall npm <- Command doesn't work since I already unisntalled node 
+brew uninstall npx <- Command doesn't work since I already unisntalled node 
+brew cleanup
+
+************
+Then, install nvm (stands for "Node Version Manager")
+(Haven't done that yet)
+
+brew install nvm
+
+Create folder that nvm installs/manages Node versions:
+mkdir ~/.nvm
+
+Tell Terminal About that new folder
+nano ~/.zshrc  <-Enter our shell config to edit it
+
+Add these lines at the bottom
+export NVM_DIR="$HOME/.nvm"   <-Tells my Terminal/nvm where the node versions will be stored/managed (Note: Remember, no spaces next to the "=" sign.)
+source $(brew --prefix nvm)/nvm.sh  # Loads nvm functions into every Terminal session so commands like "nvm install", "nvm use" etc. work in Terminal
+
+
+Then, save + exit NANO
+
+
+*********
+Apply updates to current Terminal (instead of needing to open a new Terminal window for the changes to apply)
+source ~/.zshrc
+
+Then, install a Node version using nvm
+nvm install 22  <- Installs Node V22 LTS
+nvm use 22  <-Activates NVM V22 for current Terminal Session
+nvm alias default 22 <-Sets version to be default in future Terminal sessions (and therefore will not need to type in "nvm use 22" in future Terminal sessions)
+
+(Note: I'm downloading/using v24, the current and latest Node LTS version)
 
 
 
+---
+Now, I'm running the same commands as just above to see all the different versions currently on my mac now that I've hopefully clearned up my node installs and now will use NVM (Node Version Manager):
+
+whereis node
+node: /Users/David/.nvm/versions/node/v24.13.1/bin/node /Users/David/.nvm/versions/node/v24.13.1/share/man/man1/node.1
+(base) MacBookPro:frontend David$ find /usr/local -name node -type f 2>/dev/null
+/usr/local/share/dotnet/packs/Microsoft.NET.Runtime.Emscripten.2.0.23.Node.osx-x64/6.0.4/tools/bin/node
+(base) MacBookPro:frontend David$ find /opt/homebrew -name node -type f 2>/dev/null
+(base) MacBookPro:frontend David$ find ~ -name node -type f 2>/dev/null | head -n 20
+/Users/David/node_modules/node/bin/node
+/Users/David/node_modules/node/node_modules/node-darwin-x64/bin/node
+/Users/David/.nvm/versions/node/v24.13.1/bin/node
+/Users/David/miniconda3/pkgs/nodejs-20.17.0-h406526a_0/bin/node
+/Users/David/miniconda3/envs/navigator/bin/node
+(base) MacBookPro:frontend David$ command -v nvm
+nvm
+(base) MacBookPro:frontend David$ brew list | grep node
+(base) MacBookPro:frontend David$ brew --prefix node
+/usr/local/opt/node
+(base) MacBookPro:frontend David$ echo $PATH
+/Users/David/.nvm/versions/node/v24.13.1/bin:/Library/Frameworks/Python.framework/Versions/3.10/bin:/Library/Frameworks/Python.framework/Versions/3.6/bin:/Users/David/local/bin:/Users/David/local/bin:/Library/Frameworks/Python.framework/Versions/3.6/bin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/opt/local/bin:/opt/local/sbin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/opt/pmk/env/global/bin:/opt/X11/bin:/Library/Apple/usr/bin:/Developer/Tools/Panda3D:/usr/local/share/dotnet:~/.dotnet/tools:/usr/local/git/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Users/David/miniconda3/bin:/Users/David/miniconda3/condabin:/Library/Frameworks/Python.framework/Versions/3.10/bin:/Library/Frameworks/Python.framework/Versions/3.6/bin:/Users/David/local/bin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/opt/local/bin:/opt/local/sbin:/Users/David/.rvm/bin:/Users/David/.rvm/bin:/Users/David/.rvm/bin
+(base) MacBookPro:frontend David$ type -a node
+node is /Users/David/.nvm/versions/node/v24.13.1/bin/node
+(base) MacBookPro:frontend David$ type -a npm
+npm is /Users/David/.nvm/versions/node/v24.13.1/bin/npm
+(base) MacBookPro:frontend David$ type -a npx
+npx is /Users/David/.nvm/versions/node/v24.13.1/bin/npx
+(base) MacBookPro:frontend David$ node -v
+v24.13.1
+(base) MacBookPro:frontend David$ which node
+/Users/David/.nvm/versions/node/v24.13.1/bin/node
+(base) MacBookPro:frontend David$ type -a node
+node is /Users/David/.nvm/versions/node/v24.13.1/bin/node
+(base) MacBookPro:frontend David$ 
 
 
+Now, let's check which versions of node, npm and npx are being used by default:
+
+(base) MacBookPro:frontend David$ node -v
+v24.13.1
+(base) MacBookPro:frontend David$ npm -v
+11.8.0
+(base) MacBookPro:frontend David$ npx -v
+11.8.0
+
+(base) MacBookPro:frontend David$ which node
+/Users/David/.nvm/versions/node/v24.13.1/bin/node
+(base) MacBookPro:frontend David$ which npm
+/Users/David/.nvm/versions/node/v24.13.1/bin/npm
+(base) MacBookPro:frontend David$ which npx
+/Users/David/.nvm/versions/node/v24.13.1/bin/npx
 
 
+Now, let's try the Vite command:
+npm create vite@latest
+
+> npx
+> "create-vite"
+
+/Users/David/.npm/_npx/1415fee72ff6294b/node_modules/create-vite/index.js:3
+import './dist/index.js'
+       ^^^^^^^^^^^^^^^^^
+
+SyntaxError: Unexpected string
+    at new Script (vm.js:74:7)
+    at createScript (vm.js:246:10)
+    at Object.runInThisContext (vm.js:298:10)
+    at Module._compile (internal/modules/cjs/loader.js:657:28)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:266:19)
+npm error code 1
+npm error path /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/frontend
+npm error command failed
+npm error command sh -c "create-vite"
+npm error A complete log of this run can be found in: /Users/David/.npm/_logs/2026-02-19T20_05_05_899Z-debug-0.log
 
 
+Now, let's clear the npm and npx caches from before we installed nvm
+
+npm cache clean --force  <- NPM's cache
+rm -rf ~/.npm/_npx  <-NPX's cache
+
+Now let's try again:
+npm create vite@latest
+
+Nope.
+Now I just deactivated conda again.
+Then, I commented out Conda's auto-activation code from the shell config file (.zshrc) 
+
+Now I'll wipe NPM's and NPX's caches again and then try the command again
+npm cache clean --force  <- NPM's cache
+rm -rf ~/.npm/_npx  <-NPX's cache
+
+Install latest NPM version
+npm install -g npm@latest
+
+
+Then clear the caches again, with some new cache-clearing commands
+rm -rf ~/.npm
+rm -rf ~/.npm/_npx
+npm cache clean --force  <- NPM's cache
+
+Let's try npx instead of npm for this command, see if it makes a difference:
+
+npx create-vite@latest
+
+Try again, but use the --yes flag to bypass certain prompting when running the command
+
+npx --yes create-vite@latest
+Nope, still same error.
+
+Testing npx by running:
+npx --yes tsx --version
+
+Yes, this causes an error. Maybe this iwll help me figure out what's going wrong.
+So far, the error seems to be that my current npx and Node on my computer can't run modern ES modules, even though I have version Node v24 installed via nvm
+
+Let's Try these potential solutions:
+Let's run tsx by using npx by specifying the location that npx is stored and running npx by calling on its location directly
+/Users/David/.nvm/versions/node/v24.13.1/bin/npx tsx --version
+Same error:
+
+Let's try temporarily clearing the NODE_OPTIONS in this particular command.
+NODE_OPTIONS = /Users/David/.nvm/versions/node/v24.13.1/bin/npx tsx --version
+
+This doesn't work.
+
+Next attempt:
+
+Let's try install NPM directly by using the curl command.
+nvm use 24 <- Say we are using Node v24 (we already area, but let's specify again)
+curl -L https://www.npmjs.com/install.sh | sh  <-Downloading NPM from the NPM website
+
+Now, let's see what versions we have
+npm -v
+11.10.0
+npx -v
+11.10.0
+
+Now let's try using npx again:
+npx tsx --version
+
+Still the error again:
+MacBookPro:frontend David$ npx tsx --version
+/Users/David/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/cli.mjs:2
+var Rn=Object.defineProperty;var a=(t,e)=>Rn(t,"name",{value:e,configurable:!0});import{constants as lt}from"node:os";import bn from"tty";import{transformSync as vn}from"esbuild";import{v as Sn}from"./package-CeBgXWuR.mjs";import{r as Ie,g as Bn,i as $n}from"./get-pipe-path-BHW2eJdv.mjs";import{pathToFileURL as Tn,fileURLToPath as xn}from"node:url";import On from"child_process";import z from"path";import De from"fs";import{i as mu,m as Nn,t as Hn}from"./node-features-_8ZFwP_x.mjs";import Pn from"node:path";import Ln from"events";import ge from"util";import In from"stream";import _u from"os";import{g as kn,l as Mn,e as Gn,f as Wn,y as me}from"./index-gbaejti9.mjs";import jn from"node:net";import ct from"node:fs";import{t as Un}from"./temporary-directory-CwHp0_NW.mjs";import"module";const Kn="known-flag",Vn="unknown-flag",zn="argument",{stringify:_e}=JSON,Yn=/\B([A-Z])/g,qn=a(t=>t.replace(Yn,"-$1").toLowerCase(),"v$1"),{hasOwnProperty:Xn}
+
+SyntaxError: Unexpected token {
+    at new Script (vm.js:74:7)
+    at createScript (vm.js:246:10)
+    at Object.runInThisContext (vm.js:298:10)
+    at Module._compile (internal/modules/cjs/loader.js:657:28)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:266:19)
+
+Let's try using npx without caching
+npx --ignore-existing tsx --version
+Still has the same error
+
+Let's try downloading npx in a temporary package to see if that 
+npx --package tsx tsx --version
+Still has the same error
+
+Now let's clear cache and try with the --yes flag
+npm cache clean --force
+npx --yes tsx --version
+Same error
+
+
+Run npx directly from npx's location and try --no-install at the same time:
+~/.nvm/versions/node/v24.13.1/bin/npx --no-install tsx --version
+Same error
+
+Now, let's look at my shell config file:
+nano ~/.zshrc
+
+
+-----
+Will list all nodes 
+which -a node
+node -v
+node -p "process.execPath"
+which -a npx
+
+Now, when I reload my Terminal, NVM is not showing up.
+Now, to get NVM to load automatically in my Terminal,
+open and edit the shell config file
+nano ~/.zshrc
+
+Erase these lines (As a reminder, I had added them earlier in this project, trying to get nvm to load automatically, but it didn't work.):
+export NVM_DIR="$HOME/.nvm"   <-Tells my Terminal/nvm where the node versions will be stored/managed (Note: Remember, no spaces next to the "=" sign.)
+source $(brew --prefix nvm)/nvm.sh  # Loads nvm functions into every Terminal session so commands like "nvm install", "nvm use" etc. work in Terminal
+
+
+Add these lines:
+export NVM_DIR="$HOME/.nvm"
+# Yes, same line as the 1st line above
+# Creates global variable $NVM_DIR and sets it to where our nvm is stored (/Users/MyUserName/.nvm).
+# "export" makes it available to child processes,
+# Tells my Terminal/nvm where the node versions will be stored and managed
+
+
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+# "[]" is a test condition, "-s" means: "file exists and is not empty" "$NVM_DIR/nvm.sh" is the file path, "]"] closes the if statement.
+# first part as whole means this if statement: If "$NVM_DIR/nvm.sh" exists.
+# &&: If condition before this is true, do the following command
+# As a whole means: If nvm.sh exists, load it into this shell.
+
+
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+# Loads tab-completion support. So when you type in "nvm <TAB>", you get autocomplete suggestions
 
 
 
