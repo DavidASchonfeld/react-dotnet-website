@@ -938,3 +938,71 @@ export NVM_DIR="$HOME/.nvm"
 
 
 
+Now, when I re-open Visual Studio Code and try to use NVM, yeah it doesn't automatically load into the terminal.
+Once I run the shell config myself (by running "source ~/.zshrc"), then I have access to NVM.
+
+This Mac I bought was before Mac's Termianl was default to zsh, (So my older Mac using Bash)
+
+Switch Shell to ZSH:
+chsh -s /bin/zsh
+Then, close the Terminal window and re-open
+
+Switch Shell (Back to) Bash:
+chsh -s /bin/bash
+Then, close the Terminal window and re-open
+
+See which shell is currently running:
+echo $SHELL
+
+
+Now let's see about NVM working:
+echo $NVM_DIR
+/Users/David/.nvm
+Okay, good, it can access that variable from zsh's startup shell ~/.zshrc
+
+Now, let's see Node and NVM working:
+command -v nvm
+node -v
+
+Results:
+MacBookPro:react-dotnet-website David$ command -v nvm
+MacBookPro:react-dotnet-website David$ node -v
+v24.13.1
+
+Let's see if loading the NVM manually works:
+export NVM_DIR="$HOME/.nvm"
+source /usr/local/opt/nvm/libexec/nvm.sh 
+command -v nvm
+Now, the line above prints "nvm" so now it works.
+
+
+
+----
+New Attempt 
+
+
+if [ -s "$(brew --prefix nvm)/nvm.sh" ]; then
+  . "$(brew --prefix nvm)/nvm.sh"
+fi
+
+if [ -s "$(brew --prefix nvm)/etc/bash_completion.d/nvm" ]; then
+  . "$(brew --prefix nvm)/etc/bash_completion.d/nvm"
+fi
+
+
+----
+Fixed.
+Final ~/.zshrc file has:
+
+export NVM_DIR="$HOME/.nvm"
+# Creates global variable $NVM_DIR, sets it to where my nvm is stored.
+# "export" makes it available to child processes,
+# Tells my Terminal/nvm where the node versions will be stored and managed
+   
+# Load NVM directly (NVM was installed via official script, not Homebrew)
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# Enable nvm's tab completion (Optional, not needed to run nvm) 
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+
