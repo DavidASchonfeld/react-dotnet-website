@@ -16,6 +16,7 @@ dotnet run
 
 URL Example to see it work
 https://localhost:7267/weatherforecast
+Note: /weatherforecast is included in the template 
 
 
 
