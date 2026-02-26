@@ -6,7 +6,8 @@ npm run dev
 
 
 ## Vite Template Generation Command:
-dotnet new webapi -n MyDotNetWebsiteApi
+npx create-vite@latest . --template react-ts
+
 
 
 ############### Generated from Vite ###################
