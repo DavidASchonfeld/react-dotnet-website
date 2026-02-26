@@ -14,6 +14,9 @@ dotnet restore <- Only needed for running it the first time
 OR dotnet build
 dotnet run
 
+URL Example to see it work
+https://localhost:7267/weatherforecast
+
 
 
 ##### Setup Command
