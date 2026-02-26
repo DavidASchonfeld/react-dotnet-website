@@ -1,7 +1,8 @@
 
 
-
-
+#### Running Instructions (Developer)
+npm install <- Only needed before first time Running to install required NPM Packages
+npm run dev
 
 
 ## Vite Template Generation Command:
