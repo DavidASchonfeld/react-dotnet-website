@@ -7,7 +7,8 @@ npm run dev
 
 ## Vite Template Generation Command:
 npx create-vite@latest . --template react-ts
-
+npm install react-router-dom
+npm audit fix <- npm told me to run that command to fix security concerns, so I did and the concern was fixed.
 
 
 ############### Generated from Vite ###################
