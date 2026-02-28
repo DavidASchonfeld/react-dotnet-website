@@ -22,4 +22,17 @@ Note: /weatherforecast is included in the template
 
 ##### Setup Command
 
+## For Creating the .NET Backend Template:
 dotnet new webapi -n MyDotNetWebsiteApi
+
+## For Adding New Packages
+Note: Remember, you must enter the folder MyDotNetWebsiteApi before running these commands
+
+dotnet add package Microsoft.EntityFrameworkCore.Sqlite
+# For SQLite, a very basic version of SQL
+
+dotnet add package Microsoft.EntityFrameworkCore.Tools
+# For migrations (for pushing/pulling changes to/from the database), like using Github to track/implement changes
+
+dotnet add package Microsoft.AspNetCore.Identity.EntityFrameworkCore
+# For taking care of users/passwords
