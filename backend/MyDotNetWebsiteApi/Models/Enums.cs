@@ -5,20 +5,22 @@
 // because this file is inside the C# project
 // and they share a namespace
 
-
-public enum MediaType
-{
-    Book,
-    Movie,
-    TVShow,
-    VideoGame,
-    Comic,
-    Webcomic,
-    Website,
-    Article,
-    Image,
-    TBD
-}
+// TODO: Add these into potential entries for MediaTypes:
+// public enum MediaType
+// {
+//     Book,
+//     Movie,
+//     TVShow,
+//     VideoGame,
+//     Comic,
+//     Webcomic,
+//     Website,
+//     Article,
+//     Image,
+//     RadioShow,
+//     Podcast,
+//     TBD
+// }
 
 public enum Visibility
 {
@@ -37,7 +39,8 @@ public enum ItemAccessStatus
 public enum PermissionLevel
 {
     Viewer,
-    Editor
+    Editor,
+    Manager
 }
 
 public enum CreatorType

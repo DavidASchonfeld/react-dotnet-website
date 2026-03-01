@@ -9,11 +9,6 @@ public class AppUser : IdentityUser
     public DateTime CreatedAt {get; set; } = DateTime.UtcNow;
 
     // Navigation Properties to your own tables
-    public ICollection<MediaList> Lists {get; set; } = new List<MediaList>()
-
-    
-
-
-
+    public ICollection<MediaList> Lists {get; set; } = new List<MediaList>();
 
 }
