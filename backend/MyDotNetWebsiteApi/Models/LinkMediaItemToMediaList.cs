@@ -1,12 +1,13 @@
 public class LinkMediaItemToMediaList
 {
+    ///// Real SQL Columns
     public int Id {get; set; }
 
     public int HostListId {get; set;}
-    public MediaList HostList {get; set;} = null!;
     
-    public int ListItemId {get; set;}
-    public MediaItem ListItem {get; set;} = null!;
+    
+    public int MediaItemId {get; set;}
+    
     
     
     // Gapless Ordering VS Sparse Ordering
@@ -18,6 +19,15 @@ public class LinkMediaItemToMediaList
     // For this project, I am choosing "Gapless Ordering" because it is just satisfying to use right now.
     // If this project/website becomes widely-used/famous/etc. and speed matters more, I could implement sparse ordering instead.
     public int Position {get; set; }
+
+
+
+    ///// C# Only - They do not exist in the SQL Database
+    
+    /// We already have MediaItemId and HostListId in the Real SQL Columns section above
+    public MediaList HostList {get; set;} = null!;
+    public MediaItem MediaItem {get; set;} = null!;
+
 
 }
 

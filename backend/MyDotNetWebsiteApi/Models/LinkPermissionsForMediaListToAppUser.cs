@@ -1,15 +1,22 @@
 
 public class LinkPermissionsForMediaListToAppUser
 {
+    ///// Real SQL Columns
     public int Id {get; set; }
 
     public int HostListId {get; set;}
-    public MediaList HostList {get; set;} = null!;
+    
     
     public string SharedWithUserId {get; set;} = string.Empty;
-    public AppUser SharedWithUser {get; set;} = null!;
     
     // Permission Levels: Viewer, Editor, Manager
     // Manager can edit content and manage permissions for this list
     public PermissionLevel UserPermission {get; set;}
+
+
+    ///// C# Only - They do not exist in the SQL Database
+    
+    /// We already have HostListId and SharedWithUserId in the Real SQL Columns section above
+    public MediaList HostList {get; set;} = null!;
+    public AppUser SharedWithUser {get; set;} = null!;
 }

@@ -43,14 +43,6 @@ public enum PermissionLevel
     Manager
 }
 
-public enum CreatorType
-{
-    Person,
-    Band,
-    Company,
-    GameStudio
-}
-
 public enum CreatorRole
 {
     Author,
