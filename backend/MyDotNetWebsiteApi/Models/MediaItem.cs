@@ -36,7 +36,7 @@ public class MediaItem
     public ICollection<LinkCreatorToMediaItem> Creators {get; set;} = new List<LinkCreatorToMediaItem>();
     public ICollection<LinkMediaItemToGenre> Genres {get; set; } = new List<LinkMediaItemToGenre>();
 
-    public ICollection<LinkMediaItemToSeries> SeriesEntries {get; set; } = new List<LinkMediaItemToSeries>();
+    public ICollection<LinkMediaItemToSeriesItem> SeriesEntries {get; set; } = new List<LinkMediaItemToSeriesItem>();
     public ICollection<LinkMediaItemToFranchise> FranchiseEntries {get; set; } = new List<LinkMediaItemToFranchise>();
 
     // When I pull ListApperaances, I will incorporate it into the script that it only shows the current user the lists that he/she has access to.

@@ -1,4 +1,4 @@
-public class LinkMediaItemToSeries
+public class LinkMediaItemToSeriesItem
 {
     ///// Real SQL Columns
     public int Id {get; set; }

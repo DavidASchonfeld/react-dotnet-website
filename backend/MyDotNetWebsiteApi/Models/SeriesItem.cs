@@ -37,6 +37,6 @@ public class SeriesItem
 
     public ICollection<LinkSeriesItemToFranchise> FranchiseEntries {get; set; } = new List<LinkSeriesItemToFranchise>();
 
-    public ICollection<LinkMediaItemToSeries> SeriesEntries {get; set; } = new List<LinkMediaItemToSeries>();
+    public ICollection<LinkMediaItemToSeriesItem> SeriesEntries {get; set; } = new List<LinkMediaItemToSeriesItem>();
 
 }

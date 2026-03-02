@@ -1,0 +1,2 @@
+I am putting all of my link/join tables (the .cs model files that C# uses to CRUD (Create, Read, Update, Delete) ) here in this folder to make my Models .cs folder more organized.
+Because my .csproj, by default since I'm using a newer version of .NET, uses <ImplicitUsings>enable</ImplicitUsings>, putting these .cs Model files in this folder will not affect the ability for my code to access and use these Model files.
