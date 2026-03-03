@@ -7,7 +7,7 @@ public class Genre
     public string? Description {get; set;}
     public DateTime DateSubmitted {get; set;} = DateTime.UtcNow;
 
-    public string SubmittedByUserId {get; set;} = string.Empty;
+    public string? SubmittedById {get; set;}
     
 
     // TODO: In the future, adding a more complicated version of approval status would be ideal.

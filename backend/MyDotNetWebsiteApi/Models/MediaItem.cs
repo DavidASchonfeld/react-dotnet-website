@@ -12,7 +12,7 @@ public class MediaItem
 
     public ItemAccessStatus AccessStatus {get; set;}
     public DateTime? PublishedDateTime {get; set; }
-    public string SubmittedById {get; set;} = string.Empty;
+    public string? SubmittedById {get; set;}
     
     public DateTime SubmittedDateTime {get; set; } = DateTime.UtcNow;
 

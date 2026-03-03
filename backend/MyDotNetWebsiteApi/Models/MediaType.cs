@@ -8,7 +8,7 @@ public class MediaType
 
     // Submission Variables
 
-    public string SubmittedByUserId {get; set;} = string.Empty;
+    public string? SubmittedById {get; set;}
     public DateTime DateSubmitted {get; set;} = DateTime.UtcNow;
 
     // isApproved = false means only display to creator and the admins to approve/deny

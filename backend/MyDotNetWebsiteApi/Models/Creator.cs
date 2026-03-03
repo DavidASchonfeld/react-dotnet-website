@@ -9,7 +9,7 @@ public class Creator
 
 
     // Submission Variables
-    public string SubmittedByUserId {get; set;} = string.Empty;
+    public string? SubmittedById {get; set;}
     public DateTime DateSubmitted {get; set;} = DateTime.UtcNow;
     public bool IsApproved {get; set;}
 

@@ -6,7 +6,7 @@ public class MediaList
     public string? Description {get; set;}
     public DateTime DateSubmitted {get; set;} = DateTime.UtcNow;
 
-    public string SubmittedByUserId {get; set;} = string.Empty;
+    public string? SubmittedById {get; set;}
     
 
     public ItemAccessStatus AccessStatus {get; set;}

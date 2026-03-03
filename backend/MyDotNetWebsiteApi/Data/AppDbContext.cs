@@ -61,7 +61,92 @@ public class AppDbContext : IdentityDbContext<AppUser>
 
         // Relationship Between Tables:
 
-        // Cascade Delete Behavior
+        // Cascade Delete for Link Tables
+
+        // Restrict Deletion for Core Data (only allow deletions
+        // if there are no foreign keys related to this to-be-deleted table)
+
+        // Each Code Chunk below refers to 1 relationship between 2 items
+
+
+
+        // In each of these files, you should have these line of code:
+        // public string? SubmittedById {get; set;} <-Yes, we need the "?" to ensure that this variable can be set to null.
+
+        // Block 1: Media Item -> AppUser (via SubmittedBy)
+        modelBuilder.Entity<MediaItem>()
+            .HasOne(m => m.SubmittedBy)
+            // A MediaItem has 1 AppUser, and that AppUser is accessed through the SubmittedBy property.
+            // Note: We arbitrarily chose "m" as the variable name to refer to for MediaItem, but could be any variable name
+            // The arbitrary variable name applies to the HasForeignKey below too
+
+            .WithMany()  // Describes the AppUser perspective: that it has relationship with many MediaItems.
+            // Example: An AppUser can create many MediaItems
+            .HasForeignKey(m => m.SubmittedById)  // the actual SQL column storing the AppUser's id
+            .OnDelete(DeleteBehavior.SetNull); 
+            // when the linked AppUser is deleted, set SubmittedById to null
+            // The MediaItem survives without the user who created that item
+
+        
+        // Block 2: Creator -> AppUser (via SubmittedBy)
+        modelBuilder.Entity<Creator>()
+            .HasOne(m => m.SubmittedBy)
+            // A Creator has 1 AppUser, and that AppUser is accessed through the SubmittedBy property.
+
+            .WithMany()  // Describes the AppUser perspective: that it has relationship with many Creators.
+            // Example: An AppUser can create many Creators
+            .HasForeignKey(m => m.SubmittedById)  // the actual SQL column storing the AppUser's id
+            .OnDelete(DeleteBehavior.SetNull); 
+            // when the linked AppUser is deleted, set SubmittedById to null
+            // The Creator survives without the user who created that item
+
+        modelBuilder.Entity<Genre>()
+            .HasOne(m => m.SubmittedBy)
+            .WithMany()
+            .HasForeignKey(m => m.SubmittedById)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<MediaType>()
+            .HasOne(m => m.SubmittedBy)
+            .WithMany()
+            .HasForeignKey(m => m.SubmittedById)
+            .OnDelete(DeleteBehavior.SetNull);
+        
+        modelBuilder.Entity<SeriesItem>()
+            .HasOne(m => m.SubmittedBy)
+            .WithMany()
+            .HasForeignKey(m => m.SubmittedById)
+            .OnDelete(DeleteBehavior.SetNull);
+        
+        modelBuilder.Entity<Franchise>()
+            .HasOne(m => m.SubmittedBy)
+            .WithMany()
+            .HasForeignKey(m => m.SubmittedById)
+            .OnDelete(DeleteBehavior.SetNull);
+        
+        modelBuilder.Entity<MediaList>()
+            .HasOne(m => m.SubmittedBy)
+            .WithMany()
+            .HasForeignKey(m => m.SubmittedById)
+            .OnDelete(DeleteBehavior.SetNull);
+
+
+
+        // Cascade Deletions
+        //// Means: If that item is deleted, if it has a foreign key in another table rows, those rows are atuomatically deleted
+        //// For Many-To-Many Relationships,
+        /////// foreign keys for objects are not stored in the corresponding other object
+        /////// the foreign keys are only directly stored in the link/join tables
+        /////// So for cascade deletion only deletes the row in the link/join table, not the related item(s0 in through the link/join table
+        /////// Deleting a link/join row never affects the items referred to inside the link/join row 
+
+
+
+
+        // Right now, I'll auto-approve all submitted things.
+        // In my Future_Ideas.md, I added to implement a more complcated approval system.
+
+
 
 
 

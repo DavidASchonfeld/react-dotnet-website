@@ -19,7 +19,7 @@ public class SeriesItem
 
     // Submission Variables
     public DateTime DateSubmitted {get; set;} = DateTime.UtcNow;
-    public string SubmittedByUserId {get; set;} = string.Empty;
+    public string? SubmittedById {get; set;}
     
 
     // isApproved = false means only display to creator and the admins to approve/deny
