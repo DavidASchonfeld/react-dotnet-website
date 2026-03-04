@@ -148,3 +148,11 @@
 /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/backend/MyDotNetWebsiteApi/bin/Debug/net10.0/runtimes/win-arm64/native/e_sqlite3.dll
 /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/backend/MyDotNetWebsiteApi/bin/Debug/net10.0/runtimes/win-x64/native/e_sqlite3.dll
 /Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/backend/MyDotNetWebsiteApi/bin/Debug/net10.0/runtimes/win-x86/native/e_sqlite3.dll
+/Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/backend/MyDotNetWebsiteApi/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/backend/MyDotNetWebsiteApi/bin/Debug/net10.0/Microsoft.IdentityModel.Abstractions.dll
+/Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/backend/MyDotNetWebsiteApi/bin/Debug/net10.0/Microsoft.IdentityModel.JsonWebTokens.dll
+/Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/backend/MyDotNetWebsiteApi/bin/Debug/net10.0/Microsoft.IdentityModel.Logging.dll
+/Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/backend/MyDotNetWebsiteApi/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.dll
+/Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/backend/MyDotNetWebsiteApi/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+/Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/backend/MyDotNetWebsiteApi/bin/Debug/net10.0/Microsoft.IdentityModel.Tokens.dll
+/Users/David/Documents/Programming/React and Dotnet/React and Dotnet Website/Git-Linked Folder/react-dotnet-website/backend/MyDotNetWebsiteApi/bin/Debug/net10.0/System.IdentityModel.Tokens.Jwt.dll

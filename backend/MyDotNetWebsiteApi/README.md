@@ -66,3 +66,22 @@ dotnet ef migrations add DescribeWhatYouChanged
 dotnet ef database update
 
 
+# For JWT (Json Web Tokens), Setting up
+I edited/added JWT information in the appsettings.json
+For the JWT token, for development, I did the following command
+Note: Remember to navigate into backend/MyDotNetWebsiteApi folder first.
+
+dotnet user-secrets init
+dotnet user-secrets set "JwtSettings:Secret" "MySecretKeyWhichMustBe32PlusCharactersLong"
+Note: I am, of course, not going to publish my actual secret string onto github since then it wouldn't be a secret (and therefore it would be bad for security).
+
+
+-- Issuer Validation: token was created by my website/server, (not someone else's, and not someone pretending to be my website)
+-- Audience Validation: Checking that the token was made for this app/program, and not for another app/program.
+-- Signature Validation: checking that the token wasn't tampered it
+
+Import NuGet package:
+dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer
+
+
+

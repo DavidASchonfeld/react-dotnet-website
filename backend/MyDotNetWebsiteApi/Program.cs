@@ -1,5 +1,10 @@
+using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+
+// JWT Libaries to Import
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 
 
@@ -26,6 +31,54 @@ builder.Services.AddIdentity<AppUser, IdentityRole>()
 
     // Add default token providers for things like password reset emails so Microsoft's built-in password reset stuff is enabled.
     .AddDefaultTokenProviders();
+
+
+////////
+/// JWT (Json Web Token):
+
+
+//// Pull my Secret from "dotnet user-secret" (Details just Below)
+// I edited/added JWT information in the appsettings.json
+// For the JWT token, for development, I did the following command
+// Note: Remember to navigate into backend/MyDotNetWebsiteApi folder first.
+// dotnet user-secrets init
+// dotnet user-secrets set "JwtSettings:Secret" "MySecretKeyWhichMustBe32PlusCharactersLong"
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secret = jwtSettings["Secret"];
+
+builder.Services.AddAuthentication(options =>
+{
+    // Set JWT as the default authenticaiton
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true, // Validate that the token was created by this website/server/backend
+        ValidateAudience = true, // Validate that the token was meant for this app
+        ValidateLifetime = true, // Validate that the token was not expired
+        ValidateIssuerSigningKey = true, //Validate that the token signature was not tampered with
+        ValidIssuer = jwtSettings["Issuer"], // Pulling this value from the appsettings.json
+        ValidAudience = jwtSettings["Audience"], // Pulling this value from the appsettings.json
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(secret!)
+        )
+    };
+});
+
+
+
+
+
+///////
+
+
+
+
+
+
 
 // Register Controllers
 // Tells app to look for controller classes to handle API requests.

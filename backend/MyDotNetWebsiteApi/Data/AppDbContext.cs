@@ -132,6 +132,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
 
 
         // Next, added this to clarify the relationship between AppUser and MediaList
+        // Block: AppUSer (One) -> MediaList (Many) (through SubmittedBy Id variable)
         modelBuilder.Entity<AppUser>()
             .HasMany(u => u.Lists)  // An AppUser can have many lists.
             .WithOne(l => l.SubmittedBy) // The MediaList can only have 1 AppUser. as represented by SubmittedBy variable
