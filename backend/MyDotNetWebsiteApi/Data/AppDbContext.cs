@@ -131,6 +131,12 @@ public class AppDbContext : IdentityDbContext<AppUser>
             .OnDelete(DeleteBehavior.SetNull);
 
 
+        // Next, added this to clarify the relationship between AppUser and MediaList
+        modelBuilder.Entity<AppUser>()
+            .HasMany(u => u.Lists)  // An AppUser can have many lists.
+            .WithOne(l => l.SubmittedBy) // The MediaList can only have 1 AppUser. as represented by SubmittedBy variable
+            .HasForeignKey(l => l.SubmittedById); //The actual variable for this in SQL is SubmittedById
+
 
         // Cascade Deletions
         //// Means: If that item is deleted, if it has a foreign key in another table rows, those rows are atuomatically deleted
@@ -139,10 +145,9 @@ public class AppDbContext : IdentityDbContext<AppUser>
         /////// the foreign keys are only directly stored in the link/join tables
         /////// So for cascade deletion only deletes the row in the link/join table, not the related item(s0 in through the link/join table
         /////// Deleting a link/join row never affects the items referred to inside the link/join row 
+        /// Note: Since Cascade Deletion is the default mode, we do not need to add code blocks to specify this, since it is the default mode.
 
-
-
-
+        /// 
         // Right now, I'll auto-approve all submitted things.
         // In my Future_Ideas.md, I added to implement a more complcated approval system.
 

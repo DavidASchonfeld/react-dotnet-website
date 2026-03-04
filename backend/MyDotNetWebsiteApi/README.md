@@ -29,10 +29,40 @@ dotnet new webapi -n MyDotNetWebsiteApi
 Note: Remember, you must enter the folder MyDotNetWebsiteApi before running these commands
 
 dotnet add package Microsoft.EntityFrameworkCore.Sqlite
-# For SQLite, a very basic version of SQL
+## For SQLite, a very basic version of SQL
 
 dotnet add package Microsoft.EntityFrameworkCore.Tools
-# For migrations (for pushing/pulling changes to/from the database), like using Github to track/implement changes
+## For migrations (for pushing/pulling changes to/from the database), like using Github to track/implement changes
 
 dotnet add package Microsoft.AspNetCore.Identity.EntityFrameworkCore
-# For taking care of users/passwords
+
+
+#### Instal the dotnet ef command onto your Mac:
+dotnet tool install --global dotnet-ef
+
+cat << \EOF >> ~/.zprofile (Writes text to file. Everything I type until I type EOF again is the text to write to the ~/.zprofile file)
+# Add .NET Core SDK tools (Yes, we're adding this line as a comment to the ~/.zprofile file)
+export PATH="$PATH:/Users/David/.dotnet/tools"
+EOF
+
+Then, open a new Terminal to run this instead or run the following command just to get the thing again.
+export PATH="$PATH:/Users/David/.dotnet/tools"
+
+Then, to verify that it worked:
+dotnet ef --version
+
+#### For Setting Up Link to DB (And Every Time I edit any Model C# Class):
+Examples of When to Run This:
+-- Adding an ew model class
+-- adding a field to an existing model class
+-- removing a field
+-- changing a field type
+-- adding or changing a relationship (For example, foreign key changes)
+-- changing OnModelCreating configuration
+## Step 1: Generate the migration file
+dotnet ef migrations add DescribeWhatYouChanged
+
+## Step 2: Apply it to the database
+dotnet ef database update
+
+
