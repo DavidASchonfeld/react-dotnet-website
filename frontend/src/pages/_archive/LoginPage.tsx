@@ -3,8 +3,8 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 // Import from My Files
-import { loginUser } from "../services/authService";
-import { useAuth } from "../hooks/useAuth";
+import { loginUser } from "../../services/authService";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function LoginPage() {
     const [userName, setUserName] = useState("");
@@ -59,7 +59,7 @@ export default function LoginPage() {
 
                     onChange = {e => setPassword(e.target.value)} 
                 />
-            
+                <br />
                 <button type = "submit">Submit</button>
             </form>
        </>

@@ -67,6 +67,7 @@ export default function Navbar() {
                 {/* Only appears if varaible "minimized" = false */}
                 <Link to="/">Home</Link>
                 <Link to="/about">About</Link>
+                <Link to="/login">Log In</Link>
 
                 <button onClick={() => setIsTop(!isTop)} style = {{}}>
                     {isTop ? 'Set Menu to Left' : 'Set Menu to Top'}

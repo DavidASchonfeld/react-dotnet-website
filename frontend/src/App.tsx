@@ -4,7 +4,7 @@ import './App.css'
 import {Routes, Route} from 'react-router-dom'
 import About from './pages/About'
 import Navbar from './components/Navbar'
-import LoginPage from './pages/LoginPage'
+import LoginPage from './pages/_archive/LoginPage'
 
 function App() {
 
