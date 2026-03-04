@@ -1,3 +1,11 @@
+### React Frontend
+node_modules/
+dist/
+
+
+### .NET Backend
+bin/
+obj/
 
 # SQLite Database files
 *.db
@@ -5,3 +13,6 @@
 ### Temporary SQLite Runtime Files
 *.db-shm
 *.db-wal
+
+# Mac
+.DS_Store

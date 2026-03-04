@@ -84,4 +84,15 @@ Import NuGet package:
 dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer
 
 
+## Testing API Directly
+# Creating a Test User
+
+Using curl in Command Line/Terminal
+Note: This user/pass/email etc. is a filler. I'm not putting on Github actual login information
+curl -X POST http://localhost:5198/api/auth/register -H "Content-Type: application/json" -d '{"userName":"testuser","email":"test@bounce.com","password":"X!x!x1"}'
+
+# Logging in with Test User
+
+curl -X POST http://localhost:5198/api/auth/login -H "Content-Type: application/json" -d '{"userName":"testuser","password":"X!x!x1!"}'
+
 
