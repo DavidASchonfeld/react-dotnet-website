@@ -1,5 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from 'react'
+
+// Importing from My Files
+import { useAuth } from "../hooks/useAuth";
 
 export default function Navbar() {
     // export: So this function can be used in other files
@@ -15,6 +18,15 @@ export default function Navbar() {
     const [isTop, setIsTop] = useState(true)
     // useState(true) means that default value is true
 
+
+    const auth = useAuth();
+    const navigate = useNavigate();  // set up useNavigate React.js to use it later (just like with useAuth()  ).
+
+
+    const handleLogout = () => {
+        auth?.logout();
+        navigate('/login');
+    }
 
 
     return (
@@ -67,7 +79,19 @@ export default function Navbar() {
                 {/* Only appears if varaible "minimized" = false */}
                 <Link to="/">Home</Link>
                 <Link to="/about">About</Link>
+
+                {!auth?.userName && 
                 <Link to="/login">Log In</Link>
+                }
+                
+                {auth?.userName && 
+                <>
+                    <h2>{auth?.userName}</h2>
+                    <button onClick={handleLogout}>Log Out</button>
+                </>
+                }
+
+
 
                 <button onClick={() => setIsTop(!isTop)} style = {{}}>
                     {isTop ? 'Set Menu to Left' : 'Set Menu to Top'}

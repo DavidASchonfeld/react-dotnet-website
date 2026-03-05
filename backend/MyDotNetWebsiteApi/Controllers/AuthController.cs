@@ -46,8 +46,14 @@ public class AuthController : ControllerBase
 
         if (!result.Succeeded)
             return BadRequest(result.Errors);
-        
-        return Ok("User registered successfully");
+
+
+        // Now, log in the user that was just created, by providing a login token to the user
+
+        // Generate JWT Token
+        var token = GenerateJwtToken(user);
+
+        return Ok(new {token = token});
     }
 
     [HttpPost("login")]
