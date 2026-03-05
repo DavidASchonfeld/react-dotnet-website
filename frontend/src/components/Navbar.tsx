@@ -79,11 +79,11 @@ export default function Navbar() {
             {!minimized && (
             <>
                 {/* Only appears if varaible "minimized" = false */}
-                <Link to="/">Home</Link>
-                <Link to="/about">About</Link>
+                <button onClick={() => navigate("/")}>Home</button>
+                <button onClick={() => navigate("/about")}>About</button>
 
                 {!auth?.userName && 
-                <Link to="/login">Log In</Link>
+                <button onClick={() => navigate("/login")}>Log In</button>
                 }
                 
                 {auth?.userName && 
