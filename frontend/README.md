@@ -10,6 +10,16 @@ npx create-vite@latest . --template react-ts
 npm install react-router-dom
 npm audit fix <- npm told me to run that command to fix security concerns, so I did and the concern was fixed.
 
+## More to Download
+
+Downloading Tailwind, a CSS folder:
+npm install tailwindcss @tailwindcss/vite
+And then, in index.css, I need to add "@import "tailwindcss";" to the top of the file.
+
+
+
+
+
 
 ############### Generated from Vite ###################
 
