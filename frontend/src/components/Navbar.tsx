@@ -18,6 +18,8 @@ export default function Navbar() {
     const [isTop, setIsTop] = useState(true)
     // useState(true) means that default value is true
 
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
 
     const auth = useAuth();
     const navigate = useNavigate();  // set up useNavigate React.js to use it later (just like with useAuth()  ).
@@ -33,7 +35,7 @@ export default function Navbar() {
         <nav style = {{
             display: 'flex',
             flexDirection: isTop ? 'row' : 'column',
-            // row for Top, column for putting the bar on the left
+            // row for Top, column for⤒ putting the bar on the left
 
             width: isTop ? '100%': '100px',
             // 100% for full width if nav is on the top
@@ -86,8 +88,33 @@ export default function Navbar() {
                 
                 {auth?.userName && 
                 <>
-                    <h2>{auth?.userName}</h2>
-                    <button onClick={handleLogout}>Log Out</button>
+                    
+                    <div className = "relative">
+                        {/* Clicking Username will toggle (open/close) this User-Specific Menu. */}
+                        {/* Potential Icons to Use for Opening/Closing Menus:
+                        ⇤⤒⬇︎▼▲—|⬅︎⬆︎
+                        */}
+                        <button onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
+                            {auth?.userName} {isUserMenuOpen ? "▲" : "▼"}
+                        </button>
+
+                        {/* The Dropdown Menu */}
+                        {isUserMenuOpen &&(
+                            <div className = "absolute top-full right-0 bg-white shadow-lg rounded mt-1">
+                                {/* absolute: removes eleemnt from normal page flow, puts it relative to the neatrest relative parent.
+                                This is how we get this menu to float over other elements.
+                                top-full:positions top of dropdown button on the bottom of parent button
+                                mt-1: mt stands for "Margin-Top". Add just 1 to the top of this menu to add a tiny margin
+                                between this menu and the button that opened it.
+                                */}
+
+                                <button onClick={() => navigate("/my-lists")}>My Lists</button>
+                                <button onClick={handleLogout}>Log Out</button>
+                            </div>
+                        )}
+
+                    </div>
+
                 </>
                 }
 
