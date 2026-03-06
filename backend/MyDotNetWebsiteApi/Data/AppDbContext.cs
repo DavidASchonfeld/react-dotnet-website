@@ -162,6 +162,28 @@ public class AppDbContext : IdentityDbContext<AppUser>
         // in link tables, instead of giving each row its own id.
 
 
+        // Seeding Data (aka manually putting in initial data):
+        // Note: For seeding data, IDs must be hardcoded so, across migrations EF Core can track them
+
+        // Media Types
+        modelBuilder.Entity<MediaType>().HasData(
+            // Note: You cannot use DateTime.UtcNow here since it will be a different value every time you run this file
+            new MediaType { Id = 1, Name = "Movie", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new MediaType { Id = 2, Name = "TV Show", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new MediaType { Id = 3, Name = "Book", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new MediaType { Id = 4, Name = "Video Game", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)}
+        );
+
+        // Genres
+        modelBuilder.Entity<Genre>().HasData(
+            new Genre { Id = 1, Name = "Comedy", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new Genre { Id = 2, Name = "Sitcom", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new Genre { Id = 3, Name = "Action", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new Genre { Id = 4, Name = "Sci-Fi", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new Genre { Id = 5, Name = "Fantasy", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)}
+        );
+
+        // Media Items
 
     }
 

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MyDotNetWebsiteApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260306115740_SeedingAFewMediaTypesAndGenres")]
+    partial class SeedingAFewMediaTypesAndGenres
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.3");
@@ -176,35 +179,35 @@ namespace MyDotNetWebsiteApi.Migrations
                         new
                         {
                             Id = 1,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateSubmitted = new DateTime(2026, 3, 6, 11, 57, 39, 561, DateTimeKind.Utc).AddTicks(310),
                             IsApproved = true,
                             Name = "Comedy"
                         },
                         new
                         {
                             Id = 2,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateSubmitted = new DateTime(2026, 3, 6, 11, 57, 39, 561, DateTimeKind.Utc).AddTicks(670),
                             IsApproved = true,
                             Name = "Sitcom"
                         },
                         new
                         {
                             Id = 3,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateSubmitted = new DateTime(2026, 3, 6, 11, 57, 39, 561, DateTimeKind.Utc).AddTicks(670),
                             IsApproved = true,
                             Name = "Action"
                         },
                         new
                         {
                             Id = 4,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateSubmitted = new DateTime(2026, 3, 6, 11, 57, 39, 561, DateTimeKind.Utc).AddTicks(670),
                             IsApproved = true,
                             Name = "Sci-Fi"
                         },
                         new
                         {
                             Id = 5,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateSubmitted = new DateTime(2026, 3, 6, 11, 57, 39, 561, DateTimeKind.Utc).AddTicks(670),
                             IsApproved = true,
                             Name = "Fantasy"
                         });
@@ -469,28 +472,28 @@ namespace MyDotNetWebsiteApi.Migrations
                         new
                         {
                             Id = 1,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateSubmitted = new DateTime(2026, 3, 6, 11, 57, 39, 560, DateTimeKind.Utc).AddTicks(730),
                             IsApproved = true,
                             Name = "Movie"
                         },
                         new
                         {
                             Id = 2,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateSubmitted = new DateTime(2026, 3, 6, 11, 57, 39, 560, DateTimeKind.Utc).AddTicks(1120),
                             IsApproved = true,
                             Name = "TV Show"
                         },
                         new
                         {
                             Id = 3,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateSubmitted = new DateTime(2026, 3, 6, 11, 57, 39, 560, DateTimeKind.Utc).AddTicks(1120),
                             IsApproved = true,
                             Name = "Book"
                         },
                         new
                         {
                             Id = 4,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateSubmitted = new DateTime(2026, 3, 6, 11, 57, 39, 560, DateTimeKind.Utc).AddTicks(1120),
                             IsApproved = true,
                             Name = "Video Game"
                         });
