@@ -9,7 +9,7 @@ public class MediaList
     public string? SubmittedById {get; set;}
     
 
-    public ItemAccessStatus AccessStatus {get; set;}
+    public VisibilityStatus VisibilityStatus {get; set;}
     
 
 

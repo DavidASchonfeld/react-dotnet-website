@@ -184,7 +184,20 @@ public class AppDbContext : IdentityDbContext<AppUser>
         );
 
         // Media Items
-
+        modelBuilder.Entity<MediaItem>().HasData(
+            new MediaItem { Id = 1, Name = "Finding Nemo", MediaTypeId = 1, Description = "Disney Pixar movie about a father clownfish and his son getting separated and attempting to bring the son home.", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new MediaItem { Id = 2, Name = "The Lion King", MediaTypeId = 1, Description = "Disney Animated 1990s Musical about a lion growing up in the wild.", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new MediaItem { Id = 3, Name = "The Avengers", MediaTypeId = 1, Description = "2012 Superhero Ensemble Movie Based on Marvel Comics Superheroes", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new MediaItem { Id = 4, Name = "Super Mario 64", MediaTypeId = 4, Description = "1st 3d Platformer for Nintendo's Super Mario Franchise.", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new MediaItem { Id = 5, Name = "Star Trek", MediaTypeId = 2, Description = "1966 Sci-Fi TV Show about a crew from the US Federation exploring space.", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new MediaItem { Id = 6, Name = "A Study in Scarlet", MediaTypeId = 3, Description = "1st Sherlock Holmes book (unless my research is incorrect). Published 1887" , IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)}
+        );
     }
 
 }
+
+// Classic Movies:
+// Fantasy: Lord of the Rings
+// Sci-Fi: Star-Wars: #1
+// Classic: 1950s Musicals from Parents
+// Gilligan's Island 

@@ -8,8 +8,28 @@
 -- Approval System:
 ---- Currently, approval will automatically be approved. Eventually, it will be great to build a more complicated approval system.
 ---- Make the isApproved boolean used in many files into a more complicated system like "Not Submitted", "Pending", "Approval", "Rejection (Able to be Resubmitted)" etc.
----- Consolidate the repeating fields for Approved, SubmittedBy etc. into a separate class to add 
+---- Consolidate the repeating fields for Approved, SubmittedBy etc. into a separate class to add:
+------ Visibility/AccessStatus
+------ SubmittedById
+------ SubmittedDate
+------ ApprovedById
+------ ApprovedDate
+------ RejectedById
+------ RejectedDate
+------ RejectionReason
 to classes to streamline/simplify/refactor the submission/approval process
+---- Also: Streamline "IsApproved" VS "AccessStatus"
+------ "isApproved": for private->submit becuase goal is for it to be public
+------ "AccessStatus: You choose if it is Public or Private
+-- Edit history/audit trail
+-- after editing, requiring approval for new edits/updates
+-- Report button (for inappropriate content)
+
+-- Admin Features
+---- Only Admins can edit MediaItems, Genres, MedaTypes after approval
+---- Only admins can edit descriptions/titles of MediaItems
+---- Only admins can edit descriptions/titles of public MediaLists
+-- And after these features, build an edit/approval system of non-admins making edits that can be approved by the admins 
 
 -- Creator Detail Characteristic:
 ---- For Example: a Birthday field

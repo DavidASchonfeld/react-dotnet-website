@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MyDotNetWebsiteApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260307174848_ForMediaItemRenamedDateSubmittedField")]
+    partial class ForMediaItemRenamedDateSubmittedField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.3");
@@ -406,62 +409,6 @@ namespace MyDotNetWebsiteApi.Migrations
                     b.HasIndex("SubmittedById");
 
                     b.ToTable("MediaItems");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Disney Pixar movie about a father clownfish and his son getting separated and attempting to bring the son home.",
-                            IsApproved = true,
-                            MediaTypeId = 1,
-                            Name = "Finding Nemo"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Disney Animated 1990s Musical about a lion growing up in the wild.",
-                            IsApproved = true,
-                            MediaTypeId = 1,
-                            Name = "The Lion King"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "2012 Superhero Ensemble Movie Based on Marvel Comics Superheroes",
-                            IsApproved = true,
-                            MediaTypeId = 1,
-                            Name = "The Avengers"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "1st 3d Platformer for Nintendo's Super Mario Franchise.",
-                            IsApproved = true,
-                            MediaTypeId = 4,
-                            Name = "Super Mario 64"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "1966 Sci-Fi TV Show about a crew from the US Federation exploring space.",
-                            IsApproved = true,
-                            MediaTypeId = 2,
-                            Name = "Star Trek"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "1st Sherlock Holmes book (unless my research is incorrect). Published 1887",
-                            IsApproved = true,
-                            MediaTypeId = 3,
-                            Name = "A Study in Scarlet"
-                        });
                 });
 
             modelBuilder.Entity("MediaList", b =>

@@ -10,11 +10,11 @@ public class MediaItem
     public string? Description {get; set; }
     // The ? means it can be Null (aka empty) if needed
 
-    public ItemAccessStatus AccessStatus {get; set;}
+    public bool IsApproved {get; set;}
     public DateTime? PublishedDateTime {get; set; }
     public string? SubmittedById {get; set;}
     
-    public DateTime SubmittedDateTime {get; set; } = DateTime.UtcNow;
+    public DateTime DateSubmitted {get; set; } = DateTime.UtcNow;
 
 
 

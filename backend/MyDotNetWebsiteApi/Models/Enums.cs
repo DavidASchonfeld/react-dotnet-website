@@ -22,18 +22,11 @@
 //     TBD
 // }
 
-public enum Visibility
+public enum VisibilityStatus
 {
     Private,
     Public,
     Shared
-}
-
-public enum ItemAccessStatus
-{
-    Private,
-    PendingApproval,
-    Public
 }
 
 public enum PermissionLevel
