@@ -116,8 +116,16 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+else
+{
+    // Only in Production, redirect to HTTPS (since it will have a real HTTPS certificate)
 
-app.UseHttpsRedirection();
+    // If we kept this in Development, it would intercept requests before the requests reach the controllers
+    // which result in POST endpoints getting 404s.
+    // HOW WOULD THAT BE DIFFERENT Once I set this up in Production?
+
+    app.UseHttpsRedirection();
+}
 
 // Enable CORS
 //// Activate the CORS we described in the builder.Services.AddCors section above

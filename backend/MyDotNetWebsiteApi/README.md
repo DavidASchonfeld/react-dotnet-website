@@ -96,4 +96,23 @@ curl -X POST http://localhost:5198/api/auth/register -H "Content-Type: applicati
 curl -X POST http://localhost:5198/api/auth/login -H "Content-Type: application/json" -d '{"userName":"testuser","password":"X!x!x1!"}'
 
 
+#### Testing with CURL
+## Testing GetMyLists
+curl -X POST http://localhost:5198/api/auth/login -H "Content-Type: application/json" -d '{"userName":"testusername","password":"PasswordIamNotPushingOntoGithub"}'
+
+curl -X GET http://localhost:5198/api/medialist/GetMyLists -H "Authorization: Bearer TheCopyPastedTokenFromWhatIGotFromThePreviousCommand
+
+## Testing CreateList
+curl -X POST http://localhost:5198/api/auth/login -H "Content-Type: application/json" -d '{"userName":"testusername","password":"PasswordIamNotPushingOntoGithub"}'
+
+curl -X POST http://localhost:5198/api/medialist/CreateList -H "Content-Type: application/json" -H "Authorization: Bearer PUT_TOKEN_FROM_LOGIN_HERE" -d '{"Name":"List Number One", "description":"First list, created via CURL.","visibilityStatus":0}'
+// 0 = Private, 1 = Shared, 1 = Public
+
+curl -X GET http://localhost:5198/api/medialist/GetMyLists -H "Authorization: Bearer TheCopyPastedTokenFromWhatIGotFromThePreviousCommand
+
+
+
+
+
+
 
