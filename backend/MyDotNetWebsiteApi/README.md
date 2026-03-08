@@ -128,4 +128,10 @@ The PATCH command for testing PATCH
 curl -X PATCH http://localhost:5198/api/medialist/MEDIA_LIST_ID -H "Content-Type: application/json" -H "Authorization: Bearer PUT_MY_TOKEN_HERE" -d '{"name": "New Name"}'
 
 
+# Testing Adding MediaItem to MediaList:
+// Note: Adding -v at the front to see any error messages easier (-v stands for Verbose)
+// If I put no position value in:
+curl -v -X POST http://localhost:5198/api/medialist/1/items/2 -H "Content-Type: application/json" -H "Authorization: Bearer PUT_MY_TOKEN_HERE" -d '{}'
 
+// If I put position value = 1
+curl -v -X POST http://localhost:5198/api/medialist/1/items/2 -H "Content-Type: application/json" -H "Authorization: Bearer PUT_MY_TOKEN_HERE" -d '{"position": 1}'

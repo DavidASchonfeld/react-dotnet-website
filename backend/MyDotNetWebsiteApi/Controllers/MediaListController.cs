@@ -259,10 +259,15 @@ public class MediaListController : ControllerBase
         // Flush changes to database
         await _context.SaveChangesAsync();
 
+
+        // Getting MediaList's Count:
+        
+
         return Ok(new MediaListSummaryDto
         {
             Id = targetedMediaList.Id,
             Name = targetedMediaList.Name,
+            SubmittedById = targetedMediaList!.SubmittedById,
             Description = targetedMediaList.Description,
             VisibilityStatus = targetedMediaList.VisibilityStatus
             // TODO: To Implement: Give it a way to count # of MediaItems in it
@@ -319,20 +324,82 @@ public class MediaListController : ControllerBase
         (AppUser? requesterUser, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
 
-        // Create New Row Object for this Newly Added MediaItem:
-        [Create the NEw Row Object]
-        if Position is <0, autoamtically make Position = 0 to put it in the front of the list
-        if Position is Bigger than Length, automatically add it to the last 
+        // Search for MediaItem Object.
+        // If you can't find it, return NotFound()
+        var targetedMediaItem = await _context.MediaItems.FindAsync(mediaItemId);
 
+        // if targetedMediaItem is not found in our MediaItems table.
+        if (targetedMediaItem == null)
+        {
+            return NotFound();
+        }
+
+
+        // Fetch MediaList contents for Checking
+        var mediaListObjects = await _context.LinkMediaItemToMediaListTable
+            .Where(l => l.HostListId == mediaListId)
+            .ToListAsync();
+
+        // Check for Duplicates:
+        // Is the MediaItem the user wants to add already part of the MediaList.
+        // Duplicates are prevented from being added. (Perhaps that will change in a future update)
+        if (mediaListObjects.Any(l => l.MediaItemId == mediaItemId))  return Conflict("This MediaItem already exists in this MediaList.");
+        // The above line does the exact same thing as this:
+        // foreach (var eachLinkRow in mediaListObjects){
+        //     if (eachLinkRow.MediaItemId == mediaItemId) return Conflict("This MediaItem already exists in this MediaList.");
+        // }
+
+        
+        // get the MediaList's Count
+        int targetedMediaList_Count = mediaListObjects.Count;
+
+        // Create New Row Object for this Newly Added MediaItem:
+        
+        // ?? is the "Null-Coalescing Operator"
+        // Means: var variableToSet = (NullableVariable) ?? (If it is null, use this value instead.)
+        var positionToCheck = dto.Position ?? targetedMediaList_Count;
+        var positionToUse = positionToCheck;  // As a placeholder.
+
+        if (positionToCheck < 0) positionToUse = 0;  // The 1st position in the list.
+        else if (positionToCheck > targetedMediaList_Count) positionToUse = targetedMediaList_Count; // The last position on the list.
+        else positionToUse = positionToCheck;
+
+         var newLinkRow = new LinkMediaItemToMediaList
+         {
+            // .NET's EntityFramework Core automatically adds the objects assocaited with the ids to the Link Row,
+            // so I don't have to specifically add them here. Hence, they are commented out here just for explanation purposes.
+
+            HostListId = mediaListId,
+            //  HostList = targetedMediaList!,  // In "fetchUserMediaList_andCheckPermissions", we already checked for if it is null
+             MediaItemId = mediaItemId,
+            //  MediaItem = targetedMediaItem!, // Above, we check if targetedMediaItem is null
+             Position = positionToUse
+         };
 
 
         // Rearrange MediaItems Behind this Newly Added MediaItem
-        await updatePositionsBehindTargetMediaItem(dto.targetPosition, mediaListId, true);
+        // aka Make room for the new object.
+        // Yes, this method makes potential changes to the positions to the link rows,
+        // so we don't need to fetch those new row versions from this method
+        await updatePositionsBehindTargetMediaItem(positionToUse, mediaListId, true);
+
+
+        // Add the new Row Object to Database:
+        _context.LinkMediaItemToMediaListTable.Add(newLinkRow);
+
 
         // Flush changes to database
         await _context.SaveChangesAsync();
 
-        return Ok();
+        return Ok(new MediaListSummaryDto
+        {
+            Id = targetedMediaList!.Id,  // In "fetchUserMediaList_andCheckPermissions", we already checked for if it is null
+            Name = targetedMediaList.Name,
+            SubmittedById = targetedMediaList!.SubmittedById,
+            Description = targetedMediaList.Description,
+            VisibilityStatus = targetedMediaList.VisibilityStatus,
+            ItemCount = targetedMediaList_Count + 1
+        });
     }
 
 

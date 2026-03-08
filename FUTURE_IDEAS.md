@@ -43,5 +43,7 @@ When Displaying a Series:
 -- Deleting: Whee n a user is deleted, I want a default "ghost" account that gets ownership of all of those items (besides MediaList) that the deleted user used to own.
 -- Submission Queue Tool for Admins to Review/Approve/Deny etc. pending items
 
+Right now, duplicate MediaItems in the same MediaList is not allowed. In the future, I could add the ability to allow it after a Confirmation popup.
+
 
 
