@@ -261,6 +261,10 @@ public class MediaListController : ControllerBase
 
 
         // Getting MediaList's Count:
+        // Get Current Count of the MediaList
+        var linkRowCount = await _context.LinkMediaItemToMediaListTable
+            .Where(l => l.HostListId == mediaListId)
+            .CountAsync();
         
 
         return Ok(new MediaListSummaryDto
@@ -269,9 +273,8 @@ public class MediaListController : ControllerBase
             Name = targetedMediaList.Name,
             SubmittedById = targetedMediaList!.SubmittedById,
             Description = targetedMediaList.Description,
-            VisibilityStatus = targetedMediaList.VisibilityStatus
-            // TODO: To Implement: Give it a way to count # of MediaItems in it
-            // ItemCount = targetedMediaList.ItemLinks  // It == 0 since for this createList method, we create empty lsits, and in another method, we can add to it
+            VisibilityStatus = targetedMediaList.VisibilityStatus,
+            ItemCount = linkRowCount
         });
     }
 
@@ -371,9 +374,9 @@ public class MediaListController : ControllerBase
 
             HostListId = mediaListId,
             //  HostList = targetedMediaList!,  // In "fetchUserMediaList_andCheckPermissions", we already checked for if it is null
-             MediaItemId = mediaItemId,
+            MediaItemId = mediaItemId,
             //  MediaItem = targetedMediaItem!, // Above, we check if targetedMediaItem is null
-             Position = positionToUse
+            Position = positionToUse
          };
 
 
@@ -393,7 +396,7 @@ public class MediaListController : ControllerBase
 
         return Ok(new MediaListSummaryDto
         {
-            Id = targetedMediaList!.Id,  // In "fetchUserMediaList_andCheckPermissions", we already checked for if it is null
+            Id = targetedMediaList!.Id,
             Name = targetedMediaList.Name,
             SubmittedById = targetedMediaList!.SubmittedById,
             Description = targetedMediaList.Description,
@@ -405,5 +408,70 @@ public class MediaListController : ControllerBase
 
 
 
+
+    
+    // Remove 1 MediaItem from MediaList
+    [HttpDelete("{mediaListId}/items/{mediaItemId}")]  // /api/medialist/{mediaListId}/items/{mediaItemId}
+    public async Task<IActionResult> RemoveMediaItemFromList(int mediaListId, int mediaItemId)
+    {
+
+        // The _ for the first aparameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
+        (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        if (error != null) return error;
+
+        // Search for MediaItem Object.
+        // If you can't find it, return NotFound()
+        var targetedMediaItem = await _context.MediaItems.FindAsync(mediaItemId);
+
+        // Throw an error if the MediaItem does not exist at all
+        if (targetedMediaItem == null)
+        {
+            return NotFound();
+        }
+
+
+        // Fetch MediaList contents for Checking
+        var linkRowToRemove = await _context.LinkMediaItemToMediaListTable
+            .Where(l => l.HostListId == mediaListId)
+            .Where(l => l.MediaItemId == mediaItemId)
+            .FirstOrDefaultAsync();
+        
+        // If the requesterUser tries to remove a MediaItem that actually is not in the MediaList,
+        // then we will throw a NotFound() error, as described in the line below
+        if (linkRowToRemove == null) return NotFound();  
+
+        int positionToUse = linkRowToRemove.Position;
+        
+        
+        // Rearrange MediaItems Behind this Newly Removed MediaItem
+        // Move those MediaItems one position upwards to fill the gap.
+        // Yes, this method makes potential changes to the positions to the link rows,
+        // so we don't need to fetch those new row versions from this method
+        // Passing in "positionToUse + 1" because we don't want to move the toRemove MediaItem, just starting with the object(s) after it.
+        await updatePositionsBehindTargetMediaItem(positionToUse + 1, mediaListId, false);
+
+
+        // Delete from Database:
+        _context.LinkMediaItemToMediaListTable.Remove(linkRowToRemove);
+
+
+        // Flush changes to database
+        await _context.SaveChangesAsync();
+
+        // Get Current Count (after the Removal) of the MediaList
+        var linkRowCount = await _context.LinkMediaItemToMediaListTable
+            .Where(l => l.HostListId == mediaListId)
+            .CountAsync();
+
+        return Ok(new MediaListSummaryDto
+        {
+            Id = targetedMediaList!.Id,  // In "fetchUserMediaList_andCheckPermissions", we already checked for if it is null
+            Name = targetedMediaList.Name,
+            SubmittedById = targetedMediaList!.SubmittedById,
+            Description = targetedMediaList.Description,
+            VisibilityStatus = targetedMediaList.VisibilityStatus,
+            ItemCount = linkRowCount
+        });
+    }
 
 }
