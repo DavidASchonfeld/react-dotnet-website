@@ -13,6 +13,9 @@ public class AppUser : IdentityUser
     // Real SQL Columns -- More Additions
     public DateTime CreatedAt {get; set; } = DateTime.UtcNow;
 
+    // Role/Level
+    public UserRoleLevel RoleLevel {get; set;} = UserRoleLevel.Basic;
+
     // C# Only (does not exist in the SQL database)
     // Navigation Properties to your own tables
     public ICollection<MediaList> Lists {get; set; } = new List<MediaList>();

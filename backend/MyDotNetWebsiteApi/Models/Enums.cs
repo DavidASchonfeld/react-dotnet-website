@@ -29,6 +29,15 @@ public enum VisibilityStatus
     Shared
 }
 
+// Site-Wide Permissions Levels for each User Account
+public enum UserRoleLevel
+{
+    Basic,  // Basic access
+    Moderator,  // Can approve, edit, delete any content
+    Administrator  // Full Access
+}
+
+// Specific Roles for Specific MediaList etc.
 public enum PermissionLevel
 {
     Viewer,
