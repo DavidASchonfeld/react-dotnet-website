@@ -76,10 +76,42 @@ public class MediaListController : ControllerBase
         });
 
     }
+
+    // Private: because this is NOT a route to be used. It is an internal method here in MediaListController to decide permissions for modifying a MediaList
+    private bool CanModifyDeleteMediaList(AppUser requesterUser, MediaList targetedMediaList)
+    {
+
+        if (targetedMediaList == null)
+        {
+            return false;
+        }
+
+        // if requesterUser is not found in our Users table.
+        if (requesterUser == null)
+        {
+            return false;
+        }
+
+
+        // Permissions to Check
+        // Only the user who created the MediaList (aka its owner)
+        // and special users (Administrator, Moderator)
+        // have permission to delete the MediaList
+        // (Who the MediaList might be shared with is NOT relevant for deleting MediaLists)
+
+        bool isOwner = (targetedMediaList.SubmittedById == requesterUser.Id);
+        bool isSpecialUserWhoCanDelete = (requesterUser.RoleLevel == UserRoleLevel.Moderator
+                                            || requesterUser.RoleLevel == UserRoleLevel.Administrator);
+
+        // If the requesterUser is the owner (aka creator) of the MediaList
+        // and/or is a user with special permissions (Moderator or Administrator),
+        // he can modify/delete the MediaList
+        return (isOwner || isSpecialUserWhoCanDelete);
+    }
         
     
-    [HttpDelete("{MediaListId}")]
-    public async Task<IActionResult> DeleteList(int MediaListId)
+    [HttpDelete("{mediaListId}")]
+    public async Task<IActionResult> DeleteList(int mediaListId)
     {
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -90,7 +122,7 @@ public class MediaListController : ControllerBase
         // Get User and MediaList items
         // Note: .FindAsync is searching via Primary Key (aka Id for those tables)
         var requesterUser = await _context.Users.FindAsync(userId);
-        var targetedMediaList = await _context.MediaLists.FindAsync(MediaListId);
+        var targetedMediaList = await _context.MediaLists.FindAsync(mediaListId);
 
         if (targetedMediaList == null)
         {
@@ -104,17 +136,8 @@ public class MediaListController : ControllerBase
         }
 
 
-        // Permissions to Check before Deleting:
-        // Only the user who created the MediaList (aka its owner)
-        // and special users (Administrator, Moderator)
-        // have permission to delete the MediaList
-        // (Who the MediaList might be shared with is NOT relevant for deleting MediaLists)
-
-        bool isOwner = (targetedMediaList.SubmittedById == userId);
-        bool isSpecialUserWhoCanDelete = (requesterUser.RoleLevel == UserRoleLevel.Moderator
-                                            || requesterUser.RoleLevel == UserRoleLevel.Administrator);
-
-        if (!isOwner && !isSpecialUserWhoCanDelete)
+        // If (NOT can modifiy) AKA If cannot modify the MediaList
+        if (!CanModifyDeleteMediaList(requesterUser, targetedMediaList))
         {
             return Forbid();
         }
@@ -127,6 +150,76 @@ public class MediaListController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok();
+    }
+
+
+    // Update Basic Info on MediaList
+    // Update Name, Description, Visibility 
+    // Does NOT add/remove MediaItem(s) in MediaList
+    [HttpPatch("{mediaListId}")]  // Occurs with route /GetMyLists (with GET request)
+    public async Task<IActionResult> PatchListBasicInfo(int mediaListId, [FromBody] UpdateMediaListNotListContentDto dto)
+    {
+        //TODO: Rename this method's name for a neater name.
+
+        ///// Permission Check:
+        ///
+        // Get RequesterUser
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var requesterUser = await _context.Users.FindAsync(userId);
+
+        // if requesterUser is not found in our Users table.
+        if (requesterUser == null)
+        {
+            return Unauthorized();
+        }
+
+
+        // Get MediaList
+        var targetedMediaList = await _context.MediaLists.FindAsync(mediaListId);
+        
+        // If MediaList is not found in the MediaList table:
+        if (targetedMediaList == null)
+        {
+            return NotFound();
+        }
+
+
+         // If (NOT can modifiy) AKA If cannot modify the MediaList
+        if (!CanModifyDeleteMediaList(requesterUser, targetedMediaList))
+        {
+            return Forbid();
+        }
+        
+
+
+        // Make the Changes to the MediaList object
+        if (dto.Name != null)
+            targetedMediaList.Name = dto.Name;
+        if (dto.Description != null)
+            targetedMediaList.Description = dto.Description;
+        if (dto.VisibilityStatus != null)
+        {
+            if (dto.VisibilityStatus == VisibilityStatus.Shared)
+            {   
+                // TODO: Implement Sharing
+                return StatusCode(501, "Sharing is not implemented yet.");
+            }
+            targetedMediaList.VisibilityStatus = dto.VisibilityStatus.Value;
+        }
+
+
+        // Flush changes to database
+        await _context.SaveChangesAsync();
+
+        return Ok(new MediaListSummaryDto
+        {
+            Id = targetedMediaList.Id,
+            Name = targetedMediaList.Name,
+            Description = targetedMediaList.Description,
+            VisibilityStatus = targetedMediaList.VisibilityStatus
+            // TODO: To Implement: Give it a way to count # of MediaItems in it
+            // ItemCount = targetedMediaList.ItemLinks  // It == 0 since for this createList method, we create empty lsits, and in another method, we can add to it
+        });
     }
 
 

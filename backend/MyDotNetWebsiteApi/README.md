@@ -103,8 +103,10 @@ curl -X POST http://localhost:5198/api/auth/login -H "Content-Type: application/
 curl -X GET http://localhost:5198/api/medialist/GetMyLists -H "Authorization: Bearer TheCopyPastedTokenFromWhatIGotFromThePreviousCommand"
 
 ## Testing CreateMediaList
+# Login
 curl -X POST http://localhost:5198/api/auth/login -H "Content-Type: application/json" -d '{"userName":"testusername","password":"PasswordIamNotPushingOntoGithub"}'
 
+# Create List
 curl -X POST http://localhost:5198/api/medialist/CreateList -H "Content-Type: application/json" -H "Authorization: Bearer PUT_TOKEN_FROM_LOGIN_HERE" -d '{"Name":"List Number One", "description":"First list, created via CURL.","visibilityStatus":0}'
 // 0 = Private, 1 = Shared, 1 = Public
 
@@ -121,8 +123,9 @@ curl -X DELETE http://localhost:5198/api/medialist/1 -H "Authorization: Bearer P
 Check if it still exists using GetMyLists
 
 
-
-
+## Testing PATCH (aka Update) for BasicInfo (not actual MediaItems) on MediaList
+The PATCH command for testing PATCH
+curl -X PATCH http://localhost:5198/api/medialist/MEDIA_LIST_ID -H "Content-Type: application/json" -H "Authorization: Bearer PUT_MY_TOKEN_HERE" -d '{"name": "New Name"}'
 
 
 
