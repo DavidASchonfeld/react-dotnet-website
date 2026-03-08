@@ -108,43 +108,90 @@ public class MediaListController : ControllerBase
         // he can modify/delete the MediaList
         return (isOwner || isSpecialUserWhoCanDelete);
     }
-        
     
-    [HttpDelete("{mediaListId}")]
-    public async Task<IActionResult> DeleteList(int mediaListId)
-    {
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    // Helper Method
+    // Because this logic is used over and over in many of these methods, I am refactoring my code
+    // to put all of this code into 1 method
+    // To return async, I need to wrap the return type in Task<>
+    private async Task<(AppUser? requesterUser, MediaList? targetedMediaList, IActionResult?)> fetchUserMediaList_andCheckPermissions(int targetedMediaListId)
+    {
+        IActionResult? httpError = null;
+
+
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         
 
         //// Get Current User's Permission Level:
         
         // Get User and MediaList items
         // Note: .FindAsync is searching via Primary Key (aka Id for those tables)
-        var requesterUser = await _context.Users.FindAsync(userId);
-        var targetedMediaList = await _context.MediaLists.FindAsync(mediaListId);
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        var targetedMediaList = await _context.MediaLists.FindAsync(targetedMediaListId);
 
+        // if targetedMediaList is not found in our MediaLists table.
         if (targetedMediaList == null)
         {
-            return NotFound();
+            httpError = NotFound();
         }
 
         // if requesterUser is not found in our Users table.
-        if (requesterUser == null)
+        else if (requesterUser == null)
         {
-            return Unauthorized();
+            httpError = Unauthorized();
         }
 
 
         // If (NOT can modifiy) AKA If cannot modify the MediaList
-        if (!CanModifyDeleteMediaList(requesterUser, targetedMediaList))
+        else if (!CanModifyDeleteMediaList(requesterUser, targetedMediaList))
         {
-            return Forbid();
+            httpError = Forbid();
         }
 
+        return (requesterUser, targetedMediaList, httpError);
+    }
+
+
+    
+    [HttpDelete("{mediaListId}")]
+    public async Task<IActionResult> DeleteList(int mediaListId)
+    {
+
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+
+        // //// Get Current User's Permission Level:
+        
+        // // Get User and MediaList items
+        // // Note: .FindAsync is searching via Primary Key (aka Id for those tables)
+        // var requesterUser = await _context.Users.FindAsync(userId);
+        // var targetedMediaList = await _context.MediaLists.FindAsync(mediaListId);
+
+        // if (targetedMediaList == null)
+        // {
+        //     return NotFound();
+        // }
+
+        // // if requesterUser is not found in our Users table.
+        // if (requesterUser == null)
+        // {
+        //     return Unauthorized();
+        // }
+
+
+        // // If (NOT can modifiy) AKA If cannot modify the MediaList
+        // if (!CanModifyDeleteMediaList(requesterUser, targetedMediaList))
+        // {
+        //     return Forbid();
+        // }
+
+        (AppUser? requesterUser, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        if (error != null) return error;
 
         // Delete from Database:
-        _context.MediaLists.Remove(targetedMediaList);
+        // I'm adding ! because I'm telling C# that targetedMediaList should NOT be null by the time it reaches this point
+        // (since it is set to a value in that fetchUserMediaList_andCheckPermissions method)
+        _context.MediaLists.Remove(targetedMediaList!);
 
         // Flush changes to database
         await _context.SaveChangesAsync();
@@ -159,36 +206,37 @@ public class MediaListController : ControllerBase
     [HttpPatch("{mediaListId}")]  // Occurs with route /GetMyLists (with GET request)
     public async Task<IActionResult> PatchListBasicInfo(int mediaListId, [FromBody] UpdateMediaListNotListContentDto dto)
     {
-        //TODO: Rename this method's name for a neater name.
 
-        ///// Permission Check:
-        ///
-        // Get RequesterUser
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var requesterUser = await _context.Users.FindAsync(userId);
+        // ///// Permission Check:
+        // ///
+        // // Get RequesterUser
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        // var requesterUser = await _context.Users.FindAsync(userId);
 
-        // if requesterUser is not found in our Users table.
-        if (requesterUser == null)
-        {
-            return Unauthorized();
-        }
+        // // if requesterUser is not found in our Users table.
+        // if (requesterUser == null)
+        // {
+        //     return Unauthorized();
+        // }
 
 
-        // Get MediaList
-        var targetedMediaList = await _context.MediaLists.FindAsync(mediaListId);
+        // // Get MediaList
+        // var targetedMediaList = await _context.MediaLists.FindAsync(mediaListId);
         
-        // If MediaList is not found in the MediaList table:
-        if (targetedMediaList == null)
-        {
-            return NotFound();
-        }
+        // // If MediaList is not found in the MediaList table:
+        // if (targetedMediaList == null)
+        // {
+        //     return NotFound();
+        // }
 
 
-         // If (NOT can modifiy) AKA If cannot modify the MediaList
-        if (!CanModifyDeleteMediaList(requesterUser, targetedMediaList))
-        {
-            return Forbid();
-        }
+        //  // If (NOT can modifiy) AKA If cannot modify the MediaList
+        // if (!CanModifyDeleteMediaList(requesterUser, targetedMediaList))
+        // {
+        //     return Forbid();
+        // }
+        (AppUser? requesterUser, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        if (error != null) return error;
         
 
 
@@ -221,6 +269,73 @@ public class MediaListController : ControllerBase
             // ItemCount = targetedMediaList.ItemLinks  // It == 0 since for this createList method, we create empty lsits, and in another method, we can add to it
         });
     }
+
+
+
+
+
+    // Helper method, When a MediaItem is added into/remove from the middle of the list, we need to update the positions of the MediaItems behind that MediaItem object.
+    // This is called Gapless Ordering. Wheere the positions are 1, 2, 3, etc. with no gaps between them.
+    // The Industry Standard, according to my basic searching, is "Sparse Ordering:" Use big numbers like 100, 200, etc.
+    //    so if I rearrange or delete an item I don't have to renumber all items in the list every time an object is added or removed.
+    // If my website becomes famous/heavily-used where my website needs to be much faster, then I can update my code to use Sparse Ordering instead.
+    // I am using Gapless Ordering because I don't need Sparse Ordering right now, and Gapless Ordering is more satisfying.
+
+    private async Task updatePositionsBehindTargetMediaItem(int targetPosition, int mediaListId, bool isAdding)
+    {
+
+
+        // if isAdding, then move each item behind it back 1 position in the list
+        // Else (aka is Removing), then move each item behind it up 1 position in the list
+        int positionEditNum = isAdding ? 1 : -1 ;
+
+        var linkRowsToUpdate = await _context.LinkMediaItemToMediaListTable
+            .Where(l => l.HostListId == mediaListId)
+            .Where(l => l.Position >= targetPosition)
+            .ToListAsync();
+
+        foreach (var linkRow in linkRowsToUpdate){
+            linkRow.Position += positionEditNum;
+        }
+        
+        // Don't need to return the linkRowsToUpdate since EF Core tracks the rows
+        // And if the method that calls this one decides to implement the changes, it just
+        // has to call to flush the changes "await _context.SaveChangesAsync();" and the changes
+        // will automatically be pushed into the database
+
+
+    }
+
+
+
+
+    //// Editing Items in the MediaList Object:
+    
+
+    // Add 1 MediaItem to MediaList
+    [HttpPost("{mediaListId}/items/{mediaItemId}")]  // /api/medialist/{mediaListId}/items/{mediaItemId}
+    public async Task<IActionResult> AddMediaItemToList(int mediaListId, int mediaItemId, [FromBody] AddMediaItemToMediaList dto)
+    {
+        (AppUser? requesterUser, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        if (error != null) return error;
+
+        // Create New Row Object for this Newly Added MediaItem:
+        [Create the NEw Row Object]
+        if Position is <0, autoamtically make Position = 0 to put it in the front of the list
+        if Position is Bigger than Length, automatically add it to the last 
+
+
+
+        // Rearrange MediaItems Behind this Newly Added MediaItem
+        await updatePositionsBehindTargetMediaItem(dto.targetPosition, mediaListId, true);
+
+        // Flush changes to database
+        await _context.SaveChangesAsync();
+
+        return Ok();
+    }
+
+
 
 
 
