@@ -225,6 +225,32 @@ public class MediaListController : ControllerBase
 
 
 
+    //// Editing Items in the MediaList Object:
+    
+
+
+    // Helper Method: Handle Out of Bounds Position Number
+    // If Number is Negative, put the MediaItem in the front of the list
+    // If Number is Way Too Big, put the MediaItem in the back of the list
+    private async Task<int> HandleOutOfBoundsPositionNumber(int mediaListId, int? submittedPosition)
+    {
+        // Get Size of MediaList (# of MediaItems stored in MediaList)
+        // Getting MediaList's Count:
+        // Get Current Count of the MediaList
+        var targetedMediaList_Count = await _context.LinkMediaItemToMediaListTable
+            .Where(l => l.HostListId == mediaListId)
+            .CountAsync();
+
+         // ?? is the "Null-Coalescing Operator"
+        // Means: var variableToSet = (NullableVariable) ?? (If it is null, use this value instead.)
+        var positionToCheck = submittedPosition ?? targetedMediaList_Count;
+        var positionToUse = positionToCheck;  // As a placeholder.
+
+        if (positionToCheck < 0) positionToUse = 0;  // The 1st position in the list.
+        else if (positionToCheck > targetedMediaList_Count) positionToUse = targetedMediaList_Count; // The last position on the list.
+        else positionToUse = positionToCheck;
+        return positionToUse;
+    }
 
 
     // Helper method, When a MediaItem is added into/remove from the middle of the list, we need to update the positions of the MediaItems behind that MediaItem object.
@@ -259,10 +285,6 @@ public class MediaListController : ControllerBase
 
     }
 
-
-
-
-    //// Editing Items in the MediaList Object:
     
 
     // Add 1 MediaItem to MediaList
@@ -297,20 +319,25 @@ public class MediaListController : ControllerBase
         //     if (eachLinkRow.MediaItemId == mediaItemId) return Conflict("This MediaItem already exists in this MediaList.");
         // }
 
-        
-        // get the MediaList's Count
-        int targetedMediaList_Count = mediaListObjects.Count;
 
-        // Create New Row Object for this Newly Added MediaItem:
-        
-        // ?? is the "Null-Coalescing Operator"
-        // Means: var variableToSet = (NullableVariable) ?? (If it is null, use this value instead.)
-        var positionToCheck = dto.Position ?? targetedMediaList_Count;
-        var positionToUse = positionToCheck;  // As a placeholder.
+        ///////////////
+        //// TODO: Delete this older not-yet-refactored version of what is now in "handleOutOfBoundsPositionNumber method"
+        // // get the MediaList's Count
+        // int targetedMediaList_Count = mediaListObjects.Count;
 
-        if (positionToCheck < 0) positionToUse = 0;  // The 1st position in the list.
-        else if (positionToCheck > targetedMediaList_Count) positionToUse = targetedMediaList_Count; // The last position on the list.
-        else positionToUse = positionToCheck;
+        // // Create New Row Object for this Newly Added MediaItem:
+        
+        // // ?? is the "Null-Coalescing Operator"
+        // // Means: var variableToSet = (NullableVariable) ?? (If it is null, use this value instead.)
+        // var positionToCheck = dto.Position ?? targetedMediaList_Count;
+        // var positionToUse = positionToCheck;  // As a placeholder.
+
+        // if (positionToCheck < 0) positionToUse = 0;  // The 1st position in the list.
+        // else if (positionToCheck > targetedMediaList_Count) positionToUse = targetedMediaList_Count; // The last position on the list.
+        // else positionToUse = positionToCheck;
+        /////////////
+
+        var positionToUse = await HandleOutOfBoundsPositionNumber(mediaItemId, dto.Position);
 
          var newLinkRow = new LinkMediaItemToMediaList
          {
@@ -338,6 +365,12 @@ public class MediaListController : ControllerBase
 
         // Flush changes to database
         await _context.SaveChangesAsync();
+
+
+        // Get Count:
+        var targetedMediaList_Count = await _context.LinkMediaItemToMediaListTable
+            .Where(l => l.HostListId == mediaListId)
+            .CountAsync();
 
         return Ok(new MediaListSummaryDto
         {
@@ -426,6 +459,80 @@ public class MediaListController : ControllerBase
     [HttpPatch("{mediaListId}/items/{mediaItemId}")]  // /api/medialist/{mediaListId}/items/{mediaItemId}
     public async Task<IActionResult> MoveMediaItemWithinMediaList(int mediaListId, int mediaItemId, [FromBody] MoveMediaItemWithinMediaList dto)
     {
+
+
+
+        // The _ for the first aparameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
+        (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        if (error != null) return error;
+
+
+        // Search for MediaItem Object.
+        // If you can't find it, return NotFound()
+        var targetedMediaItem = await _context.MediaItems.FindAsync(mediaItemId);
+
+        // Throw an error if the MediaItem does not exist at all
+        if (targetedMediaItem == null)
+        {
+            return NotFound();
+        }
+
+        var destinationPosition = await HandleOutOfBoundsPositionNumber(mediaListId, dto.NewPosition);
+
+        // Get Existing MediaItem LinkRow for the MediaList
+        var linkRowRightNow = await _context.LinkMediaItemToMediaListTable
+            .Where(l => l.HostListId == mediaListId)
+            .Where(l => l.MediaItemId == mediaItemId)
+            .FirstOrDefaultAsync();
+        if (linkRowRightNow == null)
+        {
+            return NotFound();
+        }
+
+        // If the destinationPosition == the old position,
+        // then I do not need to move anything at all,
+        // I will return a Success.
+        if (destinationPosition == linkRowRightNow.Position)
+        {
+            
+            return Ok(new MediaListSummaryDto
+            {
+                Id = targetedMediaList!.Id,
+                Name = targetedMediaList.Name,
+                SubmittedById = targetedMediaList!.SubmittedById,
+                Description = targetedMediaList.Description,
+                VisibilityStatus = targetedMediaList.VisibilityStatus,
+                ItemCount = await _context.LinkMediaItemToMediaListTable
+                            .Where(l => l.HostListId == mediaListId)
+                            .CountAsync()
+            });  
+        } 
+
+
+        // Move:
+        // Update the Position of the target MediaItem
+        linkRowRightNow.Position = destinationPosition;
+
+        // Move all of the Objects whose Positions Now Need to be Updated
+
+
+
+
+        // Flush changes to database
+        await _context.SaveChangesAsync();
+
+        
+        return Ok(new MediaListSummaryDto
+        {
+            Id = targetedMediaList!.Id,
+            Name = targetedMediaList.Name,
+            SubmittedById = targetedMediaList!.SubmittedById,
+            Description = targetedMediaList.Description,
+            VisibilityStatus = targetedMediaList.VisibilityStatus,
+            ItemCount = await _context.LinkMediaItemToMediaListTable
+                        .Where(l => l.HostListId == mediaListId)
+                        .CountAsync()
+        });
 
     }
 
