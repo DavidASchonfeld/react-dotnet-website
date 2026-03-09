@@ -157,34 +157,6 @@ public class MediaListController : ControllerBase
     public async Task<IActionResult> DeleteList(int mediaListId)
     {
 
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        
-
-        // //// Get Current User's Permission Level:
-        
-        // // Get User and MediaList items
-        // // Note: .FindAsync is searching via Primary Key (aka Id for those tables)
-        // var requesterUser = await _context.Users.FindAsync(userId);
-        // var targetedMediaList = await _context.MediaLists.FindAsync(mediaListId);
-
-        // if (targetedMediaList == null)
-        // {
-        //     return NotFound();
-        // }
-
-        // // if requesterUser is not found in our Users table.
-        // if (requesterUser == null)
-        // {
-        //     return Unauthorized();
-        // }
-
-
-        // // If (NOT can modifiy) AKA If cannot modify the MediaList
-        // if (!CanModifyDeleteMediaList(requesterUser, targetedMediaList))
-        // {
-        //     return Forbid();
-        // }
-
         (AppUser? requesterUser, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
 
@@ -207,34 +179,7 @@ public class MediaListController : ControllerBase
     public async Task<IActionResult> PatchListBasicInfo(int mediaListId, [FromBody] UpdateMediaListNotListContentDto dto)
     {
 
-        // ///// Permission Check:
-        // ///
-        // // Get RequesterUser
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        // var requesterUser = await _context.Users.FindAsync(userId);
-
-        // // if requesterUser is not found in our Users table.
-        // if (requesterUser == null)
-        // {
-        //     return Unauthorized();
-        // }
-
-
-        // // Get MediaList
-        // var targetedMediaList = await _context.MediaLists.FindAsync(mediaListId);
         
-        // // If MediaList is not found in the MediaList table:
-        // if (targetedMediaList == null)
-        // {
-        //     return NotFound();
-        // }
-
-
-        //  // If (NOT can modifiy) AKA If cannot modify the MediaList
-        // if (!CanModifyDeleteMediaList(requesterUser, targetedMediaList))
-        // {
-        //     return Forbid();
-        // }
         (AppUser? requesterUser, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
         
@@ -473,5 +418,18 @@ public class MediaListController : ControllerBase
             ItemCount = linkRowCount
         });
     }
+
+
+
+
+    // Move 1 MediaItem to a Different Position, still in the same MediaList
+    [HttpPatch("{mediaListId}/items/{mediaItemId}")]  // /api/medialist/{mediaListId}/items/{mediaItemId}
+    public async Task<IActionResult> MoveMediaItemWithinMediaList(int mediaListId, int mediaItemId, [FromBody] MoveMediaItemWithinMediaList dto)
+    {
+
+    }
+
+
+
 
 }
