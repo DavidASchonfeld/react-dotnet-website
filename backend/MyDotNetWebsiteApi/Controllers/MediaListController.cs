@@ -50,12 +50,23 @@ public class MediaListController : ControllerBase
     public async Task<IActionResult> CreateList([FromBody] CreateMediaListDto dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        // The following line means:
+        // If dto.VisibilityStatus is null, set it to Private
+        // AKA by default, if I don't get a VisiblityStatus value, I'll set it to Private by default
+        // In Code Terms, it also means:
+        // if (dto.VisibilityStatus == null){
+        //     VisibilityStatusToSet = VisibilityStatus.Private
+        // } else {
+        //     VisibilityStatusToSet = dto.VisibilityStatus
+        // }
+        var VisibilityStatusToSet = dto.VisibilityStatus ?? VisibilityStatus.Private;
 
         var newMediaList = new MediaList
         {
             Name = dto.Name,
             Description = dto.Description,
-            VisibilityStatus = dto.VisibilityStatus,
+            VisibilityStatus = VisibilityStatusToSet,
             SubmittedById = userId,
             DateSubmitted = DateTime.UtcNow
         };

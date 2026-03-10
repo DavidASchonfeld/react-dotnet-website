@@ -47,7 +47,7 @@ export interface CreateMediaListRequest
     name: string;
     description?: string;  // Optional: Adding a descriptiohn
 
-    visibilityStatus: VisibilityStatus;
+    visibilityStatus?: VisibilityStatus;  // Optional: Adding a descriptiohn
 }
 
 export interface UpdateMediaListNotListContentRequest

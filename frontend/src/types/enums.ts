@@ -1,4 +1,4 @@
-// TODO: NOTE: I just copy-pasted my models/mediaList.cs file from my backen
+// TODO: NOTE: I just copy-pasted this enum from the backend/MyDotNetWebsiteApi/Models/Enums.cs file
 // and translated it to .ts (aka TypeScript):
 
 
