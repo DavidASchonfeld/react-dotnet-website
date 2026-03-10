@@ -108,7 +108,7 @@ export default function Navbar() {
                                 between this menu and the button that opened it.
                                 */}
 
-                                <button onClick={() => navigate("/my-lists")}>My Lists</button>
+                                <button onClick={() => navigate("/my-medialists")}>My Lists</button>
                                 <button onClick={handleLogout}>Log Out</button>
                             </div>
                         )}

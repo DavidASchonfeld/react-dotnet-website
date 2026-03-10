@@ -45,5 +45,10 @@ When Displaying a Series:
 
 Right now, duplicate MediaItems in the same MediaList is not allowed. In the future, I could add the ability to allow it after a Confirmation popup.
 
+Implement batching for requesting data from the backend (Means to split the data into chunks for the front-end to process). Very helpful when you have huge amounts of data to request from the backend.
 
-
+Implement bouncy refreshing, swiping left/right and swiping up/down to reorder:
+Use External Libraries for this:
+@dnd-kit/core + @dnd-kit/sortable : Sorting Items in a List
+react-swipeable: swipe left/right
+@tanstack/react-query: pull to refresh

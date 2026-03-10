@@ -12,7 +12,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import About from './pages/About'
 import Navbar from './components/Navbar'
 import LoginOrRegisterPage from './pages/LoginOrRegisterPage'
-import MyListsPage from './pages/MyListsPage'
+import MyMediaListsPage from './pages/MyMediaListsPage'
 
 function App() {
 
@@ -23,9 +23,9 @@ function App() {
         <Route path = "/" element = {<div>Home Page</div>} />
         <Route path = "/about" element = {<About />} />
         <Route path = "/login" element = {<LoginOrRegisterPage />} />
-        <Route path = "/my-lists" element = {
+        <Route path = "/my-medialists" element = {
           <ProtectedRoute>
-              <MyListsPage />
+              <MyMediaListsPage />
           </ProtectedRoute>
         } />
       </Routes>
