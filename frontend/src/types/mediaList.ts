@@ -7,6 +7,7 @@
 // is implemented here in the "CreateMediaListRequest" object listed below.
 
 import type { VisibilityStatus } from "./enums";
+import type { MediaItemSummary } from "./mediaItem";
 
 
 
@@ -34,8 +35,7 @@ export interface MediaListDetail
     submittedByUserName: string | null;
     visibilityStatus: VisibilityStatus;
 
-    // TODO: To Implement: a MediaItemSummary for the MediaItemSummaryDto
-    // public ICollection<MediaItemSummaryDto> ListContent {get; set;} = new List<MediaItemSummaryDto>();
+    listContent: MediaItemSummary[];
 }
 
 

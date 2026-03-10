@@ -20,7 +20,9 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
+
+    /// Commenting out this line to enable Enums.
+    // "erasableSyntaxOnly": true, 
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },

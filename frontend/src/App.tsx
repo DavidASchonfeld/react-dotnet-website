@@ -13,6 +13,7 @@ import About from './pages/About'
 import Navbar from './components/Navbar'
 import LoginOrRegisterPage from './pages/LoginOrRegisterPage'
 import MyMediaListsPage from './pages/MyMediaListsPage'
+import MediaListDetailPage from './pages/MediaListDetailPage'
 
 function App() {
 
@@ -26,6 +27,14 @@ function App() {
         <Route path = "/my-medialists" element = {
           <ProtectedRoute>
               <MyMediaListsPage />
+          </ProtectedRoute>
+        } />
+
+        {/* The ":id means that you can pass any variable there,
+        and React will catch the value into the variable "id". */}
+        <Route path = "/medialist/:id" element = {
+          <ProtectedRoute>
+              <MediaListDetailPage />
           </ProtectedRoute>
         } />
       </Routes>

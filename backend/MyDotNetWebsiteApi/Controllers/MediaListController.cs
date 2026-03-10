@@ -3,6 +3,7 @@
 
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,59 @@ public class MediaListController : ControllerBase
     {
         _context = context;
     }
+    
+
+
+
+
+
+
+
+
+
+    // Functions:
+    // Private: because this is NOT a route to be used. It is an internal method here in MediaListController to decide permissions for seeing a Private MediaList
+    // Here, I will set it so administrators and the owner can see private lists.
+    // And all users can see public lists.
+    // TODO: Formalize/neaten policy on administrators being able to see private lists for helpdesk support and safety purposes.
+    //       It is optimal that Admin access to private data is audit-logged (who accessed what, and when.)
+    // TODO: Implement Sharing Lists.
+    private bool CanSeeList(AppUser requesterUser, MediaList targetedMediaList)
+    {   
+
+        if (targetedMediaList == null)
+        {
+            return false;
+        }
+
+        // if requesterUser is not found in our Users table.
+        if (requesterUser == null)
+        {
+            return false;
+        }
+
+
+        // Permissions to Check
+        // Only the user who created the MediaList (aka its owner)
+        // and administrators can see private lists
+
+        bool isOwner = (targetedMediaList.SubmittedById == requesterUser.Id);
+        bool isAdministrator = (requesterUser.RoleLevel == UserRoleLevel.Administrator);
+
+        // If the requesterUser is the owner (aka creator) of the MediaList
+        // and/or is a user with special permissions (Moderator or Administrator),
+        // he can modify/delete the MediaList
+        return (isOwner || isAdministrator || targetedMediaList.VisibilityStatus == VisibilityStatus.Public);
+    }
+
+
+
+
+
+
+
+
+    // Endpoints (And More Help Methods):
 
 
     [HttpGet("GetMyLists")]  // Occurs with route /GetMyLists (with GET request)
@@ -42,6 +96,61 @@ public class MediaListController : ControllerBase
             .ToListAsync();
 
         return Ok(mediaListObjects);
+    }
+
+    //Get 1 List in Detail:
+    [HttpGet("{mediaListId}")]
+    public async Task<IActionResult> GetMediaListDetail(int mediaListId)
+    {
+        // Permission Checking for Getting Media List Detail
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        var targetedMediaList = await _context.MediaLists.FindAsync(mediaListId);
+
+        // if targetedMediaList is not found in our MediaLists table.
+        if (targetedMediaList == null)
+        {
+            return NotFound();
+        }
+
+        // if requesterUser is not found in our Users table.
+        else if (requesterUser == null)
+        {
+            return Unauthorized();
+        }
+
+        // If (NOT can modifiy) AKA If cannot modify the MediaList
+        else if (!CanSeeList(requesterUser, targetedMediaList))
+        {
+            return Forbid();
+        }
+
+
+        var mediaList = await _context.MediaLists
+            .Include(l => l.ItemLinks)  // Load the link rows
+                .ThenInclude(link => link.MediaItem)  // and the MediaItem attached via the link row
+                    .ThenInclude(item => item.Type)  // add the MediaType objects connected to the MediaItems
+            .FirstOrDefaultAsync(l => l.Id == mediaListId);  // Only returning 1 MediaList
+        
+        if (mediaList == null) return NotFound();
+        
+        return Ok(new MediaListDetailDto
+        {
+            Id = mediaList.Id,
+            Name = mediaList.Name,
+            Description = mediaList.Description,
+            SubmittedById = mediaList.SubmittedById,
+            VisibilityStatus = mediaList.VisibilityStatus,
+            ListContent = mediaList.ItemLinks
+                .OrderBy(link => link.Position)  // Sorts Ascending by Default, which is what I want
+                .Select(link => new MediaItemSummaryDto
+                {
+                    Id = link.MediaItem.Id,
+                    Name = link.MediaItem.Name,
+                    MediaTypeName = link.MediaItem.Type.Name
+                })
+                .ToList()
+        });
     }
 
 

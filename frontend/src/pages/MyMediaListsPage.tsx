@@ -1,5 +1,5 @@
 // React.js Library
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 
 // My Code
@@ -10,6 +10,7 @@ import { VisibilityStatus } from '../types/enums';
 import { getMyMediaLists,
     createMediaList,
     deleteMediaList } from '../services/mediaListService';
+import { Link } from 'react-router-dom';
 
 
 
@@ -37,7 +38,22 @@ export default function MyMediaListsPage() {
 
     // Functions here are only accessible to this component
 
-    async function fetchMediaLists() {
+
+
+
+    // This is a callback function:
+    // I created fetchMediaLists and made it a callback Function to put here
+    // A callback function means that the function itself is cached
+    // to prevent an infinite loop between this functoin being generated
+    // and then causing the rendering to be triggered, causing the function
+    // to be created again etc. as an infite loop.
+    // This prevents the function fetchMediaLists() from being re-created
+    // every time that this component is re-rendered.
+    // If there is a state change in that function that causes the
+    // component to re-render, which might cause the function to be
+    // created again, that could cause an infinite loop.
+
+    const fetchMediaLists = useCallback(async() => {
             setIsLoading(true);
             setError(null);
             try {
@@ -56,7 +72,9 @@ export default function MyMediaListsPage() {
             } finally {
                 setIsLoading(false);
             }
-        }
+        }, [token]);  
+        // Only is re-created if the parameter (now called dependencies for useCallBack) value is changed.
+        // Here, that would be the token value.
 
 
     async function confirmDelete() {
@@ -106,7 +124,11 @@ export default function MyMediaListsPage() {
     // Runs after Page Loads , for fetchMediaLists() for the first time.
     useEffect(() => {
         fetchMediaLists()
-    }, []);  // Runs once the page loads, specifically when the componnent mounts. Not when the component re-renderss
+    }, [fetchMediaLists]);
+    // Runs once the page loads, specifically when the componnent mounts. Not when the component re-renderss
+    // Putting in the cached useCallback object (we passed in the fetchMediaLists function to be cached 
+    // to prevent fetchMediaList from causing a render which might call fetchMediaList
+    // and accidentally cause an infinite loop of rendering )
 
 
     // Runs after Page Loads, adds EventListener for scroll tracking for refreshing/calling fetchMediaLists() if the user scrolls too high
@@ -144,7 +166,11 @@ export default function MyMediaListsPage() {
         return () => window.removeEventListener('scroll', handleScroll)
 
 
-    }, []);  // Runs once the page loads, specifically when the componnent mounts. Not when the component re-renderss
+    }, [fetchMediaLists]);
+    // Runs once the page loads, specifically when the componnent mounts. Not when the component re-renderss
+    // Putting in the cached useCallback object (we passed in the fetchMediaLists function to be cached 
+    // to prevent fetchMediaList from causing a render which might call fetchMediaList
+    // and accidentally cause an infinite loop of rendering )
 
 
     
@@ -166,9 +192,12 @@ export default function MyMediaListsPage() {
             <button onClick={fetchMediaLists}>Refresh</button>
             {mediaLists.map(mediaList => (
                 <div key={mediaList.id}>
-                    <h2>{mediaList.name}</h2>
+                    <Link to={`/medialist/${mediaList.id}`}>
+                        <h2>{mediaList.name}</h2>
+                    </Link>
                     <p>{mediaList.description}</p>
                     <p>{mediaList.itemCount}</p>
+                    
                     <button onClick={
                         () => setMediaListToDelete(mediaList.id)
                     }>Delete</button>

@@ -3,7 +3,8 @@ import type { MediaListSummary,
     CreateMediaListRequest,
     UpdateMediaListNotListContentRequest,
     AddMediaItemToMediaListRequest,
-    MoveMediaItemWithinMediaListRequest
+    MoveMediaItemWithinMediaListRequest,
+    MediaListDetail
 } from '../types/mediaList';
 
 // NOTE: This file is a front-end version of
@@ -59,6 +60,26 @@ export async function getMyMediaLists(token: string): Promise<MediaListSummary[]
     const data: MediaListSummary[] = await response.json();
     
     return data;
+}
+
+export async function getMediaListDetail(token: string, mediaListId: number): Promise<MediaListDetail> {
+    // fetch makes HTTP requests
+    // await: Async call. Waits for response before continuing
+    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization" : `Bearer ${token}`
+        },
+        // No body needed for this API call.
+    });
+
+    if (!response.ok)
+        throw new Error("Failed to fetch list details.")
+
+    const dataToReceive: MediaListDetail = await response.json();
+    
+    return dataToReceive;
 }
 
 

@@ -52,3 +52,8 @@ Use External Libraries for this:
 @dnd-kit/core + @dnd-kit/sortable : Sorting Items in a List
 react-swipeable: swipe left/right
 @tanstack/react-query: pull to refresh
+
+Administrators can see all private lists
+-- Formalize/neaten policy on administrators being able to see private lists for helpdesk support and safety purposes.
+-- It is optimal that Admin access to private data is audit-logged (who accessed what, and when.)
+// TODO: Implement Sharing Lists.
