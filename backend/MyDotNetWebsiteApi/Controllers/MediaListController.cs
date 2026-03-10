@@ -156,8 +156,8 @@ public class MediaListController : ControllerBase
     [HttpDelete("{mediaListId}")]
     public async Task<IActionResult> DeleteList(int mediaListId)
     {
-
-        (AppUser? requesterUser, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        // The _ for the first parameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
+        (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
 
         // Delete from Database:
@@ -179,8 +179,8 @@ public class MediaListController : ControllerBase
     public async Task<IActionResult> PatchListBasicInfo(int mediaListId, [FromBody] UpdateMediaListNotListContentDto dto)
     {
 
-        
-        (AppUser? requesterUser, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        // The _ for the first parameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
+        (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
         
 
@@ -214,11 +214,18 @@ public class MediaListController : ControllerBase
 
         return Ok(new MediaListSummaryDto
         {
-            Id = targetedMediaList.Id,
-            Name = targetedMediaList.Name,
+            // I'm adding ! to the end of targetedMediaList to soothe the code to tell it
+            // that I already checked that at this point in the code,
+            // targetedMediaList is not null
+            // since the method that checked it (fetchUserMediaList_andCheckPermissions)
+            // already ran, and would have returned an Error code in the code block after it
+            // if it was null right after that method was run (at "if (error != null) return error;")
+            
+            Id = targetedMediaList!.Id,
+            Name = targetedMediaList!.Name,
             SubmittedById = targetedMediaList!.SubmittedById,
-            Description = targetedMediaList.Description,
-            VisibilityStatus = targetedMediaList.VisibilityStatus,
+            Description = targetedMediaList!.Description,
+            VisibilityStatus = targetedMediaList!.VisibilityStatus,
             ItemCount = linkRowCount
         });
     }
@@ -232,22 +239,37 @@ public class MediaListController : ControllerBase
     // Helper Method: Handle Out of Bounds Position Number
     // If Number is Negative, put the MediaItem in the front of the list
     // If Number is Way Too Big, put the MediaItem in the back of the list
-    private async Task<int> HandleOutOfBoundsPositionNumber(int mediaListId, int? submittedPosition)
+    private async Task<int> HandleOutOfBoundsPositionNumber(int mediaListId, int? submittedPosition, bool isAdd)
     {
         // Get Size of MediaList (# of MediaItems stored in MediaList)
         // Getting MediaList's Count:
         // Get Current Count of the MediaList
-        var targetedMediaList_Count = await _context.LinkMediaItemToMediaListTable
+        var targetedMediaList_Count_preChange = await _context.LinkMediaItemToMediaListTable
             .Where(l => l.HostListId == mediaListId)
             .CountAsync();
 
+        // Maximum Position for DestinationPosition
+        // For Adding an Item to the List,
+        // -- Before the item is added, the last item in the list is at position (maxLength - 1),
+        //    so if the item is added at the end, it will be placed at position (maxLength)
+        // For Moving an Item in the List,
+        // -- Before the item is moved, the last item in the list is at position (maxLength - 1),
+        //    Because the item is being moved, the length of the list is still the same,
+        //    so the length of the list is still the same,
+        //    so the last slot on the list that the item could be moved to
+        //    is the still numbered position that the preChange last item on the list is at
+        //    is still at the same position (maxLength - 1)
+
+        int maxPosition = isAdd ? (targetedMediaList_Count_preChange) : (targetedMediaList_Count_preChange -1); 
+        
+
          // ?? is the "Null-Coalescing Operator"
         // Means: var variableToSet = (NullableVariable) ?? (If it is null, use this value instead.)
-        var positionToCheck = submittedPosition ?? targetedMediaList_Count;
+        var positionToCheck = submittedPosition ?? maxPosition;
         var positionToUse = positionToCheck;  // As a placeholder.
 
         if (positionToCheck < 0) positionToUse = 0;  // The 1st position in the list.
-        else if (positionToCheck > targetedMediaList_Count) positionToUse = targetedMediaList_Count; // The last position on the list.
+        else if (positionToCheck > maxPosition) positionToUse = maxPosition; // The last position on the list.
         else positionToUse = positionToCheck;
         return positionToUse;
     }
@@ -291,7 +313,8 @@ public class MediaListController : ControllerBase
     [HttpPost("{mediaListId}/items/{mediaItemId}")]  // /api/medialist/{mediaListId}/items/{mediaItemId}
     public async Task<IActionResult> AddMediaItemToList(int mediaListId, int mediaItemId, [FromBody] AddMediaItemToMediaList dto)
     {
-        (AppUser? requesterUser, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        // The _ for the first parameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
+        (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
 
         // Search for MediaItem Object.
@@ -320,24 +343,7 @@ public class MediaListController : ControllerBase
         // }
 
 
-        ///////////////
-        //// TODO: Delete this older not-yet-refactored version of what is now in "handleOutOfBoundsPositionNumber method"
-        // // get the MediaList's Count
-        // int targetedMediaList_Count = mediaListObjects.Count;
-
-        // // Create New Row Object for this Newly Added MediaItem:
-        
-        // // ?? is the "Null-Coalescing Operator"
-        // // Means: var variableToSet = (NullableVariable) ?? (If it is null, use this value instead.)
-        // var positionToCheck = dto.Position ?? targetedMediaList_Count;
-        // var positionToUse = positionToCheck;  // As a placeholder.
-
-        // if (positionToCheck < 0) positionToUse = 0;  // The 1st position in the list.
-        // else if (positionToCheck > targetedMediaList_Count) positionToUse = targetedMediaList_Count; // The last position on the list.
-        // else positionToUse = positionToCheck;
-        /////////////
-
-        var positionToUse = await HandleOutOfBoundsPositionNumber(mediaItemId, dto.Position);
+        var positionToUse = await HandleOutOfBoundsPositionNumber(mediaListId, dto.Position, isAdd:true);
 
          var newLinkRow = new LinkMediaItemToMediaList
          {
@@ -374,12 +380,19 @@ public class MediaListController : ControllerBase
 
         return Ok(new MediaListSummaryDto
         {
+            // I'm adding ! to the end of targetedMediaList to soothe the code to tell it
+            // that I already checked that at this point in the code,
+            // targetedMediaList is not null
+            // since the method that checked it (fetchUserMediaList_andCheckPermissions)
+            // already ran, and would have returned an Error code in the code block after it
+            // if it was null right after that method was run (at "if (error != null) return error;")
+
             Id = targetedMediaList!.Id,
-            Name = targetedMediaList.Name,
+            Name = targetedMediaList!.Name,
             SubmittedById = targetedMediaList!.SubmittedById,
-            Description = targetedMediaList.Description,
-            VisibilityStatus = targetedMediaList.VisibilityStatus,
-            ItemCount = targetedMediaList_Count + 1
+            Description = targetedMediaList!.Description,
+            VisibilityStatus = targetedMediaList!.VisibilityStatus,
+            ItemCount = targetedMediaList_Count
         });
     }
 
@@ -393,7 +406,7 @@ public class MediaListController : ControllerBase
     public async Task<IActionResult> RemoveMediaItemFromList(int mediaListId, int mediaItemId)
     {
 
-        // The _ for the first aparameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
+        // The _ for the first parameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
         (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
 
@@ -443,11 +456,18 @@ public class MediaListController : ControllerBase
 
         return Ok(new MediaListSummaryDto
         {
-            Id = targetedMediaList!.Id,  // In "fetchUserMediaList_andCheckPermissions", we already checked for if it is null
-            Name = targetedMediaList.Name,
+            // I'm adding ! to the end of targetedMediaList to soothe the code to tell it
+            // that I already checked that at this point in the code,
+            // targetedMediaList is not null
+            // since the method that checked it (fetchUserMediaList_andCheckPermissions)
+            // already ran, and would have returned an Error code in the code block after it
+            // if it was null right after that method was run (at "if (error != null) return error;")
+
+            Id = targetedMediaList!.Id,
+            Name = targetedMediaList!.Name,
             SubmittedById = targetedMediaList!.SubmittedById,
-            Description = targetedMediaList.Description,
-            VisibilityStatus = targetedMediaList.VisibilityStatus,
+            Description = targetedMediaList!.Description,
+            VisibilityStatus = targetedMediaList!.VisibilityStatus,
             ItemCount = linkRowCount
         });
     }
@@ -462,7 +482,7 @@ public class MediaListController : ControllerBase
 
 
 
-        // The _ for the first aparameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
+        // The _ for the first parameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
         (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
 
@@ -477,7 +497,15 @@ public class MediaListController : ControllerBase
             return NotFound();
         }
 
-        var destinationPosition = await HandleOutOfBoundsPositionNumber(mediaListId, dto.NewPosition);
+
+        // Technically, I could write this method just as:
+        // var positionToUse = await HandleOutOfBoundsPositionNumber(mediaListId, dto.Position, false);
+        // I added the "isAdd:" label (aka name of the input parameter for that parameter) to that parameter
+        // to make this code easier to read, so they understand instantly what the boolean is for.
+
+        var destinationPosition = await HandleOutOfBoundsPositionNumber(mediaListId, dto.NewPosition, isAdd:false);
+
+
 
         // Get Existing MediaItem LinkRow for the MediaList
         var linkRowRightNow = await _context.LinkMediaItemToMediaListTable
@@ -492,7 +520,8 @@ public class MediaListController : ControllerBase
         // If the destinationPosition == the old position,
         // then I do not need to move anything at all,
         // I will return a Success.
-        if (destinationPosition == linkRowRightNow.Position)
+        int oldPosition = linkRowRightNow.Position;
+        if (destinationPosition == oldPosition)
         {
             
             return Ok(new MediaListSummaryDto
@@ -513,10 +542,46 @@ public class MediaListController : ControllerBase
         // Update the Position of the target MediaItem
         linkRowRightNow.Position = destinationPosition;
 
-        // Move all of the Objects whose Positions Now Need to be Updated
-        //TODO: To Implement
 
 
+        // Move the Items Between TargetMediaItem's Old and New Positions to Maintain Gapless Ordering
+        // aka to maintain that once we put the TargetMediaItem into its new position,
+        // we move the other objects to their new correct positions
+
+        List<LinkMediaItemToMediaList> linkRowsToUpdate;
+        if (destinationPosition > oldPosition)
+        {
+               linkRowsToUpdate = await _context.LinkMediaItemToMediaListTable
+               .Where(l => l.HostListId == mediaListId)
+
+               // Note: All items in between destinationPosition and oldPosition need to be moved
+               //   This includes destinationPosition (to make room for the movedItem)
+               //   This excludes oldPosition because that is the movedItem itself,
+               //   which is being moved in a separate query.
+               .Where(l => oldPosition < l.Position && l.Position <= destinationPosition)
+               .ToListAsync();
+
+        } else // if (destinationPosition < oldPosition) <-Yes, this is what it means.
+        {
+            linkRowsToUpdate = await _context.LinkMediaItemToMediaListTable
+               .Where(l => l.HostListId == mediaListId)
+
+               // Note: All items in between destinationPosition and oldPosition need to be moved
+               //   This includes destinationPosition (to make room for the movedItem)
+               //   This excludes oldPosition because that is the movedItem itself,
+               //   which is being moved in a separate query.
+               .Where(l => destinationPosition <= l.Position && l.Position < oldPosition)
+               .ToListAsync();
+        }
+
+        // If the targetMediaItem is placed in a higher Position value (aka closer to the back of the list), move other affected MediaItems 1 slot closer to the front (aka -1 for Position values)
+        int positionEditNum = (destinationPosition > oldPosition) ? -1 : 1 ;
+
+
+        foreach (var linkRow in linkRowsToUpdate){
+            linkRow.Position += positionEditNum;
+        }
+        
 
         // Flush changes to database
         await _context.SaveChangesAsync();

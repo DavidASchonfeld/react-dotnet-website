@@ -135,3 +135,7 @@ curl -v -X POST http://localhost:5198/api/medialist/1/items/2 -H "Content-Type: 
 
 // If I put position value = 1
 curl -v -X POST http://localhost:5198/api/medialist/1/items/2 -H "Content-Type: application/json" -H "Authorization: Bearer PUT_MY_TOKEN_HERE" -d '{"position": 1}'
+
+# Moving MediaItem inside MediaList:
+Curl Command:
+curl -v -X PATCH http://localhost:5198/api/medialist/1/items/2 -H "Content-Type: application/json" -H "Authorization: Bearer PUT_MY_TOKEN_HERE" -d '{"newPosition": 1}'
