@@ -185,11 +185,18 @@ public class MediaListController : ControllerBase
         
 
 
+        // I'm adding ! to the end of targetedMediaList to soothe the code to tell it
+            // that I already checked that at this point in the code,
+            // targetedMediaList is not null
+            // since the method that checked it (fetchUserMediaList_andCheckPermissions)
+            // already ran, and would have returned an Error code in the code block after it
+            // if it was null right after that method was run (at "if (error != null) return error;")
+
         // Make the Changes to the MediaList object
         if (dto.Name != null)
-            targetedMediaList.Name = dto.Name;
+            targetedMediaList!.Name = dto.Name;
         if (dto.Description != null)
-            targetedMediaList.Description = dto.Description;
+            targetedMediaList!.Description = dto.Description;
         if (dto.VisibilityStatus != null)
         {
             if (dto.VisibilityStatus == VisibilityStatus.Shared)
@@ -197,7 +204,7 @@ public class MediaListController : ControllerBase
                 // TODO: Implement Sharing
                 return StatusCode(501, "Sharing is not implemented yet.");
             }
-            targetedMediaList.VisibilityStatus = dto.VisibilityStatus.Value;
+            targetedMediaList!.VisibilityStatus = dto.VisibilityStatus.Value;
         }
 
 
