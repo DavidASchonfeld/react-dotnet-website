@@ -1,5 +1,5 @@
+import { BACKEND_BASE_URL } from '../config';
 
-const BACKEND_BASE_URL: string = "http://localhost:5198"
 
 // export: So other files in our frontend can use this function
 // async: Because this function uses "await" to run an asynchronous function
