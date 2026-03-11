@@ -57,3 +57,11 @@ Administrators can see all private lists
 -- Formalize/neaten policy on administrators being able to see private lists for helpdesk support and safety purposes.
 -- It is optimal that Admin access to private data is audit-logged (who accessed what, and when.)
 // TODO: Implement Sharing Lists.
+
+TODO: Implement into the MediaItem creation process:
+-- Creators
+-- Genres
+
+
+
+

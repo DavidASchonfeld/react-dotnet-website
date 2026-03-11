@@ -147,7 +147,7 @@ public class MediaListController : ControllerBase
                 {
                     Id = link.MediaItem.Id,
                     Name = link.MediaItem.Name,
-                    MediaTypeName = link.MediaItem.Type.Name
+                    MediaTypeId = link.MediaItemId
                 })
                 .ToList()
         });
@@ -220,13 +220,13 @@ public class MediaListController : ControllerBase
         // (Who the MediaList might be shared with is NOT relevant for deleting MediaLists)
 
         bool isOwner = (targetedMediaList.SubmittedById == requesterUser.Id);
-        bool isSpecialUserWhoCanDelete = (requesterUser.RoleLevel == UserRoleLevel.Moderator
+        bool isSpecialUserWhoCanModifyDelete = (requesterUser.RoleLevel == UserRoleLevel.Moderator
                                             || requesterUser.RoleLevel == UserRoleLevel.Administrator);
 
         // If the requesterUser is the owner (aka creator) of the MediaList
         // and/or is a user with special permissions (Moderator or Administrator),
         // he can modify/delete the MediaList
-        return (isOwner || isSpecialUserWhoCanDelete);
+        return (isOwner || isSpecialUserWhoCanModifyDelete);
     }
     
 
@@ -234,7 +234,7 @@ public class MediaListController : ControllerBase
     // Because this logic is used over and over in many of these methods, I am refactoring my code
     // to put all of this code into 1 method
     // To return async, I need to wrap the return type in Task<>
-    private async Task<(AppUser? requesterUser, MediaList? targetedMediaList, IActionResult?)> fetchUserMediaList_andCheckPermissions(int targetedMediaListId)
+    private async Task<(AppUser? requesterUser, MediaList? targetedMediaList, IActionResult?)> FetchUserMediaList_andCheckPermissions(int targetedMediaListId)
     {
         IActionResult? httpError = null;
 
@@ -277,12 +277,12 @@ public class MediaListController : ControllerBase
     public async Task<IActionResult> DeleteList(int mediaListId)
     {
         // The _ for the first parameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
-        (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        (_, MediaList? targetedMediaList, IActionResult? error) = await FetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
 
         // Delete from Database:
         // I'm adding ! because I'm telling C# that targetedMediaList should NOT be null by the time it reaches this point
-        // (since it is set to a value in that fetchUserMediaList_andCheckPermissions method)
+        // (since it is set to a value in that FetchUserMediaList_andCheckPermissions method)
         _context.MediaLists.Remove(targetedMediaList!);
 
         // Flush changes to database
@@ -300,7 +300,7 @@ public class MediaListController : ControllerBase
     {
 
         // The _ for the first parameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
-        (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        (_, MediaList? targetedMediaList, IActionResult? error) = await FetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
         
 
@@ -308,7 +308,7 @@ public class MediaListController : ControllerBase
         // I'm adding ! to the end of targetedMediaList to soothe the code to tell it
             // that I already checked that at this point in the code,
             // targetedMediaList is not null
-            // since the method that checked it (fetchUserMediaList_andCheckPermissions)
+            // since the method that checked it (FetchUserMediaList_andCheckPermissions)
             // already ran, and would have returned an Error code in the code block after it
             // if it was null right after that method was run (at "if (error != null) return error;")
 
@@ -344,7 +344,7 @@ public class MediaListController : ControllerBase
             // I'm adding ! to the end of targetedMediaList to soothe the code to tell it
             // that I already checked that at this point in the code,
             // targetedMediaList is not null
-            // since the method that checked it (fetchUserMediaList_andCheckPermissions)
+            // since the method that checked it (FetchUserMediaList_andCheckPermissions)
             // already ran, and would have returned an Error code in the code block after it
             // if it was null right after that method was run (at "if (error != null) return error;")
             
@@ -441,7 +441,7 @@ public class MediaListController : ControllerBase
     public async Task<IActionResult> AddMediaItemToList(int mediaListId, int mediaItemId, [FromBody] AddMediaItemToMediaList dto)
     {
         // The _ for the first parameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
-        (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        (_, MediaList? targetedMediaList, IActionResult? error) = await FetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
 
         // Search for MediaItem Object.
@@ -478,7 +478,7 @@ public class MediaListController : ControllerBase
             // so I don't have to specifically add them here. Hence, they are commented out here just for explanation purposes.
 
             HostListId = mediaListId,
-            //  HostList = targetedMediaList!,  // In "fetchUserMediaList_andCheckPermissions", we already checked for if it is null
+            //  HostList = targetedMediaList!,  // In "FetchUserMediaList_andCheckPermissions", we already checked for if it is null
             MediaItemId = mediaItemId,
             //  MediaItem = targetedMediaItem!, // Above, we check if targetedMediaItem is null
             Position = positionToUse
@@ -510,7 +510,7 @@ public class MediaListController : ControllerBase
             // I'm adding ! to the end of targetedMediaList to soothe the code to tell it
             // that I already checked that at this point in the code,
             // targetedMediaList is not null
-            // since the method that checked it (fetchUserMediaList_andCheckPermissions)
+            // since the method that checked it (FetchUserMediaList_andCheckPermissions)
             // already ran, and would have returned an Error code in the code block after it
             // if it was null right after that method was run (at "if (error != null) return error;")
 
@@ -534,7 +534,7 @@ public class MediaListController : ControllerBase
     {
 
         // The _ for the first parameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
-        (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        (_, MediaList? targetedMediaList, IActionResult? error) = await FetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
 
         // Search for MediaItem Object.
@@ -586,7 +586,7 @@ public class MediaListController : ControllerBase
             // I'm adding ! to the end of targetedMediaList to soothe the code to tell it
             // that I already checked that at this point in the code,
             // targetedMediaList is not null
-            // since the method that checked it (fetchUserMediaList_andCheckPermissions)
+            // since the method that checked it (FetchUserMediaList_andCheckPermissions)
             // already ran, and would have returned an Error code in the code block after it
             // if it was null right after that method was run (at "if (error != null) return error;")
 
@@ -610,7 +610,7 @@ public class MediaListController : ControllerBase
 
 
         // The _ for the first parameter is "discarding" the first value, since we do not need that value (RequestUser) for this method
-        (_, MediaList? targetedMediaList, IActionResult? error) = await fetchUserMediaList_andCheckPermissions(mediaListId);
+        (_, MediaList? targetedMediaList, IActionResult? error) = await FetchUserMediaList_andCheckPermissions(mediaListId);
         if (error != null) return error;
 
 

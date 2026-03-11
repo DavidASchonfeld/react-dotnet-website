@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 // JWT Libaries to Import
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -115,6 +116,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference(); // Using Scalar
+    // Scalar is a visual UI that makes it easier (don't have to write CURL commands)
+    // to interact with my backend API endpoints
+    // To use this, run the backend, then,
+    // in my internet browser, go to:
+    // http://localhost:5198/scalar/v1
 }
 else
 {

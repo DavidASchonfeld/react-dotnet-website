@@ -25,8 +25,8 @@
 public enum VisibilityStatus
 {
     Private,
-    Public,
-    Shared
+    Shared,
+    Public
 }
 
 // Site-Wide Permissions Levels for each User Account
