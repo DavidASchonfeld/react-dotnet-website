@@ -16,7 +16,12 @@ Downloading Tailwind, a CSS folder:
 npm install tailwindcss @tailwindcss/vite
 And then, in index.css, I need to add "@import "tailwindcss";" to the top of the file.
 
-
+Redux Toolkit
+-- createSlice, createAsyncThunk, configureStore
+React-Redux:
+-- Provider, useSelector, useDispatch
+Redux-Persist
+-- replaces localStore.getItem/setItem from my handmade AuthContext.tsx file 
 
 
 

@@ -1,10 +1,12 @@
 // Import from Libraries
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from 'react-redux';
 
 // Import from My Files
-import { loginUser, registerUser } from "../services/authService";
-import { useAuth } from "../hooks/useAuth";
+import type { AppDispatch } from "../store/store";
+import { loginThunk, registerThunk } from "../store/authSlice";
+
 
 export default function LoginOrRegisterPage() {
     const [userName, setUserName] = useState("");
@@ -21,38 +23,55 @@ export default function LoginOrRegisterPage() {
     
 
     const navigate = useNavigate(); // Importing function to navigate between pages
-    const auth = useAuth(); // Importing function to use AuthContext
+    const dispatch = useDispatch<AppDispatch>();
 
 
     const handleSubmit = async (e: React.SyntheticEvent) => {
+
 
         // Prevents the Default action (which would be, after submitting a form, refreshing a page)
         // Since we are using React.js, we don't need to refresh the page for submission
         e.preventDefault();
 
+
         setErrorString(null);  // Clears any previous error message before trying to login again.
 
         if (isRegistering){
-            // Register User Logic
             try {
-                const data = await registerUser(userName, email, password); // auth stores the useAuth(), so it calls the login function from useAuth (aka from the AuthContext.tsx file)
-                auth?.login(data.token, userName); // Pull in the data (token, username) from the successful login into the local AuthContext file so all of React.js pages can access that information
+
+                // Old Version (Before Implementing Redux (and therefore Redux's thunks)):
+                //    The line below is now in registerThunk in "authSlice.ts"
+                //       const data = await registerUser(userName, email, password); // auth stores the useAuth(), so it calls the login function from useAuth (aka from the AuthContext.tsx file)
+
+                //    The line below is now deleted since calling registerThunk saves these variables 
+                //        auth?.login(data.token, userName); // Pull in the data (token, username) from the successful login into the local AuthContext file so all of React.js pages can access that information
+
+                await dispatch(registerThunk({ userName, email, password})).unwrap();
+
                 navigate("/");  // Navigate to home page (This is only reached if the login is successful)
             } catch {
                 setErrorString("User Registration Error: Invalid username or password"); // sets the string representing the login error to that value. We'll show this error string to the user
             }
-
         } else {
-            // Login Logic
             try {
-                const data = await loginUser(userName, password); // auth stores the useAuth(), so it calls the login function from useAuth (aka from the AuthContext.tsx file)
-                auth?.login(data.token, userName); // Pull in the data (token, username) from the successful login into the local AuthContext file so all of React.js pages can access that information
+
+                // Old Version (Before Implementing Redux (and therefore Redux's thunks)):
+                //    The line below is now in loginThunk in "authSlice.ts"
+                //       const data = await loginUser(userName, password); // auth stores the useAuth(), so it calls the login function from useAuth (aka from the AuthContext.tsx file)
+
+                //    The line below is now deleted since calling loginThunk saves these variables 
+                //        auth?.login(data.token, userName); // Pull in the data (token, username) from the successful login into the local AuthContext file so all of React.js pages can access that information
+
+                
+                await dispatch(loginThunk({ userName, password})).unwrap();
+
                 navigate("/");  // Navigate to home page (This is only reached if the login is successful)
             } catch {
                 setErrorString("Login Error; Invalid username or password"); // sets the string representing the login error to that value. We'll show this error string to the user
             }
         }
 
+        
         
     };
 

@@ -1,8 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from 'react'
+import { useSelector, useDispatch } from "react-redux";
 
 // Importing from My Files
-import { useAuth } from "../hooks/useAuth";
+import type { RootState, AppDispatch } from "../store/store";
+import { clearCredentials } from "../store/authSlice";
+
+
 
 export default function Navbar() {
     // export: So this function can be used in other files
@@ -21,12 +25,22 @@ export default function Navbar() {
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
 
-    const auth = useAuth();
+    // Pulling in ability to dispatch functions and get username:
+    const { userName } = useSelector((state: RootState) => state.auth);
+    const dispatch = useDispatch<AppDispatch>();
+    
+
+    // Importing ability to Redirect
     const navigate = useNavigate();  // set up useNavigate React.js to use it later (just like with useAuth()  ).
 
 
     const handleLogout = () => {
-        auth?.logout();
+
+        // calling the logout function was refactored into clearCredentials() in frontend/src/store/authSlice.ts
+        dispatch(clearCredentials());
+
+        // The following line(s) only run if the clearCrednetials() line above is successful.
+        // Navigate to the login page.
         navigate('/login');
     }
 
@@ -82,11 +96,11 @@ export default function Navbar() {
                 <button onClick={() => navigate("/")}>Home</button>
                 <button onClick={() => navigate("/about")}>About</button>
 
-                {!auth?.userName && 
+                {!userName && 
                 <button onClick={() => navigate("/login")}>Log In</button>
                 }
                 
-                {auth?.userName && 
+                {userName && 
                 <>
                     
                     <div className = "relative">
@@ -95,7 +109,7 @@ export default function Navbar() {
                         ⇤⤒⬇︎▼▲—|⬅︎⬆︎
                         */}
                         <button onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
-                            {auth?.userName} {isUserMenuOpen ? "▲" : "▼"}
+                            {userName} {isUserMenuOpen ? "▲" : "▼"}
                         </button>
 
                         {/* The Dropdown Menu */}

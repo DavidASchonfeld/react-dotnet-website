@@ -1,31 +1,30 @@
 // React.js Library
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 
 
 // My Code
-import { useAuth } from '../hooks/useAuth';
-import type { MediaListSummary } from '../types/mediaList';
 import { VisibilityStatus } from '../types/enums';
-
-import { getMyMediaLists,
-    createMediaList,
-    deleteMediaList } from '../services/mediaListService';
-import { Link } from 'react-router-dom';
+import type { RootState, AppDispatch } from '../store/store';
+import { fetchMyLists, createList, deleteList } from '../store/mediaListsSlice';
 
 
 
 
 export default function MyMediaListsPage() {
 
-    const { token } = useAuth();
 
-    // Data for list of MediaLists
-    // Initialize as an Empty Array
-    const [mediaLists, setMediaLists] = useState<MediaListSummary[]>([]);
+    
+    //// From Redux Store
+    // replaces storing mediaLists directly here in the component
+    // and ther isLoading and userState errors also from being stored here in the component
+    const { mediaLists, status, error } = useSelector((state: RootState) => state.mediaLists);
+    const { token } = useSelector((state:RootState) => state.auth);
+    const dispatch = useDispatch<AppDispatch>();
 
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-
-    const [error, setError] = useState<string | null>(null);
+    //// Local State for this component
+    // They are about UI state, so they do not need to be shared globally nor need to survive a page refresh.
 
     // For Deletion
     const [mediaListToDelete, setMediaListToDelete] = useState<number | null>(null);
@@ -36,82 +35,95 @@ export default function MyMediaListsPage() {
     const [newListDescription, setNewListDescription] = useState<string>('');
 
 
+
+
+
+
+
     // Functions here are only accessible to this component
 
 
 
 
-    // This is a callback function:
-    // I created fetchMediaLists and made it a callback Function to put here
-    // A callback function means that the function itself is cached
-    // to prevent an infinite loop between this functoin being generated
-    // and then causing the rendering to be triggered, causing the function
-    // to be created again etc. as an infite loop.
-    // This prevents the function fetchMediaLists() from being re-created
-    // every time that this component is re-rendered.
-    // If there is a state change in that function that causes the
-    // component to re-render, which might cause the function to be
-    // created again, that could cause an infinite loop.
-
-    const fetchMediaLists = useCallback(async() => {
-            setIsLoading(true);
-            setError(null);
-            try {
-
-                // Note on "token!"
-                // token! has "!", which tells JavaScript that I am promising that this value is never null.
-                //  Why am I doing that? Because this page is in <ProtectedRoute>
-                // (as I created in /frontend/src/components/ProtectedRoute.tsx)
-                // (meaning it is only accessible to logged-in users)
-                // so logged-in users always have a non-null token value.
-                const data = await getMyMediaLists(token!);
-                setMediaLists(data);
-            } catch (err) {
-                console.error(err);
-                setError("Failed to load lists.");
-            } finally {
-                setIsLoading(false);
-            }
-        }, [token]);  
-        // Only is re-created if the parameter (now called dependencies for useCallBack) value is changed.
-        // Here, that would be the token value.
-
-
     async function confirmDelete() {
         if (mediaListToDelete === null) return;
         try {
-            await deleteMediaList(token!, mediaListToDelete);
+            // Old function having this .tsx file calling the API function directly,
+            // before I implemented using Redux. Now, instead, this component
+            // dispatches (Aka calls a synchronous function to call those API calls),
+            // with all of that logic in the deleteList AsyncThunk 
+            // in frontend/src/store/mediaListsSlice.ts
+            //    await deleteMediaList(token!, mediaListToDelete);
+
+
+            // .unwrap() so this try/catch block can catch errors.
+            await dispatch(deleteList({ token: token!, mediaListId: mediaListToDelete})).unwrap();
+
 
             // Below only occurs if the deleteMediaList() succeeds
 
-            setMediaListToDelete(null);  // <- Close the modal (aka popup)
-            await fetchMediaLists();  // Refresh the MediaList now that the MediaList is deleted
+            setMediaListToDelete(null);
+
+
+            // Since the deleteList's asyncThunk's fulfilled logic 
+            // (in frontend/src/store/mediaListsSlice.ts)
+            // already removes the deleted list in our frontend storage,
+            // then this function does not need to call fetchMyLists again to get the updated list 
+            // now that the MediaList objected was deleted
+
             
         } catch (err) {
             console.error(err);
-            setError(`Failed to delete list id: ${mediaListToDelete}.`)
         }
     }
 
     async function handleCreateMediaList() {
         if (!newListName.trim()) return  //Prevents submitting empty name
         try {
-            await createMediaList(token!, {
-                name: newListName,
-                description: newListDescription || undefined,
-                visibilityStatus: VisibilityStatus.Private  // Default
-            });
+
+
+            // Before I implemented Redux (and therefore the AsyncThunks),
+            //   I called the API method directly here.
+            // await createMediaList(token!, {
+            //     name: newListName,
+            //     description: newListDescription || undefined,
+            //     visibilityStatus: VisibilityStatus.Private  // Default
+            // });
+
+
+            // Use unwrap() so this try/catch block can catch errors
+            // createList is an asyncThunk I created
+            // in frontend/src/store/mediaListsSlice.ts
+            await dispatch(createList({
+
+
+                // Since this page is only accessible if a user is logged in, I know that token will never be null
+                // so I add ! to token to tell TypeScript that this variable will never be null.
+                token: token!,  
+
+                data: {
+                    name: newListName,
+                    description: newListDescription || undefined,
+                    visibilityStatus: VisibilityStatus.Private
+                }
+            })).unwrap();
 
             // Below only occurs if createMediaList succeeds.
+
+
+            // The createList.fulfilled handler
+            // (in frontend/src/store/mediaListsSlice.ts)
+            // already pushed this new list into the state.lists
+            // so no new to call fetchMediaLists() again.
+
+            // Manually reset the UI compoents
             setShowCreateModal(false);  // Hide the modal
             setNewListName('');  // sets the variables back to blank
             setNewListDescription('');  // sets the variables back to blank
 
-            await fetchMediaLists(); // Refresh the list now that the new MediaList was created
-
+            
         } catch (err) {
             console.error(err);
-            setError("Failed to create List");
         }
     }
 
@@ -121,14 +133,22 @@ export default function MyMediaListsPage() {
 
 
     // For onPageLoading for First Time
-    // Runs after Page Loads , for fetchMediaLists() for the first time.
+    // Runs after Page Loads , to load the mediaLists into this page for the first time.
     useEffect(() => {
-        fetchMediaLists()
-    }, [fetchMediaLists]);
-    // Runs once the page loads, specifically when the componnent mounts. Not when the component re-renderss
-    // Putting in the cached useCallback object (we passed in the fetchMediaLists function to be cached 
-    // to prevent fetchMediaList from causing a render which might call fetchMediaList
-    // and accidentally cause an infinite loop of rendering )
+        dispatch(fetchMyLists(token!));
+    }, [dispatch, token]);
+    // dispatch and token are dependencies (aka similar in concept to how parameters are passed into functions)
+    // They are passed in here as dependencies to prevent any accidental inifite loops
+    // They are saved so they do not need to be reloaded every time this component re-renders.
+    // Here, this useEffect() would only be reloaded if either of those dependences (dispatch or token)
+    // changes it values.
+    // Why save these over refreshes?
+    // To prevent an accidental infinite loop: 
+    // If either of them (For example: dispatch) has logic that would trigger the component to re-load,
+    // Then when the component reloads and the dispatch gets re-created, that dispatch being created might trigger
+    // the component to reload which would cause an inifinite loop between the component being forced to reload
+    // and one of its items in the component's creation process (Example: Dispatch) to cause the component to reload
+    // causing the componennet to infinitely reload over and over again.
 
 
     // Runs after Page Loads, adds EventListener for scroll tracking for refreshing/calling fetchMediaLists() if the user scrolls too high
@@ -152,7 +172,7 @@ export default function MyMediaListsPage() {
             // In JavaScript, == only checks for equal value (and converts types to compare)
             // So we need to use === to keep the types without converting
             if (currentScrollY === 0 && lastScrollY > 0){
-                fetchMediaLists();
+                dispatch(fetchMyLists(token!));
             }
             
             // Update lastScroll
@@ -166,16 +186,13 @@ export default function MyMediaListsPage() {
         return () => window.removeEventListener('scroll', handleScroll)
 
 
-    }, [fetchMediaLists]);
-    // Runs once the page loads, specifically when the componnent mounts. Not when the component re-renderss
-    // Putting in the cached useCallback object (we passed in the fetchMediaLists function to be cached 
-    // to prevent fetchMediaList from causing a render which might call fetchMediaList
-    // and accidentally cause an infinite loop of rendering )
+    }, [dispatch, token]);
+    // See above for explanation about dependencies
 
 
     
 
-    if (isLoading) return <div>Loading...</div>
+    if (status === 'loading') return <div>Loading...</div>
     if (error) return <div>{error}</div>
 
     return (
@@ -189,7 +206,10 @@ export default function MyMediaListsPage() {
             
 
             {/* Refresh Button - Calls Refresh on Click: */}
-            <button onClick={fetchMediaLists}>Refresh</button>
+            {/* Remember, you need "() =>"" so the function
+            only runs when the button is clicked, instead
+            of when the button is rendered. */}
+            <button onClick={() => dispatch(fetchMyLists(token!))}>Refresh</button>
             {mediaLists.map(mediaList => (
                 <div key={mediaList.id}>
                     <Link to={`/medialist/${mediaList.id}`}>
