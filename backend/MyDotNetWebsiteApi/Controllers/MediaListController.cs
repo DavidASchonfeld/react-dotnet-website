@@ -147,7 +147,7 @@ public class MediaListController : ControllerBase
                 {
                     Id = link.MediaItem.Id,
                     Name = link.MediaItem.Name,
-                    MediaTypeId = link.MediaItemId
+                    MediaTypeId = link.MediaItem.MediaTypeId
                 })
                 .ToList()
         });

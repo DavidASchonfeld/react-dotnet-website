@@ -117,7 +117,7 @@ public class MediaTypeController : ControllerBase
         // and moderators and administrators can see not approved MediaTypes
 
         bool isOwner = (targetedMediaType.SubmittedById == requesterUser.Id);
-        bool isSpecialUser = (requesterUser.RoleLevel == UserRoleLevel.Administrator)
+        bool isSpecialUser = (requesterUser.RoleLevel == UserRoleLevel.Moderator)
             || (requesterUser.RoleLevel == UserRoleLevel.Administrator);
 
         // If the requesterUser is the owner (aka creator) of the MediaList

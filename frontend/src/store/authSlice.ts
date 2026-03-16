@@ -32,7 +32,9 @@ import {loginUser, registerUser} from '../services/authService';
 type AuthState = {
     token: string | null,
     userName: string | null,
-    isAuthenticated: boolean
+    isAuthenticated: boolean,
+    status: 'idle' | 'loading' | 'succeeded' | 'failed',  // <- standard RTK (Redux Toolkit) async lifecycle
+    error: string | null
 };
 
 // About "isAuthenticated:
@@ -53,7 +55,9 @@ type AuthState = {
 const initialState: AuthState = {
     token: null,
     userName: null,
-    isAuthenticated: false
+    isAuthenticated: false,
+    status: 'idle',
+    error: null
 };
 
 
@@ -139,6 +143,11 @@ const authSlice = createSlice({
             state.token = null;
             state.userName = null;
             state.isAuthenticated = false;
+
+            // If a user logs out after, way beforehand, he had had an error hwen logging in much earlier,
+            // let's clear the error and the status just in case.
+            state.status = 'idle';
+            state.error = null;
         }
     },
     extraReducers: (builder) => {
@@ -149,19 +158,49 @@ const authSlice = createSlice({
         // theThunk.fulfilled: fired when the async function returns successfully
         // theThunk.rejected: fired when the async function throws an error
 
-        // Right now, I'm only adding functions for when loginThunk is susccessfull, and when registerThunk is successful.
+        
 
 
         builder.addCase(loginThunk.fulfilled, (state, action) => {
             state.token = action.payload.token;
             state.userName = action.payload.userName;
             state.isAuthenticated = true;
+            state.status = 'succeeded';
+            state.error = null;
         });
+        
+        builder.addCase(loginThunk.pending, (state) => {
+            state.status = 'loading';
+            state.error = null;
+        });
+
+        builder.addCase(loginThunk.rejected, (state, action) => {
+            state.status = 'failed';
+
+            // If the message == null, return the string "Login failed"
+            state.error = action.error.message ?? 'Login failed';
+        });
+
+
 
         builder.addCase(registerThunk.fulfilled, (state, action) => {
             state.token = action.payload.token;
             state.userName = action.payload.userName;
             state.isAuthenticated = true;
+        });
+
+        // Just copy-pasted from loginThunk, but for registerThunk
+        builder.addCase(registerThunk.pending, (state) => {
+            state.status = 'loading';
+            state.error = null;
+        });
+
+        // Just copy-pasted from loginThunk, but for registerThunk
+        builder.addCase(registerThunk.rejected, (state, action) => {
+            state.status = 'failed';
+
+            // If the message == null, return the string "Login failed"
+            state.error = action.error.message ?? 'Register failed';
         });
     }
 });
