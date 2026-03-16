@@ -8,7 +8,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { VisibilityStatus } from '../types/enums';
 import type { RootState, AppDispatch } from '../store/store';
 import { fetchMyLists, createList, deleteList } from '../store/mediaListsSlice';
-
+import CreateListModal from '../components/modals/CreateListModal';
+import DeleteConfirmModal from '../components/modals/DeleteConfirmModal';
 
 
 
@@ -19,9 +20,20 @@ export default function MyMediaListsPage() {
     //// From Redux Store
     // replaces storing mediaLists directly here in the component
     // and ther isLoading and userState errors also from being stored here in the component
-    const { mediaLists, status, error } = useSelector((state: RootState) => state.mediaLists);
-    const { token } = useSelector((state:RootState) => state.auth);
+    
+    // Original, separate fetching from RootState
+    // const { mediaLists, status, error } = useSelector((state: RootState) => state.mediaLists);
+    // const { token } = useSelector((state:RootState) => state.auth);
+    // Consolidated into 1 Request for Fetching from RootState:
+    const { mediaLists, status, error, token } = useSelector((state: RootState) => ({
+        ...state.mediaLists,  // Unwrap the mediaList key/value-pair-objects and put them all into the output
+        token: state.auth.token   // Telling where to specifically find the token value inside the RootState object
+    }))
+
+    
     const dispatch = useDispatch<AppDispatch>();
+
+    
 
     //// Local State for this component
     // They are about UI state, so they do not need to be shared globally nor need to survive a page refresh.
@@ -31,12 +43,6 @@ export default function MyMediaListsPage() {
 
     // For Create MediaList
     const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
-    const [newListName, setNewListName] = useState<string>('');
-    const [newListDescription, setNewListDescription] = useState<string>('');
-
-
-
-
 
 
 
@@ -77,8 +83,7 @@ export default function MyMediaListsPage() {
         }
     }
 
-    async function handleCreateMediaList() {
-        if (!newListName.trim()) return  //Prevents submitting empty name
+    async function handleCreateMediaList(newListName: string, newListDescription: string) {
         try {
 
 
@@ -116,12 +121,9 @@ export default function MyMediaListsPage() {
             // already pushed this new list into the state.lists
             // so no new to call fetchMediaLists() again.
 
-            // Manually reset the UI compoents
+            // Manually reset the UI Modal
+            //   The other UI-related parts for that modal are now in the frontend/src/components/modals/CreateListModal.tsx file
             setShowCreateModal(false);  // Hide the modal
-            setNewListName('');  // sets the variables back to blank
-            setNewListDescription('');  // sets the variables back to blank
-
-            
         } catch (err) {
             console.error(err);
         }
@@ -194,6 +196,11 @@ export default function MyMediaListsPage() {
 
     if (status === 'loading') return <div>Loading...</div>
     if (error) return <div>{error}</div>
+    if (!token) return null;  // Putting this here is important
+    // to tell people who read this code that this component
+    // should not run if the token is null since this page
+    // needs a token value to request API calls for MediaList Objects
+
 
     return (
         <div>
@@ -224,65 +231,30 @@ export default function MyMediaListsPage() {
                 </div>
             ))}
 
+
+            {/*
+                in showCreateModal,
+                    for onConfirm: pass in the already-created function handleCreateMediaList in directly
+                    for onCancel: here, passing in a non-named function (by calling "() => "), and inside that non-named function, run a specific command "setShowCreateModal(false)"
+            */}
             {showCreateModal && (
-                <>
+                
+                <CreateListModal
+                    onConfirm={handleCreateMediaList}
+                    onCancel={() => setShowCreateModal(false)}    
+                />
+            )}
 
-                {/* This div is over the top of everything else
-                    to partially black out the background
-                    to better show that the modal is currently open. */}
-                {/* Tailwind-Specific Explanations (as applied here in "className")
-                    inset-0: full screen
-                    bg-black/50: Means it is black at 50% transparency
-                    z-50: At z-index:50, which means its on top of everything else
-                    
-                */}
-                <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">  
 
-                    {/* The Modal aka Popup
-                    Tailwind-Specific Explanations:
-                    min-w-72: Minumum width is 72
-                    rounded-lg: Rounded corners
-                    p-8: 8-sized padding
-                    flex-col: Make all items into 1 column (if we want the buttons side-by-side, we'll put them in 1 div)
-                    flex: You need flex here to use "flex-col" and "gap-4"
-                    gap-4: Make gap == 4 between each object in this column
-                    */}
-                    <div className = "bg-white p-8 rounded-lg min-w-72 flex flex-col gap-4">
-                        <h2>Create New List</h2>
-                        <input
-                            placeholder="Name (Required)"
-                            value = {newListName}
-                            onChange={(e) => setNewListName(e.target.value)}
-                        />
-                        <input
-                            placeholder="Description (Optional)"
-                            value = {newListDescription}
-                            onChange={(e) => setNewListDescription(e.target.value)}
-                        />
-                        {/*
-                            We don't need to add flex-row because here, it by default fits things side-by-side
-                            until it runs out of room, to add to the next line
-                        */}
-                        <div className="flex gap-2">
-                            <button onClick={() => setShowCreateModal(false)}>Cancel</button>
-                            <button onClick={handleCreateMediaList}>Create</button>
-                        </div>
-                    </div>
-                </div>
-                </>
-             )}
-
+            {/* Remember "?" means the object could be null
+            ?? means if that value is null, use the string after the "??" */}
             {mediaListToDelete !== null && (
-                <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">  
-                    <div className = "bg-white p-8 rounded-lg min-w-72 flex flex-col gap-4">
-                        <h2>Delete the List "{mediaLists.find(l => l.id === mediaListToDelete)?.name}"?</h2>
-                        <p>Are you sure you want to delete this list?</p>
-                        <div className="flex gap-2">
-                            <button onClick={() => setMediaListToDelete(null)}>Cancel</button>
-                            <button onClick={confirmDelete}>Yes, Delete</button>
-                        </div>
-                    </div>
-                </div>
+
+               <DeleteConfirmModal
+                    itemName={mediaLists.find(l=>l.id==mediaListToDelete)?.name ?? ''}
+                    onConfirm={confirmDelete}
+                    onCancel={()=> setMediaListToDelete(null)}
+               />
              )}
 
              
