@@ -23,7 +23,7 @@ public class MediaTypeController : ControllerBase
     public async Task<IActionResult> GetAllApproved()
     {
         var result = await _mediaTypeService.GetAllApprovedAsync();
-        return Ok(result);
+        return result.ToActionResult(this);
     }
 
     [HttpGet("{mediaTypeId}")]

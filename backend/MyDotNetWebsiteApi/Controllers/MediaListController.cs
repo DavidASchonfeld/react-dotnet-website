@@ -23,7 +23,7 @@ public class MediaListController : ControllerBase
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;  // I am adding a "!" here to tell C# that this will never return a null. I know this because this controller has a [Authorize] at the top, meaning that the user will always be logged in before he ever encounters this part of the code.
         var result = await _mediaListService.GetMyListsAsync(requesterUserId);
-        return Ok(result);
+        return result.ToActionResult(this);
     }
 
     [HttpGet("{mediaListId}")]

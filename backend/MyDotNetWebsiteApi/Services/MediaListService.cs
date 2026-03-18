@@ -80,9 +80,9 @@ public class MediaListService : IMediaListService
 
     // ---- Public Service Methods ----
 
-    public async Task<List<MediaListSummaryDto>> GetMyListsAsync(string userId)
+    public async Task<ServiceResult<List<MediaListSummaryDto>>> GetMyListsAsync(string userId)
     {
-        return await _context.MediaLists
+        var lists = await _context.MediaLists
             .Where(l => l.SubmittedById == userId)
             .Select(l => new MediaListSummaryDto
             {
@@ -94,6 +94,7 @@ public class MediaListService : IMediaListService
                 ItemCount = l.ItemLinks.Count
             })
             .ToListAsync();
+        return ServiceResult<List<MediaListSummaryDto>>.Ok(lists);
     }
 
 

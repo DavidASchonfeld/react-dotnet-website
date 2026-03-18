@@ -10,9 +10,9 @@ public class MediaTypeService : IMediaTypeService
         _context = context;
     }
 
-    public async Task<List<MediaTypeSummaryDto>> GetAllApprovedAsync()
+    public async Task<ServiceResult<List<MediaTypeSummaryDto>>> GetAllApprovedAsync()
     {
-        return await _context.MediaTypes
+        var types = await _context.MediaTypes
             .Where(t => t.IsApproved)
             .Select(t => new MediaTypeSummaryDto
             {
@@ -22,6 +22,7 @@ public class MediaTypeService : IMediaTypeService
                 IsApproved = t.IsApproved
             })
             .ToListAsync();
+        return ServiceResult<List<MediaTypeSummaryDto>>.Ok(types);
     }
 
     public async Task<ServiceResult<MediaTypeDetailDto>> GetMediaTypeAsync(int mediaTypeId, string requesterId)
