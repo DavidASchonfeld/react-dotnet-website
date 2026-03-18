@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-public class UpdateMediaItemNotLinksDto
+public class UpdateMediaItemBasicInfoDto
 {
     // Id NOT included here (aka it is commented out) because it will be passed via the URL when I send over this DTO
     // public int Id {get; set;}
@@ -10,7 +10,7 @@ public class UpdateMediaItemNotLinksDto
     [MaxLength(200)]
     public string? Name {get; set;} = string.Empty;
 
-    [Range(1, int.MaxValue, ErrorMessage = "A valid MediaTypeId is required.")]
+    [Range(1, int.MaxValue, ErrorMessage = "A valid MediaTypeId is required, and it must be a positive integer.")]
     public int? MediaTypeId {get; set;}
 
     [MaxLength(2000)]

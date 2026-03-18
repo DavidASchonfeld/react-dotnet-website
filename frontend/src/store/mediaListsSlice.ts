@@ -9,7 +9,6 @@ import {
 
 
 
-//TODO: Comments
 type MediaListsState = {
     mediaLists: MediaListSummary[];
     selectedMediaListDetail: MediaListDetail | null;
@@ -36,7 +35,7 @@ const initialState: MediaListsState = {
 // the MyMediaListsPage.tsx will only manage the design/actual things that users see,
 // not the data
 
-// Is the replacement for the MyMediaListsPage.tsx using a callback to call my getMyMediaLists(token) function.
+// This is the replacement for the MyMediaListsPage.tsx using a callback to call my getMyMediaLists(token) function.
 export const fetchMyLists = createAsyncThunk(
     'mediaLists/fetchMyLists',
     async (token: string) => {
@@ -66,7 +65,7 @@ export const deleteList = createAsyncThunk(
     async ({token, mediaListId}: {token: string; mediaListId: number}) => {
         await deleteMediaList(token, mediaListId);
 
-        // Since deteMediaList returns void (aka nothing),
+        // Since deleteMediaList returns void (aka nothing),
         // I am returning mediaListId so my slice
         // (in the my code below in this same file)
         // can remove the list in my frontend storage
@@ -81,8 +80,16 @@ export const deleteList = createAsyncThunk(
 const mediaListsSlice = createSlice({
     name: 'mediaLists',
     initialState,
+
+    // reducers VS extraReducers
+    // For both, I dispatch (aka request for them to be run) to Redux, who runs them
+
+    // reducers: defines synchronous actions that this slice creates and owns.
+    // extraReducers: lisstens to actions created outside of the slice,
+    //      specifically the .pending/.fulfilled/.rejected
+    //      lifecycle events emitted by createAsyncThunk.
+    
     reducers: {
-        //TODO: Comment
         clearSelectedListDetail: (state) => {
             state.selectedMediaListDetail = null;
         }
@@ -98,6 +105,7 @@ const mediaListsSlice = createSlice({
         })
         .addCase(fetchMyLists.fulfilled, (state, action) => {
             state.status = 'succeeded';
+            state.error = null;
 
             // action.payload is the list of the user's MediaList objects.
             state.mediaLists = action.payload;
@@ -118,6 +126,7 @@ const mediaListsSlice = createSlice({
         })
         .addCase(fetchListDetail.fulfilled, (state, action) => {
             state.status = 'succeeded';
+            state.error = null;
             state.selectedMediaListDetail = action.payload;
         })
         .addCase(fetchListDetail.rejected, (state, action) => {
@@ -136,7 +145,23 @@ const mediaListsSlice = createSlice({
         builder.addCase(createList.fulfilled, (state, action) => {
 
             // action.payload = the MediaListSummary returned by createMediaList()
+            state.status = 'succeeded';
+            state.error = null;
             state.mediaLists.push(action.payload);
+        });
+
+        builder.addCase(createList.pending, (state) => {
+
+            // action.payload = the MediaListSummary returned by createMediaList()
+            state.status = 'loading';
+            state.error = null;
+        });
+
+        builder.addCase(createList.rejected, (state, action) => {
+
+            // action.payload = the MediaListSummary returned by createMediaList()
+            state.status = 'failed';
+            state.error = action.error.message ?? 'Failed to create list.';
         });
         
 
@@ -147,9 +172,17 @@ const mediaListsSlice = createSlice({
         // Filter it out of the lists array so we can immediately show the change to the user
         // without needing to send another API request to show the updated list of MediaList items
         builder.addCase(deleteList.fulfilled, (state, action) => {
+            state.status = 'succeeded';
+            state.error = null;
             state.mediaLists = state.mediaLists.filter(l => l.id !== action.payload);
         });
 
+
+        builder.addCase(deleteList.rejected, (state, action) => {
+            state.status = 'failed';
+            state.error = action.error.message ?? 'Failed to delete list.';
+        });
+        
     }
 });
 

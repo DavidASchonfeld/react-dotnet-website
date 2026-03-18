@@ -80,6 +80,16 @@ export default function MyMediaListsPage() {
             
         } catch (err) {
             console.error(err);
+
+            
+            // Close the Modal Window:
+            setMediaListToDelete(null);
+
+            // In the return section for HTML/JavaScript below, 
+            // this webpage displays the error in this section
+            // (This section only appears if error is not null.)
+            // {error && <h2>{error}</h2>}
+
         }
     }
 
@@ -204,6 +214,8 @@ export default function MyMediaListsPage() {
 
     return (
         <div>
+            {error && <h2>{error}</h2>}
+
             <h1>My Lists</h1>
             
             {/* Create MediaList Button */}

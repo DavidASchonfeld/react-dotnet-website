@@ -66,7 +66,7 @@ export default function MediaListDetailPage() {
             {selectedMediaListDetail.listContent.map(mediaItem => (
                 <div key={mediaItem.id}>
                     <p>{mediaItem.name}</p>
-                    <p>{mediaItem.mediaTypeName}</p>
+                    <p>Media Type Id: {mediaItem.mediaTypeId}</p>
                 </div>
             ))}
         </div>

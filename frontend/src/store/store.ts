@@ -7,6 +7,7 @@ import storage from 'redux-persist/lib/storage';
 
 import authReducer from './authSlice'
 import mediaListsReducer from './mediaListsSlice';
+import mediaItemsReducer from './mediaItemsSlice';
 
 
 
@@ -14,7 +15,8 @@ import mediaListsReducer from './mediaListsSlice';
 
 const rootReducer = combineReducers({
     auth: authReducer,
-    mediaLists: mediaListsReducer
+    mediaLists: mediaListsReducer,
+    mediaItems: mediaItemsReducer,
 })
 
 // ---- Persist config -----
@@ -28,6 +30,7 @@ const rootReducer = combineReducers({
 //        to keep/store without needing to re-call those values every time a page refreshes)
 //        Here, refresh means when the user manually refresh the page,
 //        which is unrelated to when React re-renders a component
+//        Here, I am only persisting the auth (login), not the mediaItems, mediaLists etc.
 
 const persistConfig = {
     key: 'root',

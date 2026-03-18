@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import {loginUser, registerUser} from '../services/authService';
+import type { UserRole } from '../types/userRole';
 
 // This file replaces my AuthContext.tsx for storing/taking care of cookies for being logged in.
 
@@ -33,6 +34,7 @@ type AuthState = {
     token: string | null,
     userName: string | null,
     isAuthenticated: boolean,
+    roleLevel: UserRole | null,
     status: 'idle' | 'loading' | 'succeeded' | 'failed',  // <- standard RTK (Redux Toolkit) async lifecycle
     error: string | null
 };
@@ -56,6 +58,7 @@ const initialState: AuthState = {
     token: null,
     userName: null,
     isAuthenticated: false,
+    roleLevel: null,
     status: 'idle',
     error: null
 };
@@ -86,7 +89,11 @@ export const loginThunk = createAsyncThunk(
         // Runs the loginUser() method from frontend/src/services/authService.ts
         const data = await loginUser(userName, password);
 
-        return {token: data.token as string, userName};
+        // Note on Casting: Here I am casting data.token and date.roleLevel
+        // since those variable types are unclear.
+        // Since userName was passed in as a parameter to this loginThunk as a string,
+        // I do not need to cast it since this loginThunk already knows that userName is a string.
+        return {token: data.token as string, userName, roleLevel: data.roleLevel as UserRole};
 
     }
 );
@@ -97,7 +104,7 @@ export const registerThunk = createAsyncThunk(
 
         // Runs the registerUser() method from frontend/src/services/authService.ts
         const data = await registerUser(userName, email, password);
-        return {token: data.token as string, userName};
+        return {token: data.token as string, userName, roleLevel: data.roleLevel as UserRole};
 
     }
 );
@@ -123,7 +130,7 @@ const authSlice = createSlice({
         // action.payload will have when it is inputted here as a parameter
 
         
-        setCredentials: (state, action: PayloadAction<{token: string; userName: string}>)  => {
+        setCredentials: (state, action: PayloadAction<{token: string; userName: string; roleLevel: UserRole | null}>)  => {
 
             // RTK (Reducer Toolkit Library) runs my reducer code
             // through a library called Immer, which intercepts code
@@ -134,6 +141,7 @@ const authSlice = createSlice({
             state.token = action.payload.token;
             state.userName = action.payload.userName;
             state.isAuthenticated = true;
+            state.roleLevel = action.payload.roleLevel;
         },
 
         // Replaces the logout() function
@@ -143,6 +151,7 @@ const authSlice = createSlice({
             state.token = null;
             state.userName = null;
             state.isAuthenticated = false;
+            state.roleLevel = null;
 
             // If a user logs out after, way beforehand, he had had an error hwen logging in much earlier,
             // let's clear the error and the status just in case.
@@ -165,6 +174,7 @@ const authSlice = createSlice({
             state.token = action.payload.token;
             state.userName = action.payload.userName;
             state.isAuthenticated = true;
+            state.roleLevel = action.payload.roleLevel;
             state.status = 'succeeded';
             state.error = null;
         });
@@ -186,7 +196,10 @@ const authSlice = createSlice({
         builder.addCase(registerThunk.fulfilled, (state, action) => {
             state.token = action.payload.token;
             state.userName = action.payload.userName;
+            state.roleLevel = action.payload.roleLevel;
             state.isAuthenticated = true;
+            state.status = 'succeeded';
+            state.error = null;
         });
 
         // Just copy-pasted from loginThunk, but for registerThunk

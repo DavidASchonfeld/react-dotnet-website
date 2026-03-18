@@ -23,7 +23,15 @@ React-Redux:
 Redux-Persist
 -- replaces localStore.getItem/setItem from my handmade AuthContext.tsx file 
 
+## Layer Separation Here in Front-End
 
+-- Pages / Components (what user sees, calls dispatch(), reads states with useSelector())
+    | dispatch(fetchMyLists(token))
+-- Slices (Redux)  (holds state; manages async, knows about loading/error/success)
+    | getMyMediaListS(token)
+-- Services        (pure fetch() calls to the backend/HTTP; no Redux, just HTTP/JSON handling)
+    | HttpRequest
+-- Backend API (in the Backend half of this project)
 
 
 ############### Generated from Vite ###################

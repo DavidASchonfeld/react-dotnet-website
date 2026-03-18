@@ -10,9 +10,9 @@ public class MediaItemService : IMediaItemService
     }
 
 
-    public async Task<ServiceResult<MediaItemDetailDto>> GetMediaItemDetailAsync(int mediaItemId, string requesterId)
+    public async Task<ServiceResult<MediaItemDetailDto>> GetMediaItemDetailAsync(int mediaItemId, string requesterUserId)
     {
-        var requesterUser = await _context.Users.FindAsync(requesterId);
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<MediaItemDetailDto>.Unauthorized();
 
         var mediaItemObject = await _context.MediaItems.FindAsync(mediaItemId);
@@ -36,9 +36,9 @@ public class MediaItemService : IMediaItemService
     }
 
 
-    public async Task<ServiceResult<List<MediaItemSummaryDto>>> GetAllApprovedMediaItemsForAdminAsync(string requesterId)
+    public async Task<ServiceResult<List<MediaItemSummaryDto>>> GetAllApprovedMediaItemsForAdminAsync(string requesterUserId)
     {
-        var requesterUser = await _context.Users.FindAsync(requesterId);
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<List<MediaItemSummaryDto>>.Unauthorized();
 
         if (!PermissionHelper.IsAdministrator(requesterUser))
@@ -58,12 +58,12 @@ public class MediaItemService : IMediaItemService
     }
 
 
-    public async Task<ServiceResult<List<MediaItemSummaryDto>>> GetRandomAsync(int amount, string requesterId)
+    public async Task<ServiceResult<List<MediaItemSummaryDto>>> GetRandomAsync(int amount, string requesterUserId)
     {
         if (amount <= 0 || amount > 5)
             return ServiceResult<List<MediaItemSummaryDto>>.BadRequest("Amount must be between 1 and 5.");
         
-        var requesterUser = await _context.Users.FindAsync(requesterId);
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<List<MediaItemSummaryDto>>.Unauthorized();
 
         var mediaItems = await _context.MediaItems
@@ -82,9 +82,9 @@ public class MediaItemService : IMediaItemService
 
     }
 
-    public async Task<ServiceResult<MediaItem>> CreateMediaItemAsync(CreateMediaItemDto dto, string requesterId)
+    public async Task<ServiceResult<MediaItem>> CreateMediaItemAsync(CreateMediaItemDto dto, string requesterUserId)
     {
-        var requesterUser = await _context.Users.FindAsync(requesterId);
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<MediaItem>.Unauthorized();
 
         var newItem = new MediaItem
@@ -94,7 +94,7 @@ public class MediaItemService : IMediaItemService
             Description = dto.Description,
             IsApproved = false,  // By default, IsApproved will be set to false
             PublishedDateTime = dto.PublishedDateTime,
-            SubmittedById = requesterId,
+            SubmittedById = requesterUserId,
             DateSubmitted = DateTime.UtcNow
         };
 
@@ -106,9 +106,9 @@ public class MediaItemService : IMediaItemService
         return ServiceResult<MediaItem>.Ok(newItem);
     }
 
-    public async Task<ServiceResult<bool>> DeleteMediaItemAsync(int mediaItemId, string requesterId)
+    public async Task<ServiceResult<bool>> DeleteMediaItemAsync(int mediaItemId, string requesterUserId)
     {
-        var requesterUser = await _context.Users.FindAsync(requesterId);
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<bool>.Unauthorized();
 
         var mediaItemObject = await _context.MediaItems.FindAsync(mediaItemId);
@@ -125,9 +125,10 @@ public class MediaItemService : IMediaItemService
     }
 
 
-    public async Task<ServiceResult<MediaItemDetailDto>> UpdateMediaItemAsync(int mediaItemId, UpdateMediaItemNotLinksDto dto, string requesterId)
+    // Patching Non-Linked (aka Basic) Items
+    public async Task<ServiceResult<MediaItemDetailDto>> PatchMediaItemBasicInfoAsync(int mediaItemId, UpdateMediaItemBasicInfoDto dto, string requesterUserId)
     {
-        var requesterUser = await _context.Users.FindAsync(requesterId);
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<MediaItemDetailDto>.Unauthorized();
 
         var mediaItemObject = await _context.MediaItems.FindAsync(mediaItemId);
