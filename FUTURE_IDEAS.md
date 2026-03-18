@@ -64,5 +64,5 @@ TODO: Implement into the MediaItem creation process:
 
 
 Give admin users the ability to see other users and give/take away their special roles as Moderator
-
+Maybe: Make the processs of giving/taking away special user roles like Moderator, but in a more complicated way, like giving Moderators the ability to updrade regular users to Moderator (but not the ability to demote them - otherwise, it might cause potential drama/craziness, so only Admins could do that.)
 

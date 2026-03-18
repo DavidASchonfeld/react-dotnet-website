@@ -73,8 +73,6 @@ builder.Services.AddAuthentication(options =>
 
 
 
-///////
-
 
 
 // Register Service Files
@@ -83,6 +81,7 @@ builder.Services.AddScoped<IMediaTypeService, MediaTypeService>();
 builder.Services.AddScoped<IMediaItemService, MediaItemService>();
 builder.Services.AddScoped<IMediaListService, MediaListService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IUserService, UserService>();
 // Every time the backend receives an HTTPRequest the DI Container wakes up a creates a "scope" for this request
 //  -- new AppDbContext()
 //  -- Here in this .AddScoped(), it will also create these services too.
