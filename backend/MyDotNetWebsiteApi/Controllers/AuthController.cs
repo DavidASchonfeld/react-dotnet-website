@@ -53,7 +53,10 @@ public class AuthController : ControllerBase
         // Generate JWT Token
         var token = _tokenService.GenerateJwtToken(user);
 
-        return Ok(new {token = token});
+        // This is about letting the front-end know which RoleLevel the user has
+        // for the UI (the actual permissions and double-checking that the user
+        // actually has those permissions will still be in the backend)
+        return Ok(new {token = token, roleLevel = user.RoleLevel.ToString()});
     }
 
 
@@ -75,7 +78,10 @@ public class AuthController : ControllerBase
         // Return Token
         // The Ok method: Returns a 200 Website Code to show that it worked.
         // new {token = token}   Anonymous object which gets converted to JSON. {"token": "fhw98h2....."}
-        return Ok(new {token = token});
+        // This is about letting the front-end know which RoleLevel the user has
+        // for the UI (the actual permissions and double-checking that the user
+        // actually has those permissions will still be in the backend)
+        return Ok(new {token = token, roleLevel = userToCheck.RoleLevel.ToString()});
         
     }
 

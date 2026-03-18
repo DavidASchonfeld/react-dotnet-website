@@ -44,7 +44,10 @@ public class TokenService : ITokenService
 
             // user.Email! tells C# to ignore that user.Email could be null, since Claim must have non-null
             // So ! means: Trust me, C#. This value will never be null.
-            new Claim(JwtRegisteredClaimNames.Email, user.Email!)
+            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+
+            // Also going to tell the front-end if the current user is a special status user (Ex: Admin, Moderator)
+            new Claim("RoleLevel", user.RoleLevel.ToString()) 
         };
 
 
