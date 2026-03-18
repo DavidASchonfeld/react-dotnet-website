@@ -103,7 +103,9 @@ builder.Services.AddControllers();
 //   "CorsSettings": {
 //     "AllowedOrigin": "http://localhost:1234" (The actual port number in my appsettings.json is different)
 //   }
-//  "allowedOrigin" will be the host URL for this website
+//  "allowedOrigin" is the URL for the front-end part of the website.
+// Adding CORs is about letting our backend accept HTTP Requests from the front-end of our website,
+// This means that we need to tell our backend here our frontend's URL so it can recognize that requests coming from the frontend are coming from the frontend
 var allowedOrigin = builder.Configuration["CorsSettings:AllowedOrigin"]!;
 
 
@@ -115,7 +117,7 @@ builder.Services.AddCors(options => {
     options.AddPolicy("AllowReactApp", policy =>
     {
 
-        // allowedOrigin is the host URL for this website
+        // allowedOrigin is the frontend URL for this website (more details are right above "var allowedOrigin" line.)
        policy.WithOrigins(allowedOrigin)
             .AllowAnyHeader()
             .AllowAnyMethod(); 
@@ -201,6 +203,123 @@ app.UseAuthorization();
 // Map controllers to the routing system.
 // This is needed. Without it, requests never reach controllers.
 app.MapControllers();
+
+
+
+
+
+// Seed initial admin user if none exists already.
+// Credentials (user/password/etc.) are read from
+// -- (Development): user-secrets
+// -- (Production ): environment variables
+
+ // Since app hasn't started running yet, I am creating a temporary scope here
+ // to the user to make that admin user.
+ // The "using" means that after this code chunk, this scope will be cleaned up/disposed when the block is finished
+ // (so it releases its connection the Database)
+using (var scope = app.Services.CreateScope()) 
+{
+
+    // Pulls .NET's built-in UserManager for CRUDing users.
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+
+    // Pulls IConfiguration (unified config object that pulls settings from appsettings,json, user-secrets and environment variables all into 1 place.)
+    // To read from IConfiguration, you do config["Key:SubKey"]
+    // For Example ["SeedAdmin:UserName"] as seen in the structure below:
+    // {
+    //     "SeedAdmin": {
+    //         "UserName": "admin"
+    //     }
+    // }
+    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+
+    // Adding a logger for logging errors:
+    // logger is a built-in C#/.NET program for logging errors:
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+
+    // Definition for this method is below, in this same Program.cs file.
+    await SeedInitialAdminAsync(userManager, config, logger);
+}
+
+
+
+// Only runs on first-ever startup (then never again), creates an admin account
+// async/Task because it accesses the database (which is an async action)
+async Task SeedInitialAdminAsync(UserManager<AppUser> userManager, IConfiguration config, ILogger<Program> logger)
+{
+    
+    // Do not run if admin already exists in the database
+    if (userManager.Users.Any(u => u.RoleLevel == UserRoleLevel.Administrator))
+        return;
+    
+    var username = config["SeedAdmin:UserName"];
+    var password = config["SeedAdmin:Password"];
+    var email = config["SeedAdmin:Email"];
+
+
+
+    // If credentials (aka user/pass/email) are not configured,
+    // skip without throwing errors (Still write in the log about it)
+    // Why are we continuing even though the admin user was not creatd?
+    // These valid skip scenarios are all automated/non-interactive runs:
+    //
+    // -- CI (Continuous Integration) pipeline aka runs everything automatically
+    // that you push this into Git, so it typically
+    // ---- pulls your code
+    // ---- builds it (dotnet build)
+    // ---- runs tests (dotnet test)
+    // ---- and reports pass/fail back to GitHub.
+    //    So CI only builds/tests, and therefore no real DB state is needed.
+    //
+    // -- Integration tests (aka testing data manually). Test data is managed by the test framework, not by startup seeding
+    //
+    // -- Docker health-check containers (which only need the webapp to start without errors)
+
+    if (username == null || password == null)
+    {
+        logger.LogWarning("SeedAdmin credentials were not configured because user and/or password were blank - skipping admin seeding.");
+        return; 
+    }
+    
+    // Builds the user object in memory (In C# - not yet in the DB)
+    var admin = new AppUser
+    {
+        UserName = username,
+        Email = email,
+        RoleLevel = UserRoleLevel.Administrator
+    };
+
+    // Writes to DB
+    var result = await userManager.CreateAsync(admin, password);
+
+    // This line below is not needed since
+    // userManager.CreateAsync (the line above)
+    // already built-in calls that flush method inside
+    // Also, we had not passed in a _context, so the line would not work anyway.
+    // And userManager already has that built-in connection to the DB.
+    // 
+    // await _context.SaveChangesAsync();  // Flushes changes
+
+    
+    if (!result.Succeeded)
+    {
+        var errorsString = string.Join(", ", result.Errors.Select(e => e.Description));
+        logger.LogError("Failed to seed admin user. Error(s): {Errors}", errorsString);
+
+        // Throw an error so the app does not run. I don't want the website to run
+        // if no administrator exists and the seeding for an administrator does not work.
+        throw new InvalidOperationException($"Admin user seeding failed. Error(s): {errorsString}");
+
+    }
+    else
+    {
+        // Logging the creation:
+        logger.LogInformation("Seeded initial admin user '{UserName}'", username);
+    }
+   
+}
+
 
 
 

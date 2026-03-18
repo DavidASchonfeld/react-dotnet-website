@@ -4,9 +4,16 @@ public class UserService : IUserService
 {
     private readonly AppDbContext _context;
 
-    public UserService(AppDbContext context)
+    // Right now, only adding logger to this service, UserService,
+    // since this is the most important/impactful service
+    // since maintianing users is very important for security/access
+    // Reminder: Logger is a built-in C#/.NET program for logging.
+    private readonly ILogger<UserService> _logger;
+
+    public UserService(AppDbContext context, ILogger<UserService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
 
@@ -57,23 +64,30 @@ public class UserService : IUserService
         }
 
         // Find User
-        var userToUpdate = await _context.Users.FindAsync(targetUserId);
+        var targetUser = await _context.Users.FindAsync(targetUserId);
 
-        if (userToUpdate == null)
+        if (targetUser == null)
             return ServiceResult<UserSummaryDto>.NotFound();
 
         // Change it
-        userToUpdate.RoleLevel = dto.NewRoleLevel;
+        targetUser.RoleLevel = dto.NewRoleLevel;
 
         await _context.SaveChangesAsync();  // Flush changes
+        
+        // Log the change:
+        _logger.LogInformation(
+            "User '{RequesterUserName}' (id: {RequesterUserId}) changed role of '{TargetedUserName}' (id: {TargetUserId}) to {NewRole}",
+            requesterUser.UserName, requesterUserId, targetUser.UserName, targetUserId, dto.NewRoleLevel
+        );
+
 
         // Return UserSummaryDto
         return ServiceResult<UserSummaryDto>.Ok(new UserSummaryDto
         {
-            Id = userToUpdate.Id,
-            UserName = userToUpdate.UserName!,
-            Email = userToUpdate.Email,
-            RoleLevel = userToUpdate.RoleLevel
+            Id = targetUser.Id,
+            UserName = targetUser.UserName!,
+            Email = targetUser.Email,
+            RoleLevel = targetUser.RoleLevel
 
         });
 

@@ -28,3 +28,9 @@ Backend:
 -- DTOs
 -- .cs Files in the "Models" folder
 
+
+
+Never Commit to Github:
+-- .env with important values (secrets, etc.)
+-- appsettings.Development.json and appsettings.Production.json (could contain user/passwords)
+-- any file that contains any passwords, API keys, JWT (Json Web Token) secrets etc.

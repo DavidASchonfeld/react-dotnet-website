@@ -5,6 +5,8 @@ Simple classes that represent data that is being transferred.
 
 
 # Note on Annotations:
+To use, put this in the top of the DTO file: 
+using System.ComponentModel.DataAnnotations;
 
 Example Annotated Variable:
 [Required]
