@@ -26,7 +26,7 @@ export default function Navbar() {
 
 
     // Pulling in ability to dispatch functions and get username:
-    const { userName } = useSelector((state: RootState) => state.auth);
+    const { userName, roleLevel } = useSelector((state: RootState) => state.auth);
     const dispatch = useDispatch<AppDispatch>();
     
 
@@ -74,7 +74,20 @@ export default function Navbar() {
                         ⇤⤒⬇︎▼▲—|⬅︎⬆︎
                         */}
                         <button onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
-                            {userName} {isUserMenuOpen ? "▲" : "▼"}
+                            {userName}
+                            {/* If the user is a Moderator or an Administrator,
+                            display a badge describing if he is a moderator or administrator
+                            ml-1 means: Margin-Left add space 1
+                            bg-amber-500 means set background to amber and use amber shade 500 (I could use any number between 50 and 950.)
+                            
+                            */}
+                            {roleLevel === 'Moderator' && (
+                                <span className="ml-1 text-xs bg-silver-600 text-white px-1 rounded">MOD</span>
+                            )}
+                            {roleLevel === 'Administrator' && (
+                                <span className="ml-1 text-xs bg-amber-500 text-white px-1 rounded">ADMIN</span>
+                            )}
+                            {isUserMenuOpen ? "▲" : "▼"}
                         </button>
 
                         {/* The Dropdown Menu */}
@@ -88,6 +101,13 @@ export default function Navbar() {
                                 */}
 
                                 <button onClick={() => navigate("/my-medialists")}>My Lists</button>
+                                
+                                {/* This option only appears to users who are Administrators */}
+                                {roleLevel === 'Administrator' && (
+                                    <button onClick={() => navigate("/admin/users")}>Manage Users</button>
+                                )}
+
+
                                 <button onClick={handleLogout}>Log Out</button>
                             </div>
                         )}

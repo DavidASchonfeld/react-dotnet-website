@@ -16,10 +16,13 @@ import Navbar from './components/Navbar'
 import LoginOrRegisterPage from './pages/LoginOrRegisterPage'
 import MyMediaListsPage from './pages/MyMediaListsPage'
 import MediaListDetailPage from './pages/MediaListDetailPage'
+import AdminManageAllUsersPage from './pages/AdminManageAllUsersPage'
 
 // Other of My Code
 import { fetchAllApprovedMediaTypes } from './store/mediaTypesSlice'
 import type { AppDispatch, RootState } from './store/store'
+import AdminRoute from './components/AdminRoute'
+
 
 
 function App() {
@@ -54,6 +57,14 @@ function App() {
               <MediaListDetailPage />
           </ProtectedRoute>
         } />
+
+        <Route path = "/admin/users" element = {
+          <AdminRoute>
+            <AdminManageAllUsersPage />
+          </AdminRoute>
+        } />
+
+
       </Routes>
     </>
   )
