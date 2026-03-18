@@ -18,6 +18,7 @@ public class MediaTypeService : IMediaTypeService
             {
                 Id = t.Id,
                 Name = t.Name,
+                Icon = t.Icon,
                 Description = t.Description,
                 IsApproved = t.IsApproved
             })
@@ -40,6 +41,7 @@ public class MediaTypeService : IMediaTypeService
         {
             Id = targetedMediaType.Id,
             Name = targetedMediaType.Name,
+            Icon = targetedMediaType.Icon,
             Description = targetedMediaType.Description,
             SubmittedById = targetedMediaType.SubmittedById,
             DateSubmitted = targetedMediaType.DateSubmitted,

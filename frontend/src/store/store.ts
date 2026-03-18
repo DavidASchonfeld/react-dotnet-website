@@ -8,6 +8,7 @@ import storage from 'redux-persist/lib/storage';
 import authReducer from './authSlice'
 import mediaListsReducer from './mediaListsSlice';
 import mediaItemsReducer from './mediaItemsSlice';
+import mediaTypesReducer from './mediaTypesSlice';
 
 
 
@@ -17,6 +18,7 @@ const rootReducer = combineReducers({
     auth: authReducer,
     mediaLists: mediaListsReducer,
     mediaItems: mediaItemsReducer,
+    mediaTypes: mediaTypesReducer
 })
 
 // ---- Persist config -----

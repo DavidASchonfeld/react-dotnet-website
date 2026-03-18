@@ -1,5 +1,24 @@
 import { BACKEND_BASE_URL } from "../config";
-import type { MediaTypeSummary } from "../types/mediaType";
+import type { MediaTypeSummary, MediaTypeDetail } from "../types/mediaType";
+
+
+export async function getMediaTypeById(token: string, mediaTypeId: number): Promise<MediaTypeDetail>
+{
+    const response = await fetch(`${BACKEND_BASE_URL}/api/mediatype/${mediaTypeId}`, {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization" : `Bearer ${token}`
+        },
+        // No body needed for this API call.
+    });
+    
+    if (!response.ok)
+        throw new Error(`MediaType ${mediaTypeId} was not found`);
+
+
+    const data: MediaTypeDetail = await response.json();
+    return data;
+}
 
 
 export async function getAllApprovedMediaTypes(token: string): Promise<MediaTypeSummary[]>
@@ -14,6 +33,5 @@ export async function getAllApprovedMediaTypes(token: string): Promise<MediaType
         throw new Error("Failed to fetch media types");
 
     const data: MediaTypeSummary[] = await response.json();
-        
     return data;
 }

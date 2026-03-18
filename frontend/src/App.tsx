@@ -3,6 +3,8 @@ import './App.css'
 // My Additional Imports
 //// React Router (External Library)
 import {Routes, Route} from 'react-router-dom'
+import { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 
 // My Code:
 /// Component
@@ -15,8 +17,23 @@ import LoginOrRegisterPage from './pages/LoginOrRegisterPage'
 import MyMediaListsPage from './pages/MyMediaListsPage'
 import MediaListDetailPage from './pages/MediaListDetailPage'
 
+// Other of My Code
+import { fetchAllApprovedMediaTypes } from './store/mediaTypesSlice'
+import type { AppDispatch, RootState } from './store/store'
+
+
 function App() {
 
+  // When Website loads, pull in all MediaType details
+  // into a frontend store in Redux
+  const { token } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
+  useEffect(() => {
+    if (token) dispatch(fetchAllApprovedMediaTypes(token));
+  }, [token, dispatch]);
+
+
+  // The entire Website Structure
   return (
     <> 
       <Navbar />

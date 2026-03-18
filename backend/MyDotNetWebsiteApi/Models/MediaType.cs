@@ -3,6 +3,10 @@ public class MediaType
     ///// Real SQL Columns
     public int Id {get; set; }
     public string Name {get; set;} = string.Empty;
+
+    // Icon is a string because (for the time being) it is an emoji.
+    public string Icon {get; set;} = string.Empty;
+
     public string? Description {get; set;}
 
 

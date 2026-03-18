@@ -145,5 +145,7 @@ curl -v -X PATCH http://localhost:5198/api/medialist/1/items/2 -H "Content-Type:
 
 Backend Uses the Controller, Services, Models structure to separate logic.
 -- Controller - like in "Models, View, Controller" the frontend that controls HTTP Endpoints etc. Like a Waiter
+----- Uses DTOs (the backend equivalent of "types") to communicate with the frontend
 -- Services - controls the logic (like permissions for users to be able to access certain data). Like a Chef
 -- Models/Database Access: Like a Pantry/Storeroom
+------ Models are stored in .cs files in the Models folder

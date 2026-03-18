@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 // My Code
 import type { RootState, AppDispatch } from '../store/store';
 import { fetchListDetail, clearSelectedListDetail} from '../store/mediaListsSlice';
+import MediaTypeLabel from '../components/MediaTypeLabel';
 
 
 
@@ -28,12 +29,15 @@ export default function MediaListDetailPage() {
     //      called "id" with type "string".
     const { id } = useParams<{ id: string }>();
 
+    // Get Details of selected MediaList from store (aka Redux)(and if store doesn't have it, it will send commands to Service which will send HTTP requests to backend)
     const { selectedMediaListDetail, status, error } = useSelector((state: RootState) => state.mediaLists); 
+
     const { token } = useSelector((state: RootState) => state.auth);
+    
     const dispatch = useDispatch<AppDispatch>();
 
 
-
+    // Runs only once (unless any of its dependencies (dispatch, token, id) changes)
     useEffect(()=> {
         // Since this function is here in the useEffect() body,
         // it runs as soon as this component is rendered (aka shown on the screen.)
@@ -52,7 +56,6 @@ export default function MediaListDetailPage() {
 
 
 
-
     if (status === 'loading') return <div>Loading...</div>
     if (error) return <div>{error}</div>
     if (!selectedMediaListDetail) return null
@@ -66,7 +69,7 @@ export default function MediaListDetailPage() {
             {selectedMediaListDetail.listContent.map(mediaItem => (
                 <div key={mediaItem.id}>
                     <p>{mediaItem.name}</p>
-                    <p>Media Type Id: {mediaItem.mediaTypeId}</p>
+                    <MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} />
                 </div>
             ))}
         </div>
