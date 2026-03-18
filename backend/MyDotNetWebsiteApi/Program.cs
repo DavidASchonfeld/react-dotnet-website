@@ -152,6 +152,34 @@ else
 //// Activate the CORS we described in the builder.Services.AddCors section above
 app.UseCors("AllowReactApp");
 
+// Global exception handler — catches any unhandled exception and returns a ProblemDetails JSON response.
+// Placed before UseAuthentication so it wraps the entire auth + controller pipeline.
+// We are putting this here so if this website has any error,
+// this code block only shows a standardized vague error
+// in order to hide the actual error from customers
+// for
+// -- security purposes
+// -- potential problems from the errors
+// ----- consistency (in case an error causes random effects)
+// ----- and to prevent an error from sending out an Ok 200 Http Code
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/problem+json";
+
+        // Creates a ProblemDetails (for showing HttpResposne Error)
+        // ProblemDetails is a .NET-build-in class for standardizing showing the HttpError
+        var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails
+        {
+            Status = 500,
+            Title = "An unexpected error occurred."
+        };
+        await context.Response.WriteAsJsonAsync(problem);
+    });
+});
+
 // Enable Authentication and Authorization
 // Checking incoming requeets for Authentication Tokens.
 // Without this, tokens (including JWT(Json Web Tokens) tokens) would not be looked for/checked.

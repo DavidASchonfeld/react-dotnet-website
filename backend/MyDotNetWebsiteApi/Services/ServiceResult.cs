@@ -55,16 +55,8 @@ public static class ServiceResultExtensions
     public static IActionResult ToActionResult<T>(this ServiceResult<T> result, ControllerBase controller)
     {
         if (result.IsSuccess) return controller.Ok(result.Data);
-        return controller.StatusCode(result.StatusCode, result.ErrorMessage);
-        // return result.StatusCode switch
-        // {
-        //     400 => controller.BadRequest(result.ErrorMessage),
-        //     401 => controller.Unauthorized(),
-        //     403 => controller.Forbid(),
-        //     404 => controller.NotFound(result.ErrorMessage),
-        //     409 => controller.Conflict(result.ErrorMessage),
-        //     501 => controller.StatusCode(501, result.ErrorMessage),
-        //     _ => controller.StatusCode(result.StatusCode, result.ErrorMessage)
-        // };
+        
+        // controller.Problem is a C#/.NET built-in method to auto-full the title from HttpStatusCode
+        return controller.Problem(detail: result.ErrorMessage, statusCode: result.StatusCode);
     }
 }
