@@ -100,6 +100,13 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 // Without this, my API endpoints won't be discovered nor routed.
 builder.Services.AddControllers();
 
+// The following line pulls from this logic from the appsettings.json:
+//   "CorsSettings": {
+//     "AllowedOrigin": "http://localhost:1234" (The actual port number in my appsettings.json is different)
+//   }
+//  "allowedOrigin" will be the host URL for this website
+var allowedOrigin = builder.Configuration["CorsSettings:AllowedOrigin"]!;
+
 
 // Configure CORS
 // Allows my app to allow requests from the listed url typed below (Example: http://localhost:5173).
@@ -108,7 +115,9 @@ builder.Services.AddControllers();
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowReactApp", policy =>
     {
-       policy.WithOrigins("http://localhost:5173")
+
+        // allowedOrigin is the host URL for this website
+       policy.WithOrigins(allowedOrigin)
             .AllowAnyHeader()
             .AllowAnyMethod(); 
     });
