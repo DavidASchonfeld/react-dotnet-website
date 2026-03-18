@@ -77,8 +77,22 @@ builder.Services.AddAuthentication(options =>
 
 
 
-
-
+// Register Service Files
+//  (They are in the backend/MyDotNetWebsiteApi/Services folder)
+builder.Services.AddScoped<IMediaTypeService, MediaTypeService>();
+builder.Services.AddScoped<IMediaItemService, MediaItemService>();
+builder.Services.AddScoped<IMediaListService, MediaListService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+// Every time the backend receives an HTTPRequest the DI Container wakes up a creates a "scope" for this request
+//  -- new AppDbContext()
+//  -- Here in this .AddScoped(), it will also create these services too.
+//  -- the controllers will be created, injected with the Service
+//  -- the GetMyLists() runs, queries DB, returns response
+//  -- response is sent to the browser
+//  -- Scope is disposed (aka destroyed):
+//  ---- MediaListService.Dispose() called (if it has one)
+//  ---- AppDbContext.Dispose() called <- important since it releases the DB connection
+//  ---- those objects are garbage collected
 
 
 // Register Controllers

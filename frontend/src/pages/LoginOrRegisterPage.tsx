@@ -24,7 +24,7 @@ export default function LoginOrRegisterPage() {
     const authError = useSelector((state: RootState) => state.auth.error);
 
 
-    const handleSubmit = async (e: React.SyntheticEvent) => {
+    const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
 
 
         // Prevents the Default action (which would be, after submitting a form, refreshing a page)
