@@ -139,3 +139,11 @@ curl -v -X POST http://localhost:5198/api/medialist/1/items/2 -H "Content-Type: 
 # Moving MediaItem inside MediaList:
 Curl Command:
 curl -v -X PATCH http://localhost:5198/api/medialist/1/items/2 -H "Content-Type: application/json" -H "Authorization: Bearer PUT_MY_TOKEN_HERE" -d '{"newPosition": 1}'
+
+
+
+
+Backend Uses the Controller, Services, Models structure to separate logic.
+-- Controller - like in "Models, View, Controller" the frontend that controls HTTP Endpoints etc. Like a Waiter
+-- Services - controls the logic (like permissions for users to be able to access certain data). Like a Chef
+-- Models/Database Access: Like a Pantry/Storeroom

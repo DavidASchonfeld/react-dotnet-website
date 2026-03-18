@@ -63,5 +63,6 @@ TODO: Implement into the MediaItem creation process:
 -- Genres
 
 
+Give admin users the ability to see other users and give/take away their special roles as Moderator
 
 

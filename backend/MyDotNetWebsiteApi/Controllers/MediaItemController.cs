@@ -62,7 +62,13 @@ public class MediaItemController : ControllerBase
         return result.ToActionResult(this);
     }
 
-
+    [HttpPatch("{mediaItemId}")]
+    public async Task<IActionResult> UpdateMediaItem(int mediaItemId, [FromBody] UpdateMediaItemNotLinksDto dto)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaItemService.UpdateMediaItemAsync(mediaItemId, dto, requesterUserId);
+        return result.ToActionResult(this);
+    }
 
 
 

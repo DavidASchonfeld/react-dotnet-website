@@ -125,6 +125,41 @@ public class MediaItemService : IMediaItemService
     }
 
 
+    public async Task<ServiceResult<MediaItemDetailDto>> UpdateMediaItemAsync(int mediaItemId, UpdateMediaItemNotLinksDto dto, string requesterId)
+    {
+        var requesterUser = await _context.Users.FindAsync(requesterId);
+        if (requesterUser == null) return ServiceResult<MediaItemDetailDto>.Unauthorized();
+
+        var mediaItemObject = await _context.MediaItems.FindAsync(mediaItemId);
+        if (mediaItemObject == null) return ServiceResult<MediaItemDetailDto>.NotFound();
+
+        if (!PermissionHelper.CanModifyOrDeleteItem(requesterUser, mediaItemObject))
+            return ServiceResult<MediaItemDetailDto>.Forbidden();
+
+
+        // Only overwrite the fields that were filled in by the user aka not null in the DTO
+        if (dto.Name != null) mediaItemObject.Name = dto.Name;
+        if (dto.MediaTypeId != null) mediaItemObject.MediaTypeId = dto.MediaTypeId.Value;
+        if (dto.Description != null) mediaItemObject.Description = dto.Description;
+        if (dto.PublishedDateTime != null) mediaItemObject.PublishedDateTime = dto.PublishedDateTime;
+
+        await _context.SaveChangesAsync();  // Flush changes
+
+        return ServiceResult<MediaItemDetailDto>.Ok(new MediaItemDetailDto
+        {
+           Id = mediaItemObject.Id,
+           Name = mediaItemObject.Name,
+           SubmittedById = mediaItemObject.SubmittedById,
+           Description = mediaItemObject.Description,
+           MediaTypeId = mediaItemObject.MediaTypeId,
+           IsApproved = mediaItemObject.IsApproved,
+           PublishedDateTime = mediaItemObject.PublishedDateTime,
+           DateSubmitted = mediaItemObject.DateSubmitted 
+        });
+
+    }
+
+
 
 
 
