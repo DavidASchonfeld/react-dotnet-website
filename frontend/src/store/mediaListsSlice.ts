@@ -8,6 +8,7 @@ import {
     patchListBasicInfo,
     addMediaItemToList,
     removeMediaItemFromList,
+    reorderMediaListItems,
 } from '../services/mediaListService';
 import type { MediaItemSummary } from '../types/mediaItem';
 
@@ -103,6 +104,14 @@ export const removeItemFromList = createAsyncThunk(
     async ({token, mediaListId, mediaItemId }: {token: string; mediaListId: number; mediaItemId: number}) => {
         await removeMediaItemFromList(token, mediaListId, mediaItemId);
         return mediaItemId;  // Return the Id so the state/my Redux logic can filter it out
+    }
+);
+
+export const reorderItemsInList = createAsyncThunk(
+    'mediaLists/reorderItemsInList',
+    async ({token, mediaListId, orderedItemIds}: {token: string; mediaListId: number; orderedItemIds: number[]}) => {
+        await reorderMediaListItems(token, mediaListId, orderedItemIds);
+        return orderedItemIds;
     }
 );
 
@@ -287,6 +296,19 @@ const mediaListsSlice = createSlice({
         builder.addCase(removeItemFromList.rejected, (state, action) => {
             state.status = 'failed';
             state.error = action.error.message ?? 'Failed to update list.';
+        });
+
+
+        // ---- reorderItemsInList -----
+        // Optimistic update is handled locally in the page before dispatch,
+        // so no state mutation needed on fulfilled — just clear any error.
+        builder.addCase(reorderItemsInList.fulfilled, (state) => {
+            state.status = 'succeeded';
+            state.error = null;
+        });
+        builder.addCase(reorderItemsInList.rejected, (state, action) => {
+            state.status = 'failed';
+            state.error = action.error.message ?? 'Failed to reorder list items.';
         });
     }
 });

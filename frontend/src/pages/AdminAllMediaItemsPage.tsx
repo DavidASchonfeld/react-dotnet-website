@@ -1,11 +1,11 @@
 import { useDispatch, useSelector } from "react-redux";
-import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
 import type { AppDispatch, RootState } from "../store/store";
 import { useEffect, useState } from "react";
 import { createMediaItemTHUNK, deleteMediaItemTHUNK, fetchAllApprovedMediaItemsForAdmin, fetchMediaItemDetail, patchMediaItemBasicInfoTHUNK } from "../store/mediaItemsSlice";
 import MediaTypeLabel from "../components/MediaTypeLabel";
 import MediaItemFormModal from "../components/modals/MediaItemFormModal";
 import type { MediaItemDetail } from "../types/mediaItem";
+import ConfirmModal from "../components/modals/ConfirmModal";
 
 
 export default function AdminAllMediaItemsPage() {
@@ -141,8 +141,12 @@ export default function AdminAllMediaItemsPage() {
             {showCreateModal && <MediaItemFormModal onConfirm={handleCreate} onCancel={() => setShowCreateModal(false)} />}
             {mediaItemToEdit && <MediaItemFormModal existingItem = {mediaItemToEdit} onConfirm={handleEdit} onCancel={() => setMediaItemToEdit(null)} />}
             {mediaItemToDeleteId !== null && (
-                <DeleteConfirmModal
-                    itemName={mediaItems.find(i => i.id === mediaItemToDeleteId)?.name ?? ''}
+                <ConfirmModal
+                    // NOTE on JavaScript Format:
+                    // Right: title = "" or {""} or title = attributeName
+                    // Wrong: title = {} or () or [] etc.
+                    title={`Do you want to delete "${mediaItems.find(i => i.id === mediaItemToDeleteId)?.name ?? ''}"?`}
+                    message=""
                     onConfirm={confirmDelete}
                     onCancel={() => setMediaItemToDeleteId(null)}
                 />

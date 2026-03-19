@@ -82,6 +82,14 @@ public class MediaListController : ControllerBase
         return result.ToActionResult(this);
     }
 
+    [HttpPatch("{mediaListId}/reorder")]
+    public async Task<IActionResult> ReorderItems(int mediaListId, [FromBody] ReorderMediaListItemsDto dto)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaListService.ReorderItemsAsync(mediaListId, dto.OrderedItemIds, requesterUserId);
+        return result.ToActionResult(this);
+    }
+
 
 
 

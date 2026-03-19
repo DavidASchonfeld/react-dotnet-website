@@ -106,27 +106,37 @@ export default function Navbar() {
 
                         {/* The Dropdown Menu */}
                         {isUserMenuOpen &&(
-                            <div className = "absolute top-full right-0 bg-white shadow-lg rounded mt-1">
-                                {/* absolute: removes eleemnt from normal page flow, puts it relative to the neatrest relative parent.
-                                This is how we get this menu to float over other elements.
-                                top-full:positions top of dropdown button on the bottom of parent button
-                                mt-1: mt stands for "Margin-Top". Add just 1 to the top of this menu to add a tiny margin
-                                between this menu and the button that opened it.
-                                */}
+                            <>
+                                <div
+                                className = "absolute top-full right-0 bg-white shadow-lg rounded mt-1"
 
-                                <button onClick={() => navigate("/my-medialists")}>My Lists</button>
-                                
-                                {/* These options only appear to users who are Administrators */}
-                                {roleLevel === 'Administrator' && (
-                                    <button onClick={() => navigate("/admin/users")}>Manage Users</button>
-                                )}
-                                {roleLevel === 'Administrator' && (
-                                    <button onClick={() => navigate("/admin/mediaitems")}>Manage Media Items</button>
-                                )}
+                                // This onClick here, on the entire dropdown menu, means that no matter what you click in the dropdown menu itself,
+                                // it will still close the dropdown menu, so the dropdown menu doesn't awkwardly stay open when you navigate to another page.
+                                onClick={() => setIsUserMenuOpen(false)}
+                                >
+                                    {/* absolute: removes eleemnt from normal page flow, puts it relative to the neatrest relative parent.
+                                    This is how we get this menu to float over other elements.
+                                    top-full:positions top of dropdown button on the bottom of parent button
+                                    mt-1: mt stands for "Margin-Top". Add just 1 to the top of this menu to add a tiny margin
+                                    between this menu and the button that opened it.
+                                    */}
+
+                                    <button onClick={() => navigate("/my-medialists")}>My Lists</button>
+                                    
+                                    {/* These options only appear to users who are Administrators */}
+                                    {roleLevel === 'Administrator' && (
+                                        <button onClick={() => navigate("/admin/users")}>Manage Users</button>
+                                    )}
+                                    {roleLevel === 'Administrator' && (
+                                        <button onClick={() => navigate("/admin/mediaitems")}>Manage Media Items</button>
+                                    )}
 
 
-                                <button onClick={handleLogout}>Log Out</button>
-                            </div>
+                                    <button onClick={handleLogout}>Log Out</button>
+                                </div>
+                            </>
+
+                            
                         )}
 
                     </div>

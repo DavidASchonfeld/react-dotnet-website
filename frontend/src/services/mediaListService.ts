@@ -199,6 +199,25 @@ export async function removeMediaItemFromList(token: string, mediaListId: number
 }
 
 
+// Reorder all items in a MediaList by submitting the new ordered array of item IDs
+export async function reorderMediaListItems(token: string, mediaListId: number, orderedItemIds: number[]): Promise<void> {
+    
+    // fetch makes HTTP requests
+    // await: Async call. Waits for response before continuing
+    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}/reorder`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ orderedItemIds }),
+    });
+
+    if (!response.ok)
+        throw new Error('Failed to reorder items in MediaList');
+}
+
+
 // Move 1 MediaItem to a Different Position, still in the same MediaList
 export async function moveMediaItemWithinMediaList(token: string, mediaListId: number, mediaItemId: number, dataToSend: MoveMediaItemWithinMediaListRequest):  Promise<MediaListSummary>  {
 

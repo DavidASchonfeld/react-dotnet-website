@@ -378,6 +378,36 @@ public class MediaListService : IMediaListService
 
     }
 
+    public async Task<ServiceResult<bool>> ReorderItemsAsync(int mediaListId, List<int> orderedItemIds, string requesterUserId)
+    {
+        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
+
+        if (mediaList == null) return ServiceResult<bool>.NotFound();
+        if (requesterUser == null) return ServiceResult<bool>.Unauthorized();
+        if (forbidden) return ServiceResult<bool>.Forbidden();
+
+        var linkRows = await _context.LinkMediaItemToMediaListTable
+            .Where(l => l.HostListId == mediaListId)
+            .ToListAsync();
+
+
+
+        // Verify all submitted MediaItem Ids actually belong to this list
+
+        // This line gets only the MediaItemIds (not the actual MediaItem objects) and puts them into a HashSet.
+        var listItemIds = linkRows.Select(l => l.MediaItemId).ToHashSet();
+        if (orderedItemIds.Count != listItemIds.Count || !orderedItemIds.All(listItemIds.Contains))
+            return ServiceResult<bool>.BadRequest("The submitted MediaItem IDs do not match the list's current contents.");
+
+        // Assign positions based on the submitted order
+        var linkByItemId = linkRows.ToDictionary(l => l.MediaItemId);
+        for (int i = 0; i < orderedItemIds.Count; i++)
+            linkByItemId[orderedItemIds[i]].Position = i;
+
+        await _context.SaveChangesAsync();
+
+        return ServiceResult<bool>.Ok(true);
+    }
 
 
 

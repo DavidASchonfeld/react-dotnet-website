@@ -76,3 +76,31 @@ Give each MediaItem page and Creator page places to give URLS (each with their o
 ---- Label: Official Website, URL: officialWebsite.com
 ---- Label: IMDB Page, URL: imdb.com/thatThing
 ---- Label: Amazon Store, URL: amazon.com/officialBuyOnAmazon
+
+Inspirations for this Website
+-- GoodReads.com
+-- IMDB.com
+-- Spotify.com (except this website does not play songs)
+
+add a search bar to search ALL mediaItems
+--and have a dropdown list of the 5 most popular items when eahc keystroke is typed in the search bar.
+
+Import Data from 3rd Party Websites
+
+Create Default Playlists
+(Inspired by GoodReads):
+-- Have Read, Currently Reading, Want to Read
+
+Recommendation Bar (People who read this book also read this too.)
+
+Add to MediaItemDetailPage
+-- a copy of GoodRead's DropDown
+-- [an icon ]
+
+NavBar:
+-- Minimize/Un-Minize: Make it ACTUALLY Collapse (except an error/tab sticking out)
+-- Make a smoother animation when transitioning to/from the top/left-side modes.
+
+If an album/series/franchise etc. is marked as explict, 
+my system should somehow handle that still
+For example, if someone has "Hide Explicit" Or "Hide PG-13 and Over", anything in that album/series/franchise should also be hidden.
