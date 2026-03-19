@@ -1,6 +1,6 @@
 // React Libraries
 import { useEffect, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
 // My Code
@@ -10,6 +10,7 @@ import MediaTypeLabel from '../components/MediaTypeLabel';
 
 import { fetchRandomMediaItems } from '../store/mediaItemsSlice';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
+import ConfirmModal from '../components/modals/ConfirmModal';
 
 
 
@@ -39,7 +40,6 @@ export default function MediaListDetailPage() {
     const { token } = useSelector((state: RootState) => state.auth);
     
     const dispatch = useDispatch<AppDispatch>();
-    const navigate = useNavigate();
 
 
 
@@ -48,6 +48,7 @@ export default function MediaListDetailPage() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [showAddBrowsePanel, setShowAddBrowsePanel] = useState(false);
     const [searchBarContent, setSearchBarContent] = useState('');
+    const [confirmRemoveItem, setConfirmRemoveItem] = useState<{id: number, name: string} | null>(null);
 
 
     // Runs only once (unless any of its dependencies (dispatch, token, id) changes)
@@ -120,9 +121,10 @@ export default function MediaListDetailPage() {
                     {isEditMode && 
                     <>
                         <button
+                        //TODO: Implement
                         >Edit Position (TODO: Implement)</button>
                         <button onClick={
-                            () => dispatch(removeItemFromList({token: token!, mediaListId: mediaListId, mediaItemId: mediaItem.id}))
+                            () => setConfirmRemoveItem({id: mediaItem.id, name: mediaItem.name})
                         }>Delete</button>
                     </>
                     }
@@ -181,6 +183,20 @@ export default function MediaListDetailPage() {
                         setIsEditModalOpen(false);
                     }}
                     onCancel={ () => setIsEditModalOpen(false)}
+                />
+            )}
+
+            {/* Confirm Modal for Deleting Item from List */}
+            {confirmRemoveItem && (
+                <ConfirmModal
+                    title = {`Remove "${confirmRemoveItem.name}"`}
+                    message = "This item will be removed from the list."
+                    confirmLabel = "Remove"
+                    onConfirm= {() => {
+                        dispatch(removeItemFromList({token: token!, mediaListId, mediaItemId: confirmRemoveItem.id}));
+                        setConfirmRemoveItem(null);
+                    }}
+                    onCancel = { () => setConfirmRemoveItem(null)}
                 />
             )}
         </div>

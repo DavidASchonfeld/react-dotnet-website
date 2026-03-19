@@ -1,12 +1,18 @@
-using Microsoft.EntityFrameworkCore;  // This import is needed for the lookups into the Database.  For example: _context.MediaItems.Where(i => is.IsApproved).ToListAsync();
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;  // This import is needed for the lookups into the Database.  For example: _context.MediaItems.Where(i => is.IsApproved).ToListAsync();
 
 public class MediaItemService : IMediaItemService
 {
     private readonly AppDbContext _context;
 
-    public MediaItemService(AppDbContext context)
+
+    private readonly int _randomAmountHardLimit;
+
+
+    public MediaItemService(AppDbContext context, IOptions<MediaItemSettings> settings)
     {
         _context = context;
+        _randomAmountHardLimit = settings.Value.RandomAmountHardLimit;
     }
 
 
@@ -61,11 +67,15 @@ public class MediaItemService : IMediaItemService
 
     public async Task<ServiceResult<List<MediaItemSummaryDto>>> GetRandomAsync(int amount, string requesterUserId)
     {
-        if (amount <= 0 || amount > 5)
-            return ServiceResult<List<MediaItemSummaryDto>>.BadRequest("Amount must be between 1 and 5.");
+        if (amount <= 0 || amount > _randomAmountHardLimit)
+            return ServiceResult<List<MediaItemSummaryDto>>.BadRequest($"Amount must be between 1 and {_randomAmountHardLimit}.");
         
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<List<MediaItemSummaryDto>>.Unauthorized();
+
+        var availableCount = await _context.MediaItems.CountAsync(i => i.IsApproved);
+        if (amount > availableCount)
+            return ServiceResult<List<MediaItemSummaryDto>>.BadRequest($"Requested {amount} items, but only {availableCount} approved items exist.");
 
         var mediaItems = await _context.MediaItems
             .Where(i => i.IsApproved)  // Only choose from already-approved MediaItem objects

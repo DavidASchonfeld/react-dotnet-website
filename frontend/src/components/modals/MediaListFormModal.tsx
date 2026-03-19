@@ -85,7 +85,7 @@ export default function MediaListFormModal({
                             className = "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
                         >
                             <option value = {VisibilityStatus.Private}>Private</option>
-                            <option value = {VisibilityStatus.Shared}>Shared</option>
+                            {/* <option value = {VisibilityStatus.Shared}>Shared</option> TODO: Implement Sharing.*/}
                             <option value = {VisibilityStatus.Public}>Public</option>
                         </select>
                     )}

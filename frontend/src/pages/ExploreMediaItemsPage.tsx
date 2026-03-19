@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { fetchRandomMediaItems} from "../store/mediaItemsSlice";
 import MediaTypeLabel from "../components/MediaTypeLabel";
 import { Link } from "react-router-dom";
+import { EXPLORE_PAGE_ITEM_COUNT } from "../constants";
 
 
 export default function ExploreMediaItemsPage() {
@@ -23,7 +24,7 @@ export default function ExploreMediaItemsPage() {
     const dispatch = useDispatch<AppDispatch>();
 
     // Number of Random MediaItems to show on this page
-    const amount = 5;
+    const amount = EXPLORE_PAGE_ITEM_COUNT;
 
     useEffect( () => {
         try {

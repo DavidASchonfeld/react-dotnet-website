@@ -72,7 +72,18 @@ builder.Services.AddAuthentication(options =>
 
 
 
+builder.Services.Configure<MediaItemSettings>(
 
+    // Have the website load in the values I put into appsettings.json, specifically in the "MediaItemSettings"
+    builder.Configuration.GetSection("MediaItemSettings")
+
+    // Then, the wraparound method
+    // (  aka "builder.Services.Configure<MediaItemSettings>("  )
+    // associates the setting(s) it loaded into my
+    // backend/MyDotnetWebsiteApi/Settings/MediaITemSettings.cs class I created,
+    // which also has a field inside which matches the variable I named in the appsettings.json
+    // so it knows to match them together.
+);
 
 
 // Register Service Files

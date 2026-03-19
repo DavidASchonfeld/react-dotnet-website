@@ -8,8 +8,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { VisibilityStatus } from '../types/enums';
 import type { RootState, AppDispatch } from '../store/store';
 import { fetchMyLists, createList, deleteList } from '../store/mediaListsSlice';
-import DeleteConfirmModal from '../components/modals/DeleteConfirmModal';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
+import ConfirmModal from '../components/modals/ConfirmModal';
 
 
 
@@ -263,11 +263,13 @@ export default function MyMediaListsPage() {
             ?? means if that value is null, use the string after the "??" */}
             {mediaListToDelete !== null && (
 
-               <DeleteConfirmModal
-                    itemName={mediaLists.find(l=>l.id==mediaListToDelete)?.name ?? ''}
-                    onConfirm={confirmDelete}
-                    onCancel={()=> setMediaListToDelete(null)}
-               />
+               <ConfirmModal
+                    title = {`Remove "${mediaLists.find(l=>l.id==mediaListToDelete)?.name ?? ''}"`}
+                    message = "This item will be removed from the list."
+                    confirmLabel = "Delete"
+                    onConfirm = {confirmDelete}
+                    onCancel = { () => setMediaListToDelete(null)}
+                />
              )}
 
              
