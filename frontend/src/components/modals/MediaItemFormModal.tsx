@@ -3,6 +3,9 @@ import { useSelector } from "react-redux";
 import type { MediaItemDetail } from "../../types/mediaItem";
 import type { RootState } from "../../store/store";
 
+import Select, { type SingleValue } from 'react-select';
+import MediaTypeLabel from "../MediaTypeLabel";
+
 interface Props {
     existingItem?: MediaItemDetail;  // optional. If not here, the mode is to create a MediaItem
     onConfirm: (name: string, description: string, mediaTypeId: number, publishedDateTime: string) => void;
@@ -22,11 +25,19 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
     const mediaTypes = useSelector((state: RootState) => state.mediaTypes.mediaTypes);
     const isEditMode = (existingItem !== undefined);
 
-        function handleSubmit() {
-            if (!name.trim()) return;  // Do not create with an empty name.
-            if (mediaTypeId <= 0) return;  // Do not create without a selected MediaType
-            onConfirm(name, description, mediaTypeId, publishedDateTime);
-        }
+
+    type MediaTypeOption = {value: number; label: string};
+    const selectOptions: MediaTypeOption[] = mediaTypes.map(mediaTypeObject => ({
+        value: mediaTypeObject.id,
+        label: mediaTypeObject.name
+    }));
+
+
+    function handleSubmit() {
+        if (!name.trim()) return;  // Do not create with an empty name.
+        if (mediaTypeId <= 0) return;  // Do not create without a selected MediaType
+        onConfirm(name, description, mediaTypeId, publishedDateTime);
+    }
 
     return (
         <div>
@@ -45,7 +56,9 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
                 onChange={(e) => setDescription(e.target.value)}
             />
 
-            <select
+
+            {/* TODO: DELETE the following:
+                <select
                 value={mediaTypeId}
                 onChange={(e) => setMediaTypeId(parseInt(e.target.value))}
             >
@@ -55,7 +68,20 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
                         {mediaTypeOption.icon} {mediaTypeOption.name}
                     </option>
                 ))}
-            </select>
+            </select> */}
+        <Select<MediaTypeOption>
+            options = {selectOptions}
+            value = {mediaTypeId === 0 ? null : selectOptions.find(o => o.value === mediaTypeId) ?? null}
+            onChange = {(option: SingleValue<MediaTypeOption>) =>
+                setMediaTypeId(option ? option.value : 0)
+            }
+            placeholder = "-- Media Type (Required) --"
+            formatOptionLabel = {(option) => <MediaTypeLabel mediaTypeId = {option.value} />}
+            isClearable = {true}
+        />
+
+
+
 
             <div>
                 <label>Published Date (Optional)</label>
