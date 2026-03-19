@@ -1,19 +1,38 @@
 import { useState } from 'react';
+import { VisibilityStatus } from '../../types/enums';
 
 // This defines what the caller must pass in
 interface Props {
-    onConfirm: (newListName: string, newListDescription: string) => void;  // For this parameter, pass in a function with the input parameters matching this line, and a void output (meaning no output) 
+    mode: 'create' | 'edit';
+    initialName?: string;
+    initialDescription?: string | null;
+    initialVisibility?: VisibilityStatus;
+
+
+
+
+    onConfirm: (newListName: string, newListDescription: string, visibility: VisibilityStatus) => void;  // For this parameter, pass in a function with the input parameters matching this line, and a void output (meaning no output) 
     onCancel: () => void;  // For this parameter, pass in a function
 }
 
 // In this function's parameter, it destructures the Props object into individual named variables
-export default function CreateListModal({ onConfirm, onCancel}: Props){
-    const [newListName, setNewListName] = useState('');
-    const [newListDescription, setNewListDescription] = useState('');
+export default function MediaListFormModal({
+    mode,
+    initialName,
+    initialDescription,
+    initialVisibility,
+
+
+    onConfirm,
+    onCancel
+}: Props){
+    const [name, setName] = useState(initialName ?? '');
+    const [description, setDescription] = useState(initialDescription ?? '');
+    const [visibility, setVisibility] = useState<VisibilityStatus>(initialVisibility ?? VisibilityStatus.Private);
 
     function handleSubmit() {
-        if (!newListName.trim()) return  //Prevents submitting empty name
-        onConfirm(newListName, newListDescription);
+        if (!name.trim()) return  //Prevents submitting empty name
+        onConfirm(name, description, visibility);
     }
 
     return (
@@ -39,24 +58,36 @@ export default function CreateListModal({ onConfirm, onCancel}: Props){
                 gap-4: Make gap == 4 between each object in this column
                 */}
                 <div className = "bg-white p-8 rounded-lg min-w-72 flex flex-col gap-4">
-                    <h2>Create New List</h2>
+                    <h2>{mode === 'create' ? 'Create New List' : 'Edit List'}</h2>
                     <input
                         placeholder="Name (Required)"
-                        value = {newListName}
-                        onChange={(e) => setNewListName(e.target.value)}
+                        value = {name}
+                        onChange={(e) => setName(e.target.value)}
                     />
                     <input
                         placeholder="Description (Optional)"
-                        value = {newListDescription}
-                        onChange={(e) => setNewListDescription(e.target.value)}
+                        value = {description}
+                        onChange={(e) => setDescription(e.target.value)}
                     />
                     {/*
                         We don't need to add flex-row because here, it by default fits things side-by-side
                         until it runs out of room, to add to the next line
                     */}
+                    {mode === 'edit' && (
+                        <select
+                            value={visibility}
+                            onChange = {(e) => setVisibility(Number(e.target.value) as VisibilityStatus)}
+                        >
+                            <option value = {VisibilityStatus.Private}>Private</option>
+                            <option value = {VisibilityStatus.Shared}>Shared</option>
+                            <option value = {VisibilityStatus.Public}>Public</option>
+                        </select>
+                    )}
                     <div className="flex gap-2">
                         <button onClick={onCancel}>Cancel</button>
-                        <button onClick={handleSubmit}>Create</button>
+                        <button onClick={handleSubmit}>
+                            {mode === 'create' ? 'Create' : 'Save'}
+                        </button>
                     </div>
                 </div>
             </div>

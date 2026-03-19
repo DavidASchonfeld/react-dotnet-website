@@ -23,7 +23,7 @@ export default function ExploreMediaItemsPage() {
     const dispatch = useDispatch<AppDispatch>();
 
     // Number of Random MediaItems to show on this page
-    const amount = 10;
+    const amount = 5;
 
     useEffect( () => {
         try {

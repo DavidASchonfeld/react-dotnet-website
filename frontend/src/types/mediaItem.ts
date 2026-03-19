@@ -21,6 +21,7 @@ export interface MediaItemDetail {
     publishedDateTime: string | null;
     submittedById: string;
     dateSubmitted: string;
+    canEdit: boolean;
 }
 
 

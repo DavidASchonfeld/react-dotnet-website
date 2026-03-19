@@ -4,6 +4,8 @@ public class MediaItemDetailDto
     public string Name {get; set;} = string.Empty;
     public int MediaTypeId {get; set;}
 
+    public bool CanEdit {get; set;}
+
     
 
     public string? Description {get; set; }

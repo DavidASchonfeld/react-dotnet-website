@@ -125,6 +125,7 @@ public class MediaListService : IMediaListService
             Description = mediaList_withIncludes.Description,
             SubmittedById = mediaList_withIncludes.SubmittedById,
             VisibilityStatus = mediaList_withIncludes.VisibilityStatus,
+            CanEdit = PermissionHelper.CanModifyOrDeleteList(requesterUser, targetMediaList),
             ListContent = mediaList_withIncludes.ItemLinks
                 .OrderBy(link => link.Position)  // Sorts Ascending by Default, which is what I want
                 .Select(link => new MediaItemSummaryDto

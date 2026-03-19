@@ -8,8 +8,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { VisibilityStatus } from '../types/enums';
 import type { RootState, AppDispatch } from '../store/store';
 import { fetchMyLists, createList, deleteList } from '../store/mediaListsSlice';
-import CreateListModal from '../components/modals/CreateListModal';
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal';
+import MediaListFormModal from '../components/modals/MediaListFormModal';
 
 
 
@@ -19,7 +19,7 @@ export default function MyMediaListsPage() {
     
     //// From Redux Store
     // replaces storing mediaLists directly here in the component
-    // and ther isLoading and userState errors also from being stored here in the component
+    // and their isLoading and userState errors also from being stored here in the component
     
     // Original, separate fetching from RootState
     // const { mediaLists, status, error } = useSelector((state: RootState) => state.mediaLists);
@@ -150,17 +150,17 @@ export default function MyMediaListsPage() {
         dispatch(fetchMyLists(token!));
     }, [dispatch, token]);
     // dispatch and token are dependencies (aka similar in concept to how parameters are passed into functions)
-    // They are passed in here as dependencies to prevent any accidental inifite loops
+    // They are passed in here as dependencies to prevent any accidental infinite loops
     // They are saved so they do not need to be reloaded every time this component re-renders.
-    // Here, this useEffect() would only be reloaded if either of those dependences (dispatch or token)
+    // Here, this useEffect() would only be reloaded if either of those dependencies (dispatch or token)
     // changes it values.
     // Why save these over refreshes?
     // To prevent an accidental infinite loop: 
     // If either of them (For example: dispatch) has logic that would trigger the component to re-load,
     // Then when the component reloads and the dispatch gets re-created, that dispatch being created might trigger
-    // the component to reload which would cause an inifinite loop between the component being forced to reload
+    // the component to reload which would cause an infinite loop between the component being forced to reload
     // and one of its items in the component's creation process (Example: Dispatch) to cause the component to reload
-    // causing the componennet to infinitely reload over and over again.
+    // causing the component to infinitely reload over and over again.
 
 
     // Runs after Page Loads, adds EventListener for scroll tracking for refreshing/calling fetchMediaLists() if the user scrolls too high
@@ -192,7 +192,7 @@ export default function MyMediaListsPage() {
         }
         window.addEventListener('scroll', handleScroll);
 
-        // When this page unmounts, remove tis listener.
+        // When this page unmounts, remove this listener.
         // Otherwise, the listener would keep running
         // even after leaving this specific page.
         return () => window.removeEventListener('scroll', handleScroll)
@@ -251,7 +251,8 @@ export default function MyMediaListsPage() {
             */}
             {showCreateModal && (
                 
-                <CreateListModal
+                <MediaListFormModal
+                    mode = "create"
                     onConfirm={handleCreateMediaList}
                     onCancel={() => setShowCreateModal(false)}    
                 />

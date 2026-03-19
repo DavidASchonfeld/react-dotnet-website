@@ -1,5 +1,5 @@
 // React Libraries
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
@@ -7,7 +7,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../store/store';
 import { clearSelectedMediaItemDetail} from '../store/mediaItemsSlice';
 import MediaTypeLabel from '../components/MediaTypeLabel';
-import { fetchMediaItemDetail } from '../store/mediaItemsSlice';
+import { fetchMediaItemDetail, patchMediaItemBasicInfoTHUNK } from '../store/mediaItemsSlice';
+import MediaItemFormModal from '../components/modals/MediaItemFormModal';
 
 
 
@@ -37,6 +38,8 @@ export default function MediaItemDetailPage() {
     
     const dispatch = useDispatch<AppDispatch>();
 
+    const [isEditMode, setIsEditMode] = useState(false);
+
 
     // Runs only once (unless any of its dependencies (dispatch, token, id) changes)
     useEffect(()=> {
@@ -57,6 +60,7 @@ export default function MediaItemDetailPage() {
 
 
 
+
     if (status === 'loading') return <div>Loading...</div>
     if (error) return <div>{error}</div>
     if (!selectedMediaItemDetail) return null
@@ -64,17 +68,46 @@ export default function MediaItemDetailPage() {
     return (
         <div>
 
-            <h1>{selectedMediaItemDetail.name}</h1>
-            <MediaTypeLabel mediaTypeId={selectedMediaItemDetail.mediaTypeId} />
-            <p>{selectedMediaItemDetail.description}</p>
-
-            {/*If .publishedDateTime is null,
-            then the new Date() constructor will output the default date (like January 1970 or something)
-            which would be wrong. So, this will only show the publishedDate
-            if it is stored */}
-            {selectedMediaItemDetail.publishedDateTime && ( 
-                <p>{new Date(selectedMediaItemDetail.publishedDateTime).toLocaleDateString()}</p>
+            {selectedMediaItemDetail.canEdit && (
+                <button onClick = {() => setIsEditMode(prev => !prev)}>
+                    {isEditMode ? 'Exit Editing' : 'Edit'}
+                </button>
             )}
+            
+            {isEditMode ? (
+                <>
+                    {/* Edit Mode */}
+                    <MediaItemFormModal
+                        existingItem={selectedMediaItemDetail}
+                        onConfirm = {(name, description, mediaTypeId, publishedDateTime) => {
+                            dispatch(patchMediaItemBasicInfoTHUNK({
+                                token: token!,
+                                mediaItemId: selectedMediaItemDetail.id,
+                                data: {name, description, mediaTypeId, publishedDateTime}
+                            }));
+                            setIsEditMode(false);
+                        }}
+                        onCancel = { () => setIsEditMode(false)}
+                    />
+                </>
+            ) : (
+                <>
+                    {/* View Mode */}
+                    <h1>{selectedMediaItemDetail.name}</h1>
+                    <MediaTypeLabel mediaTypeId={selectedMediaItemDetail.mediaTypeId} />
+                    <p>{selectedMediaItemDetail.description}</p>
+
+                    {/*If .publishedDateTime is null,
+                    then the new Date() constructor will output the default date (like January 1970 or something)
+                    which would be wrong. So, this will only show the publishedDate
+                    if it is stored */}
+                    {selectedMediaItemDetail.publishedDateTime && ( 
+                        <p>{new Date(selectedMediaItemDetail.publishedDateTime).toLocaleDateString()}</p>
+                    )}
+                </>
+            )}
+
+
             
         </div>
     )

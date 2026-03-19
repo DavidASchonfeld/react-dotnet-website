@@ -19,14 +19,14 @@
 ------ RejectionReason
 to classes to streamline/simplify/refactor the submission/approval process
 ---- Also: Streamline "IsApproved" VS "AccessStatus"
------- "isApproved": for private->submit becuase goal is for it to be public
+------ "isApproved": for private->submit because goal is for it to be public
 ------ "AccessStatus: You choose if it is Public or Private
 -- Edit history/audit trail
 -- after editing, requiring approval for new edits/updates
 -- Report button (for inappropriate content)
 
 -- Admin Features
----- Only Admins can edit MediaItems, Genres, MedaTypes after approval
+---- Only Admins can edit MediaItems, Genres, MediaTypes after approval
 ---- Only admins can edit descriptions/titles of MediaItems
 ---- Only admins can edit descriptions/titles of public MediaLists
 -- And after these features, build an edit/approval system of non-admins making edits that can be approved by the admins 
@@ -40,7 +40,7 @@ When Displaying a Series:
 
 -- Instead of Deleting, Archiving (and then, after 30 days, automatically delete for real)
 
--- Deleting: Whee n a user is deleted, I want a default "ghost" account that gets ownership of all of those items (besides MediaList) that the deleted user used to own.
+-- Deleting: When a user is deleted, I want a default "ghost" account that gets ownership of all of those items (besides MediaList) that the deleted user used to own.
 -- Submission Queue Tool for Admins to Review/Approve/Deny etc. pending items
 
 Right now, duplicate MediaItems in the same MediaList is not allowed. In the future, I could add the ability to allow it after a Confirmation popup.
@@ -63,11 +63,16 @@ TODO: Implement into the MediaItem creation process:
 -- Genres
 
 
-Give admin users the ability to see other users and give/take away their special roles as Moderator
-Maybe: Make the processs of giving/taking away special user roles like Moderator, but in a more complicated way, like giving Moderators the ability to updrade regular users to Moderator (but not the ability to demote them - otherwise, it might cause potential drama/craziness, so only Admins could do that.)
+Permission Giving: Complication:
+Maybe give Moderators the ability to upgrade regular users to Moderator (but not the ability to demote them - otherwise, it might cause potential drama/craziness, so only Admins could do that.)
 
-Toast Notifcation
--- Definition: a small temporary popup (usally a the bottom-right corner) that shows a message then disappears on its own (Without hiding any page content)
+Toast Notification
+-- Definition: a small temporary popup (usually at the bottom-right corner) that shows a message then disappears on its own (Without hiding any page content)
 -- Use external library: Choose from "react-toastify", "sonner" or "react-hot-toast"
 
-Use the "react-select" library to use a  select(aka dropdown menu) that allows you to put React components (like MediaTypeLabel) inside.
+Give each MediaItem page and Creator page places to give URLS (each with their own title) to external websites
+-- For example:
+----Disclaimer for Users: You are about to navigate to an external website not controlled by this website's control. Are you sure you wish to proceed?
+---- Label: Official Website, URL: officialWebsite.com
+---- Label: IMDB Page, URL: imdb.com/thatThing
+---- Label: Amazon Store, URL: amazon.com/officialBuyOnAmazon

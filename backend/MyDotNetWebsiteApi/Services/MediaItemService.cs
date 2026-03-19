@@ -31,7 +31,8 @@ public class MediaItemService : IMediaItemService
             MediaTypeId = mediaItemObject.MediaTypeId,
             IsApproved = mediaItemObject.IsApproved,
             PublishedDateTime = mediaItemObject.PublishedDateTime,
-            DateSubmitted = mediaItemObject.DateSubmitted
+            DateSubmitted = mediaItemObject.DateSubmitted,
+            CanEdit = PermissionHelper.CanModifyOrDeleteItem(requesterUser, mediaItemObject)
         });
     }
 
@@ -155,7 +156,8 @@ public class MediaItemService : IMediaItemService
            MediaTypeId = mediaItemObject.MediaTypeId,
            IsApproved = mediaItemObject.IsApproved,
            PublishedDateTime = mediaItemObject.PublishedDateTime,
-           DateSubmitted = mediaItemObject.DateSubmitted 
+           DateSubmitted = mediaItemObject.DateSubmitted,
+           CanEdit = PermissionHelper.CanModifyOrDeleteItem(requesterUser, mediaItemObject)
         });
 
     }

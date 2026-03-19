@@ -1,11 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { MediaListSummary, MediaListDetail, CreateMediaListRequest } from '../types/mediaList';
+import type { MediaListSummary, MediaListDetail, CreateMediaListRequest, UpdateMediaListNotListContentRequest } from '../types/mediaList';
 import {
     getMyMediaLists,
     getMediaListDetail,
     createMediaList,
     deleteMediaList,
+    patchListBasicInfo,
+    addMediaItemToList,
+    removeMediaItemFromList,
 } from '../services/mediaListService';
+import type { MediaItemSummary } from '../types/mediaItem';
 
 
 
@@ -17,7 +21,7 @@ type MediaListsState = {
 };
 
 
-// Sets the inital value of the MediaListsState object to null/false/etc.
+// Sets the initial value of the MediaListsState object to null/false/etc.
 // will be automatically filled by the persist storage
 const initialState: MediaListsState = {
     mediaLists: [],
@@ -72,7 +76,35 @@ export const deleteList = createAsyncThunk(
         // without needing to call API requests 
         return mediaListId;
     }
-)
+);
+
+export const patchBasicInfoList = createAsyncThunk(
+    'mediaLists/patchBasicInfoList',
+    async ({token, mediaListId, data}: {token: string; mediaListId: number; data: UpdateMediaListNotListContentRequest}) => {
+        return await patchListBasicInfo(token, mediaListId, data);
+    }
+);
+
+export const addItemToList = createAsyncThunk(
+    'mediaLists/addItemToList',
+    async ({token, mediaListId, mediaItemId, mediaItem} : {
+        token: string;
+        mediaListId: number;
+        mediaItemId: number;
+        mediaItem: MediaItemSummary;
+    }) => {
+        await addMediaItemToList(token, mediaListId, mediaItemId, {});
+        return mediaItem;  // Return the item so the state can append it optimistically
+    }
+);
+
+export const removeItemFromList = createAsyncThunk(
+    'mediaLists/removeItemFromList',
+    async ({token, mediaListId, mediaItemId }: {token: string; mediaListId: number; mediaItemId: number}) => {
+        await removeMediaItemFromList(token, mediaListId, mediaItemId);
+        return mediaItemId;  // Return the Id so the state/my Redux logic can filter it out
+    }
+);
 
 
 // Slices
@@ -85,7 +117,7 @@ const mediaListsSlice = createSlice({
     // For both, I dispatch (aka request for them to be run) to Redux, who runs them
 
     // reducers: defines synchronous actions that this slice creates and owns.
-    // extraReducers: lisstens to actions created outside of the slice,
+    // extraReducers: listens to actions created outside of the slice,
     //      specifically the .pending/.fulfilled/.rejected
     //      lifecycle events emitted by createAsyncThunk.
     
@@ -99,7 +131,7 @@ const mediaListsSlice = createSlice({
 
         // ---- fetchMyLists ------
         builder.addCase(fetchMyLists.pending, (state) => {
-            // Replace the setIsLoading(true) and setError(null) from original logc in MyMediaLsitsPage.tsx
+            // Replace the setIsLoading(true) and setError(null) from original logic in MyMediaListsPage.tsx
             state.status = 'loading';
             state.error = null;
         })
@@ -113,7 +145,7 @@ const mediaListsSlice = createSlice({
         .addCase(fetchMyLists.rejected, (state, action) => {
             state.status = 'failed';
 
-            // If aciton.error.message is null, use the string "Failed to load lists."
+            // If action.error.message is null, use the string "Failed to load lists."
             state.error = action.error.message ?? 'Failed to load lists.';
         });
 
@@ -182,7 +214,80 @@ const mediaListsSlice = createSlice({
             state.status = 'failed';
             state.error = action.error.message ?? 'Failed to delete list.';
         });
+
+
+        // ---- patchBasicInfoList -----
         
+        builder.addCase(patchBasicInfoList.fulfilled, (state, action) => {
+            state.status = 'succeeded';
+            state.error = null;
+
+            // Update selectedMediaListDetail fields in place
+            if (state.selectedMediaListDetail) {
+                state.selectedMediaListDetail.name = action.payload.name;
+                state.selectedMediaListDetail.description = action.payload.description;
+                state.selectedMediaListDetail.visibilityStatus = action.payload.visibilityStatus;
+            }
+
+            // Update the MediaListSummary in mediaLists[]
+            const indexInStoreListOfMediaLists = state.mediaLists.findIndex(l => l.id === action.payload.id);
+            if (indexInStoreListOfMediaLists !== -1) state.mediaLists[indexInStoreListOfMediaLists] = action.payload;
+        });
+
+        builder.addCase(patchBasicInfoList.pending, (state) => {
+            state.status = 'loading';
+            state.error = null;
+        });
+
+        builder.addCase(patchBasicInfoList.rejected, (state, action) => {
+            state.status = 'failed';
+            state.error = action.error.message ?? 'Failed to update list.';
+        });
+
+
+        // ---- addItemToList -----
+
+        builder.addCase(addItemToList.fulfilled, (state, action) => {
+            state.status = 'succeeded';
+            state.error = null;
+
+            
+            if (state.selectedMediaListDetail) {
+                state.selectedMediaListDetail.listContent.push(action.payload);
+            }
+        });
+
+        builder.addCase(addItemToList.pending, (state) => {
+            state.status = 'loading';
+            state.error = null;
+        });
+        builder.addCase(addItemToList.rejected, (state, action) => {
+            state.status = 'failed';
+            state.error = action.error.message ?? 'Failed to update list.';
+        });
+
+
+        // ---- removeItemFromList -----
+
+        builder.addCase(removeItemFromList.fulfilled, (state, action) => {
+            state.status = 'succeeded';
+            state.error = null;
+
+            
+            // If the item is in the detail, remove it since the user just successfully deleted the item.
+            if (state.selectedMediaListDetail) {
+                state.selectedMediaListDetail.listContent = state.selectedMediaListDetail.listContent.filter(item => item.id !== action.payload);
+            }
+        });
+
+        builder.addCase(removeItemFromList.pending, (state) => {
+            state.status = 'loading';
+            state.error = null;
+        });
+        builder.addCase(removeItemFromList.rejected, (state, action) => {
+            state.status = 'failed';
+            state.error = action.error.message ?? 'Failed to update list.';
+        });
     }
 });
 

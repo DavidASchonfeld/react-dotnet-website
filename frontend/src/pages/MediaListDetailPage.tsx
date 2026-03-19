@@ -1,12 +1,15 @@
 // React Libraries
-import { useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
 // My Code
 import type { RootState, AppDispatch } from '../store/store';
-import { fetchListDetail, clearSelectedListDetail} from '../store/mediaListsSlice';
+import { fetchListDetail, clearSelectedListDetail, addItemToList, patchBasicInfoList, removeItemFromList} from '../store/mediaListsSlice';
 import MediaTypeLabel from '../components/MediaTypeLabel';
+
+import { fetchRandomMediaItems } from '../store/mediaItemsSlice';
+import MediaListFormModal from '../components/modals/MediaListFormModal';
 
 
 
@@ -31,10 +34,20 @@ export default function MediaListDetailPage() {
 
     // Get Details of selected MediaList from store (aka Redux)(and if store doesn't have it, it will send commands to Service which will send HTTP requests to backend)
     const { selectedMediaListDetail, status, error } = useSelector((state: RootState) => state.mediaLists); 
+    const mediaItems = useSelector((state: RootState) => state.mediaItems.mediaItems); 
 
     const { token } = useSelector((state: RootState) => state.auth);
     
     const dispatch = useDispatch<AppDispatch>();
+    const navigate = useNavigate();
+
+
+
+    // Local Variables:
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [showAddBrowsePanel, setShowAddBrowsePanel] = useState(false);
+    const [searchBarContent, setSearchBarContent] = useState('');
 
 
     // Runs only once (unless any of its dependencies (dispatch, token, id) changes)
@@ -45,7 +58,7 @@ export default function MediaListDetailPage() {
 
         // Cleanup: When the user navigates from this page,
         // let's clear the stored detailed list.
-        // This prevents seeing the previious lists's data
+        // This prevents seeing the previous list's data
         // when loading/navigating to a different list.
         
         // () => {} means that this function runs when this component unmounts (aka leaves the screen)
@@ -54,24 +67,123 @@ export default function MediaListDetailPage() {
         };
     }, [dispatch, token, id]); 
 
-
-
+    
     if (status === 'loading') return <div>Loading...</div>
     if (error) return <div>{error}</div>
     if (!selectedMediaListDetail) return null
 
+
+
+    
+
+    const mediaListId = selectedMediaListDetail.id;
+    const existingIds = new Set(selectedMediaListDetail?.listContent.map(i => i.id));
+    const filteredCandidates = mediaItems.filter(
+        item => !existingIds.has(item.id) &&
+        item.name.toLowerCase().includes(searchBarContent.toLowerCase())
+    );
+
+
+    function handleToggleEditMode() {
+        if(isEditMode) setShowAddBrowsePanel(false);
+        setIsEditMode(prev => !prev);  // switch the mode to whatever its opposite is.
+    }
+    
+
+
+
+
+
     return (
         <div>
+            {/* -- Header -- */}
             <Link to="/my-medialists">⬅︎ Back to My Lists</Link>
+            {selectedMediaListDetail.canEdit && (
+                <button onClick = {handleToggleEditMode}>
+                    {isEditMode ? 'Exit Editing' : 'Edit'}
+                </button>
+            )}
+            
 
+            {/* -- List Info -- */}
             <h1>{selectedMediaListDetail.name}</h1>
             <p>{selectedMediaListDetail.description}</p>
+            {isEditMode && <button onClick={() => setIsEditModalOpen(true)}>Edit List's Basic Info</button>}
+
+            {/* -- List Content -- */}
             {selectedMediaListDetail.listContent.map(mediaItem => (
                 <div key={mediaItem.id}>
-                    <p>{mediaItem.name}</p>
+                    {isEditMode && <p>{mediaItem.name}</p>}
+                    {!isEditMode && <Link to = {`/mediaitem/${mediaItem.id}`}>{mediaItem.name}</Link>}
                     <MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} />
+
+                    {isEditMode && 
+                    <>
+                        <button onClick={
+                            () => navigate(`/mediaitem/${mediaItem.id}/edit`)}
+                        >Edit</button>
+                        <button onClick={
+                            () => dispatch(removeItemFromList({token: token!, mediaListId: mediaListId, mediaItemId: mediaItem.id}))
+                        }>Delete</button>
+                    </>
+                    }
+                    
                 </div>
             ))}
+
+            {/* -- Add Item to List (Edit Mode only) */}
+            {isEditMode && !showAddBrowsePanel && (
+                <button onClick = {() => {
+                    setShowAddBrowsePanel(true);
+                    if(mediaItems.length == 0) dispatch(fetchRandomMediaItems({token: token!, amount: 5}));
+                }}>+ Add Item (Browse Panel)</button>
+            )}
+
+            
+            {/* -- "Add Items" Browser Panel -- */}
+            {isEditMode && showAddBrowsePanel && (
+                <div>
+                    <h3>Add an Item</h3>
+                    <input
+                        placeholder = "Search by name..."
+                        value = {searchBarContent}
+                        onChange = {(e) => setSearchBarContent(e.target.value)}
+                    />
+
+                    <button onClick = { () => dispatch(fetchRandomMediaItems({token: token!, amount: 5}))}
+                    >Browse More Random MediaItems</button>
+
+                    <button onClick = { () => setShowAddBrowsePanel(false)}
+                    >Cancel</button>
+
+                    {filteredCandidates.map(item => (
+                        <div key={item.id}>
+                            <span>{item.name}</span>
+                            <MediaTypeLabel mediaTypeId={item.mediaTypeId} />
+                            <button onClick = { () => dispatch(addItemToList({token: token!, mediaListId: mediaListId, mediaItemId: item.id, mediaItem: item}))}
+                            >Add</button>
+                        </div>
+                    ))}
+
+                </div>
+            )}
+
+            {/* Edit List Info Modal (for Editing Non-Linked Info like Name) (separate from isEditMode) */}
+            {isEditModalOpen && (
+                <MediaListFormModal
+                    mode = "edit"
+                    initialName = {selectedMediaListDetail.name}
+                    initialDescription = {selectedMediaListDetail.description}
+                    initialVisibility = {selectedMediaListDetail.visibilityStatus}
+                    onConfirm = { (name, description, visibility) => {
+                        dispatch(patchBasicInfoList({token: token!, mediaListId: mediaListId, data: {
+                            name, description, visibilityStatus: visibility
+                        }}));
+                        setIsEditMode(false);
+                    }}
+                    onCancel={ () => setIsEditMode(false)}
+                />
+            )}
         </div>
     )
 

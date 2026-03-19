@@ -34,6 +34,7 @@ export interface MediaListDetail
     description: string | null;
     submittedByUserName: string | null;
     visibilityStatus: VisibilityStatus;
+    canEdit: boolean;
 
     listContent: MediaItemSummary[];
 }
