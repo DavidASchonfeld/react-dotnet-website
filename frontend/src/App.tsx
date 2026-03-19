@@ -25,6 +25,7 @@ import AdminRoute from './components/AdminRoute'
 import ExploreMediaItemsPage from './pages/ExploreMediaItemsPage'
 import MediaItemDetailPage from './pages/MediaItemDetailPage'
 import AdminAllMediaItemsPage from './pages/AdminAllMediaItemsPage'
+import HomePage from './pages/HomePage'
 
 
 
@@ -44,7 +45,7 @@ function App() {
     <> 
       <Navbar />
       <Routes>
-        <Route path = "/" element = {<div>Home Page</div>} />
+        <Route path = "/" element = {<HomePage />} />
         <Route path = "/about" element = {<About />} />
         <Route path = "/login" element = {<LoginOrRegisterPage />} />
         <Route path = "/my-medialists" element = {
