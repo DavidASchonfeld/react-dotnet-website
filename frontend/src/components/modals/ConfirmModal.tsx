@@ -30,7 +30,7 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
                 flex: You need flex here to use "flex-col" and "gap-4"
                 gap-4: Make gap == 4 between each object in this column
             */}
-            <div className = "bg-white p-8 rounded-lg min-w-72 flex flex-col gap-4">
+            <div className = "bg-white dark:bg-gray-800 p-8 rounded-lg min-w-72 flex flex-col gap-4 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded px-2 py-1">
                 <h2>{title}</h2>
                 <p>{message}</p>
                 <div className="flex gap-2">

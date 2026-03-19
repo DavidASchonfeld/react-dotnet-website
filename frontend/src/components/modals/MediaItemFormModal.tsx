@@ -40,7 +40,7 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
     }
 
     return (
-        <div>
+        <div className = "bg-white dark:bg-gray-800 p-8 rounded-lg min-w-72 flex flex-col gap-4 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded px-2 py-1">
 
 
             <h2>{isEditMode ? 'Edit Media Item' : 'Create New Media Item'}</h2>
