@@ -70,7 +70,7 @@ export default function MediaItemDetailPage() {
 
             {selectedMediaItemDetail.canEdit && (
                 <button onClick = {() => setIsEditMode(prev => !prev)}>
-                    {isEditMode ? 'Exit Editing' : 'Edit'}
+                    {isEditMode ? 'Exit "Edit Mode"' : 'Edit'}
                 </button>
             )}
             

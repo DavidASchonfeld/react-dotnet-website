@@ -100,7 +100,7 @@ export default function MediaListDetailPage() {
             <Link to="/my-medialists">⬅︎ Back to My Lists</Link>
             {selectedMediaListDetail.canEdit && (
                 <button onClick = {handleToggleEditMode}>
-                    {isEditMode ? 'Exit Editing' : 'Edit'}
+                    {isEditMode ? 'Exit "Edit Mode"' : 'Edit'}
                 </button>
             )}
             
@@ -119,9 +119,8 @@ export default function MediaListDetailPage() {
 
                     {isEditMode && 
                     <>
-                        <button onClick={
-                            () => navigate(`/mediaitem/${mediaItem.id}/edit`)}
-                        >Edit</button>
+                        <button
+                        >Edit Position (TODO: Implement)</button>
                         <button onClick={
                             () => dispatch(removeItemFromList({token: token!, mediaListId: mediaListId, mediaItemId: mediaItem.id}))
                         }>Delete</button>
@@ -179,9 +178,9 @@ export default function MediaListDetailPage() {
                         dispatch(patchBasicInfoList({token: token!, mediaListId: mediaListId, data: {
                             name, description, visibilityStatus: visibility
                         }}));
-                        setIsEditMode(false);
+                        setIsEditModalOpen(false);
                     }}
-                    onCancel={ () => setIsEditMode(false)}
+                    onCancel={ () => setIsEditModalOpen(false)}
                 />
             )}
         </div>

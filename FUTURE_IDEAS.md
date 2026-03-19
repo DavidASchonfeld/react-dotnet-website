@@ -76,3 +76,9 @@ Give each MediaItem page and Creator page places to give URLS (each with their o
 ---- Label: Official Website, URL: officialWebsite.com
 ---- Label: IMDB Page, URL: imdb.com/thatThing
 ---- Label: Amazon Store, URL: amazon.com/officialBuyOnAmazon
+
+Add Error handling for if RandomAmount for MediaItems asks for more MediaItems than exists in the current database (causes a 400 error).
+Right now, asking for 10 causes an error.
+5 is fine to ask right now.
+
+Move the amount X for Explore Page (and the hard limit for amount X in the backend) into separate files to easily edit/playaround with in a place separate from the code.
