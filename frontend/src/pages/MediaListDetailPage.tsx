@@ -48,6 +48,9 @@ export default function MediaListDetailPage() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [showAddBrowsePanel, setShowAddBrowsePanel] = useState(false);
     const [searchBarContent, setSearchBarContent] = useState('');
+
+    // For this variable, it is a tupe of number, string because I need both to make that
+    // nice-looking confirm bar. And that tuple is way less storage than storing an entire mediaItem object.
     const [confirmRemoveItem, setConfirmRemoveItem] = useState<{id: number, name: string} | null>(null);
 
 
