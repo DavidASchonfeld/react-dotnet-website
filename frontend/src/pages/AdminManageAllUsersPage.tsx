@@ -84,7 +84,7 @@ export default function AdminManageAllUsersPage() {
                 {loading && <h2>Loading...</h2>}
                 {error && <h2>{error}</h2>}
     
-                <h1>Admin: Manage All Users</h1>
+                <h1>Administrator: Manage All Users</h1>
                 {/* Refresh Button - Calls Refresh on Click: */}
                 {/* Remember, you need "() =>"" so the function
                 only runs when the button is clicked, instead

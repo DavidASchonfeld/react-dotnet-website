@@ -69,3 +69,5 @@ Maybe: Make the processs of giving/taking away special user roles like Moderator
 Toast Notifcation
 -- Definition: a small temporary popup (usally a the bottom-right corner) that shows a message then disappears on its own (Without hiding any page content)
 -- Use external library: Choose from "react-toastify", "sonner" or "react-hot-toast"
+
+Use the "react-select" library to use a  select(aka dropdown menu) that allows you to put React components (like MediaTypeLabel) inside.

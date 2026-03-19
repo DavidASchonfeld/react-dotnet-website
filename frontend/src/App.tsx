@@ -22,6 +22,9 @@ import AdminManageAllUsersPage from './pages/AdminManageAllUsersPage'
 import { fetchAllApprovedMediaTypes } from './store/mediaTypesSlice'
 import type { AppDispatch, RootState } from './store/store'
 import AdminRoute from './components/AdminRoute'
+import ExploreMediaItemsPage from './pages/ExploreMediaItemsPage'
+import MediaItemDetailPage from './pages/MediaItemDetailPage'
+import AdminAllMediaItemsPage from './pages/AdminAllMediaItemsPage'
 
 
 
@@ -57,6 +60,32 @@ function App() {
               <MediaListDetailPage />
           </ProtectedRoute>
         } />
+
+        <Route path = "/mediaitems/explore" element = {
+          <ProtectedRoute>
+            <ExploreMediaItemsPage />
+          </ProtectedRoute>
+        } />
+
+        {/* The ":id means that you can pass any variable there,
+        and React will catch the value into the variable "id". */}
+        <Route path = "/mediaitem/:id" element = {
+          <ProtectedRoute>
+            <MediaItemDetailPage />
+          </ProtectedRoute>
+        } />
+
+
+
+
+
+        {/* Admin-Only Pages */}
+        <Route path = "/admin/mediaitems" element = {
+          <AdminRoute>
+            <AdminAllMediaItemsPage />
+          </AdminRoute>
+        } />
+
 
         <Route path = "/admin/users" element = {
           <AdminRoute>

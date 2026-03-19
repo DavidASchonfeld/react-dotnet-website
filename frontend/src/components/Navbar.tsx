@@ -57,9 +57,23 @@ export default function Navbar() {
         >
             {!minimized && (
             <>
-                {/* Only appears if varaible "minimized" = false */}
+                {/* Only appears if variable "minimized" = false */}
+
+
+
+
+
+
                 <button onClick={() => navigate("/")}>Home</button>
+
+                {/* Only appears if logged in */}
+                {userName && <button onClick={() => navigate("/mediaitems/explore")}>Explore: Media Items</button>}
+
+
                 <button onClick={() => navigate("/about")}>About</button>
+                
+
+                
 
                 {!userName && 
                 <button onClick={() => navigate("/login")}>Log In</button>
@@ -82,7 +96,7 @@ export default function Navbar() {
                             
                             */}
                             {roleLevel === 'Moderator' && (
-                                <span className="ml-1 text-xs bg-silver-600 text-white px-1 rounded">MOD</span>
+                                <span className="ml-1 text-xs bg-gray-400 text-white px-1 rounded">MOD</span>
                             )}
                             {roleLevel === 'Administrator' && (
                                 <span className="ml-1 text-xs bg-amber-500 text-white px-1 rounded">ADMIN</span>
@@ -102,9 +116,12 @@ export default function Navbar() {
 
                                 <button onClick={() => navigate("/my-medialists")}>My Lists</button>
                                 
-                                {/* This option only appears to users who are Administrators */}
+                                {/* These options only appear to users who are Administrators */}
                                 {roleLevel === 'Administrator' && (
                                     <button onClick={() => navigate("/admin/users")}>Manage Users</button>
+                                )}
+                                {roleLevel === 'Administrator' && (
+                                    <button onClick={() => navigate("/admin/mediaitems")}>Manage Media Items</button>
                                 )}
 
 

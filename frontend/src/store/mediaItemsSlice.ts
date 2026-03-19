@@ -56,7 +56,7 @@ export const fetchRandomMediaItems = createAsyncThunk(
     }
 );
 
-export const fetchAllApprovedForAdmin = createAsyncThunk(
+export const fetchAllApprovedMediaItemsForAdmin = createAsyncThunk(
     'mediaItems/fetchAllApprovedForAdmin',
     async (token: string) => {
         return await mediaItemService.getAllApprovedMediaItemsForAdmin(token);
@@ -103,7 +103,7 @@ const mediaItemsSlice = createSlice({
             state.status = 'loading';
             state.error = null;
         });
-        builder.addCase(fetchAllApprovedForAdmin.pending, (state) => {
+        builder.addCase(fetchAllApprovedMediaItemsForAdmin.pending, (state) => {
             state.status = 'loading';
             state.error = null;
         });
@@ -137,7 +137,7 @@ const mediaItemsSlice = createSlice({
             state.status = 'failed';
             state.error = action.error.message ?? 'Failed to fetch random media items.';
         });
-        builder.addCase(fetchAllApprovedForAdmin.rejected, (state, action) => {
+        builder.addCase(fetchAllApprovedMediaItemsForAdmin.rejected, (state, action) => {
             state.status = 'failed';
             state.error = action.error.message ?? 'Failed to fetch all approved media items (admin exclusive method).';
         });
@@ -183,7 +183,7 @@ const mediaItemsSlice = createSlice({
         });
         
 
-        builder.addCase(fetchAllApprovedForAdmin.fulfilled, (state, action) => {
+        builder.addCase(fetchAllApprovedMediaItemsForAdmin.fulfilled, (state, action) => {
             state.status = 'succeeded';
             state.error = null;
             state.mediaItems = action.payload;
