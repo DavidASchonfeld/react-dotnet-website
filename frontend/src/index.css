@@ -1,27 +1,37 @@
 @import "tailwindcss";
 
+
+/* ─────────────────────────────────────────────
+   Tailwind v4 reads @theme and generates utility classes
+   from every --color-* variable here.
+   Named as "Semantic Tokens" aka the names for each variable are what they'll be used for
+   For example: --color-primary -> bg-primary, text-primary, border-primary
+───────────────────────────────────────────── */
+@theme {
+  --color-bg:             #242424; /* Page canvas — the deepest layer */
+  --color-surface:        #2a2a2a; /* Cards, panels — one step above bg */
+  --color-surface-raised: #333333; /* Modals, dropdowns — floats above surface */
+  --color-border:         #3f3f3f; /* All lines/dividers */
+  --color-text:           #f0f0f0; /* Primary body text */
+  --color-text-muted:     #9ca3af; /* Labels, placeholders, helper text */
+  --color-primary:        #646cff; /* Your existing brand blue-purple */
+  --color-primary-hover:  #535bf2; /* Primary darkened for hover */
+  --color-danger:         #ef4444; /* Delete/error — red */
+  --color-accent:         #f59e0b; /* Admin badge, tags — your amber-500 */
+
+  /* My own specific color that will not change based on different themes:  */
+  --color-role-admin:     #f59e0b; /* Amber,  All objects associated with Admin role will have this color */
+  --color-role-moderator: #94a3b8; /* Slate,  All objects associated with Moderator role will have this color */
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
 }
 
 body {
@@ -30,7 +40,108 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
+
+a {
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: inherit;
+}
+a:hover {
+  color: var(--color-primary-hover);
+}
+
+
+/* ─────────────────────────────────────────────
+   THEME: ocean-dark (DEFAULT — applied at :root)
+   A cool, blue-tinted dark theme
+────────────────────────────────────────────── */
+:root,
+[data-theme="ocean-dark"] {
+  --color-bg:             #0f172a; /* slate-900 — deep navy */
+  --color-surface:        #1e293b; /* slate-800 — panel bg */
+  --color-surface-raised: #334155; /* slate-700 — modal/dropdown */
+  --color-border:         #475569; /* slate-600 — visible but subtle */
+  --color-text:           #f1f5f9; /* slate-100 — near-white */
+  --color-text-muted:     #94a3b8; /* slate-400 — muted */
+  --color-primary:        #3b82f6; /* blue-500 */
+  --color-primary-hover:  #2563eb; /* blue-600 */
+  --color-danger:         #ef4444; /* red-500 */
+  --color-accent:         #f59e0b; /* amber-500 */
+}
+
+/* ─────────────────────────────────────────────
+   THEME: ocean-light
+   Light counterpart of ocean-dark
+────────────────────────────────────────────── */
+[data-theme="ocean-light"] {
+  --color-bg:             #f8fafc; /* slate-50 */
+  --color-surface:        #ffffff; /* white panels */
+  --color-surface-raised: #f1f5f9; /* slate-100 — subtle elevation */
+  --color-border:         #cbd5e1; /* slate-300 */
+  --color-text:           #0f172a; /* slate-900 — near-black */
+  --color-text-muted:     #64748b; /* slate-500 */
+  --color-primary:        #2563eb; /* blue-600 — darker for light bg contrast */
+  --color-primary-hover:  #1d4ed8; /* blue-700 */
+  --color-danger:         #dc2626; /* red-600 */
+  --color-accent:         #d97706; /* amber-600 */
+}
+
+/* ─────────────────────────────────────────────
+   THEME: forest-dark
+   Earthy green-tinted dark
+────────────────────────────────────────────── */
+[data-theme="forest-dark"] {
+  --color-bg:             #0d1a12;
+  --color-surface:        #1a2e1f;
+  --color-surface-raised: #243d28;
+  --color-border:         #2d5235;
+  --color-text:           #ecfdf5; /* green-50 */
+  --color-text-muted:     #6ee7b7; /* emerald-300 */
+  --color-primary:        #10b981; /* emerald-500 */
+  --color-primary-hover:  #059669; /* emerald-600 */
+  --color-danger:         #ef4444;
+  --color-accent:         #f59e0b;
+}
+
+/* ─────────────────────────────────────────────
+   THEME: forest-light
+────────────────────────────────────────────── */
+[data-theme="forest-light"] {
+  --color-bg:             #f0fdf4; /* green-50 */
+  --color-surface:        #ffffff;
+  --color-surface-raised: #dcfce7; /* green-100 */
+  --color-border:         #86efac; /* green-300 */
+  --color-text:           #14532d; /* green-900 */
+  --color-text-muted:     #16a34a; /* green-600 */
+  --color-primary:        #16a34a; /* green-600 */
+  --color-primary-hover:  #15803d; /* green-700 */
+  --color-danger:         #dc2626;
+  --color-accent:         #d97706;
+}
+
+/* ─────────────────────────────────────────────
+   DAY / NIGHT AUTO-DETECTION
+   If no data-theme is set, respect the OS preference.
+   When data-theme IS set, it overrides this.
+────────────────────────────────────────────── */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --color-bg:             #f8fafc;
+    --color-surface:        #ffffff;
+    --color-surface-raised: #f1f5f9;
+    --color-border:         #cbd5e1;
+    --color-text:           #0f172a;
+    --color-text-muted:     #64748b;
+    --color-primary:        #2563eb;
+    --color-primary-hover:  #1d4ed8;
+    --color-danger:         #dc2626;
+    --color-accent:         #d97706;
+  }
+}
+/* 
 
 h1 {
   font-size: 3.2em;
@@ -67,4 +178,4 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
-}
+} */

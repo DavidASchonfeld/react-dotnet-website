@@ -31,6 +31,8 @@ import HomePage from './pages/HomePage'
 
 function App() {
 
+  const { currentTheme } = useSelector((state: RootState) => state.theme);
+
   // When Website loads, pull in all MediaType details
   // into a frontend store in Redux
   const { token } = useSelector((state: RootState) => state.auth);
@@ -38,6 +40,14 @@ function App() {
   useEffect(() => {
     if (token) dispatch(fetchAllApprovedMediaTypes(token));
   }, [token, dispatch]);
+
+  useEffect(() => {
+    if (currentTheme === null){
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', currentTheme);
+    }
+  }, [currentTheme])  // runs on load, and whenever its dependency: "theme" changes
 
 
   // The entire Website Structure

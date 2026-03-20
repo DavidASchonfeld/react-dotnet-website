@@ -9,6 +9,7 @@ import authReducer from './authSlice'
 import mediaListsReducer from './mediaListsSlice';
 import mediaItemsReducer from './mediaItemsSlice';
 import mediaTypesReducer from './mediaTypesSlice';
+import themeReducer from './themeSlice';
 
 
 
@@ -18,7 +19,8 @@ const rootReducer = combineReducers({
     auth: authReducer,
     mediaLists: mediaListsReducer,
     mediaItems: mediaItemsReducer,
-    mediaTypes: mediaTypesReducer
+    mediaTypes: mediaTypesReducer,
+    theme: themeReducer
 })
 
 // ---- Persist config -----
@@ -37,7 +39,7 @@ const rootReducer = combineReducers({
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['auth']
+    whitelist: ['auth', 'theme']
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
