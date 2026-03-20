@@ -1,4 +1,5 @@
-import MediaItemRowContent from '../MediaItemRowContent';
+import RowItemContent from '../RowItemContent';
+import RowItemStyling from '../RowItemStyling';
 import MediaTypeLabel from '../MediaTypeLabel';
 import type { MediaItemSummary } from '../../types/mediaItem';
 
@@ -28,12 +29,12 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
                     Displays the same name + media type label as the list rows, so the user
                     can clearly see which item the action is about. */}
                 {itemContext && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-surface rounded text-sm">
-                        <MediaItemRowContent
+                    <RowItemStyling>
+                        <RowItemContent
                             firstString={itemContext.name}
                             emojiIcon={<MediaTypeLabel mediaTypeId={itemContext.mediaTypeId} faded={true} />}
                         />
-                    </div>
+                    </RowItemStyling>
                 )}
 
                 <h2>{title}</h2>

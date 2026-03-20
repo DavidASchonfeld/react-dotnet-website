@@ -9,7 +9,8 @@ import { clearSelectedMediaItemDetail} from '../store/mediaItemsSlice';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import { fetchMediaItemDetail, patchMediaItemBasicInfoTHUNK } from '../store/mediaItemsSlice';
 import MediaItemFormModal from '../components/modals/MediaItemFormModal';
-import MediaItemRowContent from '../components/MediaItemRowContent';
+import RowItemContent from '../components/RowItemContent';
+import RowItemStyling from '../components/RowItemStyling';
 
 
 
@@ -69,11 +70,13 @@ export default function MediaItemDetailPage() {
     return (
         <div>
 
-            <MediaItemRowContent
-                firstString={selectedMediaItemDetail.name}
-                secondString={'TODO: ADD CREATORS'}
-                emojiIcon={<MediaTypeLabel mediaTypeId={selectedMediaItemDetail.mediaTypeId} faded={true} />}
-            />
+            <RowItemStyling>
+                <RowItemContent
+                    firstString={selectedMediaItemDetail.name}
+                    secondString={'TODO: ADD CREATORS'}
+                    emojiIcon={<MediaTypeLabel mediaTypeId={selectedMediaItemDetail.mediaTypeId} faded={true} />}
+                />
+            </RowItemStyling>
 
             {selectedMediaItemDetail.canEdit && (
                 <button onClick = {() => setIsEditMode(prev => !prev)}>

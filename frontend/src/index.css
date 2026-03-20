@@ -63,6 +63,7 @@ body {
   color: var(--color-text);
 }
 
+
 a {
   font-weight: 500;
   color: var(--color-primary);
@@ -93,6 +94,7 @@ a:hover {
   --color-primary-hover:  #2563eb; /* blue-600 */
   --color-danger:         #ef4444; /* red-500 */
   --color-accent:         #f59e0b; /* amber-500 */
+  --color-btn-hover:      rgba(255, 255, 255, 0.10); /* subtle light overlay on dark bg */
 }
 
 /* ─────────────────────────────────────────────
@@ -110,6 +112,7 @@ a:hover {
   --color-primary-hover:  #1d4ed8; /* blue-700 */
   --color-danger:         #dc2626; /* red-600 */
   --color-accent:         #d97706; /* amber-600 */
+  --color-btn-hover:      rgba(0, 0, 0, 0.07); /* subtle dark overlay on light bg */
 }
 
 /* ─────────────────────────────────────────────
@@ -127,6 +130,7 @@ a:hover {
   --color-primary-hover:  #059669; /* emerald-600 */
   --color-danger:         #ef4444;
   --color-accent:         #f59e0b;
+  --color-btn-hover:      rgba(255, 255, 255, 0.10);
 }
 
 /* ─────────────────────────────────────────────
@@ -143,6 +147,7 @@ a:hover {
   --color-primary-hover:  #15803d; /* green-700 */
   --color-danger:         #dc2626;
   --color-accent:         #d97706;
+  --color-btn-hover:      rgba(0, 0, 0, 0.07);
 }
 
 /* ─────────────────────────────────────────────
@@ -162,6 +167,7 @@ a:hover {
     --color-primary-hover:  #1d4ed8;
     --color-danger:         #dc2626;
     --color-accent:         #d97706;
+    --color-btn-hover:      rgba(0, 0, 0, 0.07);
   }
 }
 
@@ -194,21 +200,41 @@ a:hover {
   /* --- Buttons ---
        .btn is the base — always pair it with a variant:
        .btn-primary   → brand color (main actions)
-       .btn-secondary → subtle/outlined (cancel, back)
+       .btn-secondary → transparent until hovered, like Navbar buttonClass
        .btn-danger    → red (delete, destructive actions)
+
+       .btn-secondary intentionally has no background — it inherits the global
+       button:hover:not(:disabled) rule which applies var(--color-btn-hover),
+       a theme-aware transparent overlay (same effect as Navbar's hover:bg-white/10).
   */
   .btn {
-    @apply px-4 py-2 rounded-md font-medium cursor-pointer
-           transition-all duration-150 active:scale-95
-           border border-transparent;
+    @apply flex items-center justify-center gap-2 w-full
+           px-3 py-2 rounded-lg font-medium cursor-pointer
+           transition-colors duration-150 active:scale-95;
   }
   .btn-primary   { @apply bg-primary text-white hover:bg-primary-hover; }
-  .btn-secondary { @apply bg-surface border-border text-text hover:bg-surface-raised; }
+  .btn-secondary { @apply text-text; }
   .btn-danger    { @apply bg-danger text-white hover:opacity-90; }
+
+  /* --- Plain button hover ---
+       Targets unstyled <button> elements (not .btn variants).
+       Gives them a rounded hover background that adapts to the theme:
+       light overlay on dark themes, dark overlay on light themes.
+       Lower specificity than .btn-primary:hover etc., so styled buttons are unaffected.
+  */
+  button {
+    @apply rounded-md transition-colors duration-150 cursor-pointer;
+  }
+  button:hover:not(:disabled) {
+    background-color: var(--color-btn-hover);
+  }
 
   /* --- Cards --- */
   .card {
-    @apply bg-surface border border-border rounded-lg p-4;
+    @apply bg-surface border border-border rounded-lg overflow-hidden;
+  }
+  .card-padding-4 {
+    @apply p-4;
   }
 
   /* --- Modal overlay ---
@@ -262,6 +288,81 @@ a:hover {
     @apply relative flex items-center w-full px-4 py-2.5
            text-sm text-text hover:bg-surface-raised
            transition-colors duration-150;
+  }
+
+  /* --- Row Item ---
+       Base visual style for a list row: background, hover/active states,
+       border separator, and horizontal padding.
+       Add cursor-pointer inline when the row is clickable.
+  */
+  .row-item {
+    @apply flex items-center gap-2 px-3
+           bg-surface border-b border-border
+           hover:bg-surface-raised active:bg-border
+           transition-colors;
+  }
+
+  /* --- Row Item: Phone variant ---
+       Additive constraint on .row-item — apply both classes together, e.g. "row-item row-item-phone".
+       Caps the row to iPhone 14/15 logical width (390px) and sets a proportional height ratio.
+
+       max-w-[390px] : max-width: 390px.
+        -- max-w-       sets max-width.
+        -- [390px]      is Tailwind's arbitrary-value syntax: any value inside brackets becomes a
+                         one-off utility at compile time, bypassing the preset scale.
+                         390px = iPhone 14/15 logical CSS pixel width (the right value since no
+                         CSS/Tailwind variable exists for "phone screen width").
+       w-full          : width: 100%, so the row still fills its parent when the parent is narrower
+                         than 390px (e.g. a 375px iPhone SE screen).
+       mx-auto         : margin-left + margin-right = auto, centering the row inside any container
+                         wider than 390px (tablet, desktop).
+       aspect-ratio: 6/1 : height = width ÷ 6. Acts as a minimum height — content taller than the ratio
+                         still expands the row. At 390px → ~65px (standard iOS cell). At 320px → ~53px.
+  */
+  .row-item-phone {
+    @apply max-w-[390px] w-full mx-auto;
+    aspect-ratio: 6 / 1;
+    max-height: 50px;
+  }
+
+  /* --- Swipeable Row Item ---
+       Classes for SwipeReorderRowItem's outer wrapper, reveal panels,
+       draggable content layer, and action buttons.
+  */
+  .row-item-swipe {
+    @apply relative overflow-hidden border-b border-border;
+  }
+  .row-item-swipe-reveal-left {
+    @apply absolute inset-0 flex items-center justify-center
+           bg-blue-600 text-white text-lg font-medium;
+  }
+  .row-item-swipe-reveal-right {
+    @apply absolute inset-0 flex items-center justify-center
+           bg-red-600 text-white text-lg font-medium;
+  }
+  .row-item-swipe-content {
+    @apply relative z-10 bg-surface flex items-center gap-2 px-3
+           select-none hover:bg-surface-raised active:bg-border transition-colors;
+  }
+  .row-item-drag-handle {
+    @apply cursor-grab text-gray-400 select-none text-lg;
+  }
+  .row-item-settings-btn {
+    @apply ml-auto shrink-0 px-2 py-1 text-gray-400
+           hover:text-gray-600 dark:hover:text-gray-200
+           bg-transparent text-lg leading-none;
+  }
+  /* Base for reveal action buttons — add bg-blue-600 or bg-red-600 inline */
+  .row-item-reveal-action-btn {
+    @apply px-2 py-1 rounded text-xs font-medium shrink-0 text-white;
+  }
+  .row-item-cancel-btn {
+    @apply px-2 py-1 text-gray-400 hover:text-gray-600
+           dark:hover:text-gray-200 bg-transparent text-lg leading-none shrink-0;
+  }
+
+  .h1-styling {
+    @apply text-2xl font-bold tracking-tight;
   }
 
 }

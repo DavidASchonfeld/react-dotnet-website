@@ -3,7 +3,8 @@ import type { AppDispatch, RootState } from "../store/store";
 import { useEffect } from "react";
 import { fetchRandomMediaItems} from "../store/mediaItemsSlice";
 import { useNavigate } from "react-router-dom";
-import MediaItemRowContent from "../components/MediaItemRowContent";
+import RowItemContent from "../components/RowItemContent";
+import RowItemStyling from "../components/RowItemStyling";
 import MediaTypeLabel from "../components/MediaTypeLabel";
 import { EXPLORE_PAGE_ITEM_COUNT } from "../constants";
 
@@ -18,7 +19,7 @@ export default function ExploreMediaItemsPage() {
     // const { mediaItems, status, error } = useSelector((state: RootState) => state.mediaItems);
     // const { token } = useSelector((state:RootState) => state.auth);
     // Consolidated into 1 Request for Fetching from RootState:
-    const { mediaItems, token } = useSelector((state: RootState) => ({
+    const { mediaItems, status, token } = useSelector((state: RootState) => ({
         ...state.mediaItems,  // Unwrap the mediaList key/value-pair-objects and put them all into the output
         token: state.auth.token   // Telling where to specifically find the token value inside the RootState object
     }))
@@ -58,6 +59,23 @@ export default function ExploreMediaItemsPage() {
 
 
 
+    if (status === 'loading') return (
+        <div className="page">
+            {/* animate-pulse: Tailwind class that fades opacity in and out, creating
+                a "breathing" shimmer effect. It needs multiple child <div>s because
+                animate-pulse only provides the animation — each child <div> is a
+                separate placeholder block that visually represents one row item that
+                will appear once data loads. Without them there is nothing to animate. */}
+            <div className="animate-pulse space-y-3">
+                <div className="h-14 bg-surface-raised rounded-lg" />
+                <div className="h-14 bg-surface-raised rounded-lg" />
+                <div className="h-14 bg-surface-raised rounded-lg" />
+                <div className="h-14 bg-surface-raised rounded-lg" />
+                <div className="h-14 bg-surface-raised rounded-lg" />
+            </div>
+        </div>
+    );
+
     return (
         <div>
             <h1>Explore Media Items</h1>
@@ -66,13 +84,13 @@ export default function ExploreMediaItemsPage() {
             >Refresh</button>
             
             {mediaItems.map(mediaItem => (
-                <div key={mediaItem.id} onClick={() => navigate(`/mediaitem/${mediaItem.id}`)}>
-                    <MediaItemRowContent
+                <RowItemStyling key={mediaItem.id} onClick={() => navigate(`/mediaitem/${mediaItem.id}`)}>
+                    <RowItemContent
                         firstString={mediaItem.name}
                         secondString={'TODO: ADD CREATORS'}
                         emojiIcon={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
                     />
-                </div>
+                </RowItemStyling>
             ))}
         </div>
     );

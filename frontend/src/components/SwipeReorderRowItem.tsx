@@ -1,20 +1,27 @@
+import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSwipeable } from 'react-swipeable';
-import MediaItemRowContent from './MediaItemRowContent';
-import MediaTypeLabel from './MediaTypeLabel';
-import type { MediaItemSummary } from '../types/mediaItem';
+import RowItemStyling from './RowItemStyling';
 import { AMOUNT_TO_SWIPE_HORIZONTALLY_TO_ACTIVATE_TRIGGER } from "../constants";
 
+// Describes one swipe action: the label shown behind the sliding row and the callback to fire.
+// The same label is used in SwipeableRow (as a large background text) and StaticRow (as a button).
+interface SwipeAction {
+    label: string;
+    onPress: () => void;
+}
+
 interface Props {
-    item: MediaItemSummary;
+    id: number;                         // used by @dnd-kit/sortable to identify this row in a list
     isEditMode: boolean;
     dragDisabled?: boolean;
     swipeDisabled?: boolean;
-    onRequestDelete: (item: { id: number; name: string }) => void;
-    onRequestOptions?: (item: MediaItemSummary) => void;
+    swipeLeftAction?: SwipeAction;      // fires on a left swipe  (shown in red)
+    swipeRightAction?: SwipeAction;     // fires on a right swipe (shown in blue)
+    onOptionsPress?: () => void;        // ··· button callback
+    children: ReactNode;               // the row content (e.g. <RowItemContent .../>)
 }
 
 // Swipe must travel this many px to trigger an action; shorter swipes snap back.
@@ -22,65 +29,69 @@ interface Props {
 const horizontalSwipeAmountThreshold = AMOUNT_TO_SWIPE_HORIZONTALLY_TO_ACTIVATE_TRIGGER;
 
 
-// Inner component that calls useSwipeable (always called — rules of hooks)
+// Inner component interface shared by SwipeableRow and StaticRow
 interface RowProps {
-    item: MediaItemSummary;
+    id: number;
     isEditMode: boolean;
     dragDisabled: boolean;
     sortable: ReturnType<typeof useSortable>;
-
-    // Need these specifically because ConfirmModal.tsx needs those.
-    onRequestDelete: (item: { id: number; name: string }) => void;
-    onRequestOptions?: (item: MediaItemSummary) => void;
+    swipeLeftAction?: SwipeAction;
+    swipeRightAction?: SwipeAction;
+    onOptionsPress?: () => void;
+    children: ReactNode;
 }
 
 
-export default function SortableMediaItem({
-    item,
+export default function SwipeReorderRowItem({
+    id,
     isEditMode,
     dragDisabled = false,
     swipeDisabled = false,
-    onRequestDelete,
-    onRequestOptions,
+    swipeLeftAction,
+    swipeRightAction,
+    onOptionsPress,
+    children,
 }: Props) {
     // useSortable must always be called (rules of hooks).
     // When dragDisabled, we simply don't attach its ref/listeners/attributes.
-    const sortable = useSortable({ id: item.id });
+    const sortable = useSortable({ id });
 
     if (swipeDisabled) {
         return (
             <StaticRow
-                item={item}
+                id={id}
                 isEditMode={isEditMode}
                 dragDisabled={dragDisabled}
                 sortable={sortable}
-                onRequestDelete={onRequestDelete}
-                onRequestOptions={onRequestOptions}
-            />
+                swipeLeftAction={swipeLeftAction}
+                swipeRightAction={swipeRightAction}
+                onOptionsPress={onOptionsPress}
+            >
+                {children}
+            </StaticRow>
         );
     }
 
     return (
         <SwipeableRow
-            item={item}
+            id={id}
             isEditMode={isEditMode}
             dragDisabled={dragDisabled}
             sortable={sortable}
-            onRequestDelete={onRequestDelete}
-            onRequestOptions={onRequestOptions}
-        />
+            swipeLeftAction={swipeLeftAction}
+            swipeRightAction={swipeRightAction}
+            onOptionsPress={onOptionsPress}
+        >
+            {children}
+        </SwipeableRow>
     );
 }
 
 
-function SwipeableRow({ item, isEditMode, dragDisabled, sortable, onRequestDelete, onRequestOptions }: RowProps) {
+function SwipeableRow({ isEditMode, dragDisabled, sortable, swipeLeftAction, swipeRightAction, onOptionsPress, children }: RowProps) {
 
-    
-
-
-    const navigate = useNavigate();
     const [horizontalSwipeOffset, setHorizontalSwipeOffset] = useState(0);
-    
+
     // isSwiping: true while the finger/mouse is actively moving.
     // Used to disable the CSS transition during the drag so the row
     // tracks the pointer without lag (the stutter), then re-enables
@@ -107,9 +118,9 @@ function SwipeableRow({ item, isEditMode, dragDisabled, sortable, onRequestDelet
 
         // Details about how Swiping Works:
         // There are 3 layers:
-        // -- Layer z-[1] or z-0: Blue "Details" background div
-        // -- Layer z-[1] or z-0: Red "Remove" background div
-        // -- Layer z-10: The MediaItem row on top.
+        // -- Layer z-[1] or z-0: Right-action (swipeRightAction) background div
+        // -- Layer z-[1] or z-0: Left-action  (swipeLeftAction)  background div
+        // -- Layer z-10: The row content on top.
         //      It's on top because the "10" in z-10
         //      is bigger than the other layers' z-values.
         // SNAP_THRESHOLD: When swiping left/right,
@@ -120,9 +131,8 @@ function SwipeableRow({ item, isEditMode, dragDisabled, sortable, onRequestDelet
         // When swipeOff
         //  onSwiped() occurs no matter how far you swiped.
         //    Here in swipeHandlers, it only is about setting
-        //    isSwiping back to false, and setting 
-        //    the horizontalSwipeOffset variable back to 0. 
-
+        //    isSwiping back to false, and setting
+        //    the horizontalSwipeOffset variable back to 0.
 
 
 
@@ -138,8 +148,8 @@ function SwipeableRow({ item, isEditMode, dragDisabled, sortable, onRequestDelet
 
         // Direction-specific handlers only trigger the action if the swipe
         // travelled past SNAP_THRESHOLD. onSwiped (below) handles cleanup for all cases.
-        onSwipedLeft:  ({ absX }) => { if (absX > horizontalSwipeAmountThreshold) onRequestDelete({ id: item.id, name: item.name }); },
-        onSwipedRight: ({ absX }) => { if (absX > horizontalSwipeAmountThreshold) navigate(`/mediaitem/${item.id}`); },
+        onSwipedLeft:  ({ absX }) => { if (absX > horizontalSwipeAmountThreshold) swipeLeftAction?.onPress(); },
+        onSwipedRight: ({ absX }) => { if (absX > horizontalSwipeAmountThreshold) swipeRightAction?.onPress(); },
 
         // Fires after every swipe (Left, Right, Up, Down) — snaps the row back
         // and marks the gesture as done so the CSS transition re-enables.
@@ -158,46 +168,35 @@ function SwipeableRow({ item, isEditMode, dragDisabled, sortable, onRequestDelet
             // Tailwind
             // overflow-hidden: clips the colored background labels so they stay
             //     hidden until the row is swiped to reveal them.
-            className="relative overflow-hidden border-b border-border"
+            className="row-item-swipe"
         >
-            {/* Details background — revealed by swiping right.
-            Both backgrounds are full-width and centered so the label appears
-            in the middle of the row. z-index swaps based on swipe direction
-            so only the relevant color shows.
-            
-            Tailwind:
-            -- absolute int-0: means the div fills the entire row 100% behind the <MediaItemRowContent>
-            
-            */}
             {/*
-                How Swiping works with the Z-Value for the Divs behind the ItemRow
-                
+                How Swiping works with the Z-Value for the Divs behind the row
+
                 z-0 is in the back
-                z-[1] is in front (but still behind the MediaItemRowContent's parent div
-                since that parent div has z-10.)
+                z-[1] is in front (but still behind the row content div
+                since that div has z-10.)
                 ${horizontalSwipeOffset >= 0 ? 'z-[1]' : 'z-0'} means that
                 if horizontalSwipeOffset >= 0 (aka you are swiping rightward with your finger/mouse),
                 then put this div at z-[1] (and the other div's logic has it go to the back (Aka to z-0)).
-                That way, whenever I swipe right and move the ItemRow div out of the way,
+                That way, whenever I swipe right and move the row content div out of the way,
                 this div is on top of the other of the div
                 The same logic applies for the other div, since it becomes z-[1]
                 when horizontalSwipeOffset < 0, which is when you are swiping left
             */}
-            {/* Detail background - Revealed by Swiping Right*/}
-            <div className={
-                `absolute inset-0 flex items-center justify-center bg-blue-600 text-white text-lg font-medium
-                ${horizontalSwipeOffset >= 0 ? 'z-[1]' : 'z-0'}
-                `}>
-                📑 Details
-            </div>
+            {/* Right-action background — revealed by swiping right (blue; e.g. Details/navigation) */}
+            {swipeRightAction && (
+                <div className={`row-item-swipe-reveal-left ${horizontalSwipeOffset >= 0 ? 'z-[1]' : 'z-0'}`}>
+                    {swipeRightAction.label}
+                </div>
+            )}
 
-            {/* Delete Background — Revealed by Swiping Left */}
-            <div className={
-                `absolute inset-0 flex items-center justify-center bg-red-600 text-white text-lg font-medium
-                ${horizontalSwipeOffset < 0 ? 'z-[1]' : 'z-0'}
-                `}>
-                🗑 Delete
-            </div>
+            {/* Left-action background — revealed by swiping left (red; e.g. Delete/destructive) */}
+            {swipeLeftAction && (
+                <div className={`row-item-swipe-reveal-right ${horizontalSwipeOffset < 0 ? 'z-[1]' : 'z-0'}`}>
+                    {swipeLeftAction.label}
+                </div>
+            )}
 
             {/* Item row — slides with swipe offset */}
             <div
@@ -214,7 +213,7 @@ function SwipeableRow({ item, isEditMode, dragDisabled, sortable, onRequestDelet
                     transition: isSwiping ? 'none' : 'transform 0.2s ease',
                 }}
                 // select-none: prevents text-highlight when the user click-drags horizontally
-                className="relative z-10 bg-surface flex items-center gap-2 p-3 select-none hover:bg-surface-raised active:bg-border transition-colors"
+                className="row-item-swipe-content"
             >
                 {isEditMode && !dragDisabled && (
                     <span
@@ -226,55 +225,53 @@ function SwipeableRow({ item, isEditMode, dragDisabled, sortable, onRequestDelet
                         // listeners: for pointer/keyboard
                         {...attributes}
                         {...listeners}
-                        className="cursor-grab text-gray-400 select-none text-lg"
+                        className="row-item-drag-handle"
                         title="Drag to reorder"
                     >
                         ⠿
                     </span>
                 )}
-                <MediaItemRowContent
-                    firstString={item.name}
-                    emojiIcon={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
-                />
+                {children}
                 {/* More Options button
                      -- stopPropagation on mousedown prevents the
                         swipe handler (which also listens to mousedown)
                         from treating this button
                         click as the start of a swipe gesture. */}
-                <button
-                    onMouseDown={e => e.stopPropagation()}
-                    onClick={() => onRequestOptions?.(item)}
-                    
-                    // Tailwind:
-                    //  -- ml-auto: pushes button to the far right end of the "flex row" (which is located )
-                    //  -- shrink-0: Even if this object (in this case, this button) is compressed, do not strink this object
-                    //  -- leading-none: sets "line-height" to 1, which means that line-height = 1x the font size.
-                    //         (The default would be 1.5x)
+                {onOptionsPress && (
+                    <button
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={onOptionsPress}
 
-                    className="ml-auto shrink-0 px-2 py-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 bg-transparent text-lg leading-none"
-                    title="More options"
-                >
-                    ···
-                </button>
+                        // Tailwind:
+                        //  -- ml-auto: pushes button to the far right end of the "flex row" (which is located )
+                        //  -- shrink-0: Even if this object (in this case, this button) is compressed, do not strink this object
+                        //  -- leading-none: sets "line-height" to 1, which means that line-height = 1x the font size.
+                        //         (The default would be 1.5x)
+
+                        className="row-item-settings-btn"
+                        title="More options"
+                    >
+                        ···
+                    </button>
+                )}
             </div>
         </div>
     );
 }
 
 
-function StaticRow({ item, isEditMode, dragDisabled, sortable, onRequestDelete, onRequestOptions }: RowProps) {
-    const navigate = useNavigate();
-
-    const { setNodeRef, attributes, listeners, transform, transition, isDragging } = sortable;
+function StaticRow({ isEditMode, dragDisabled, sortable, swipeLeftAction, swipeRightAction, onOptionsPress, children }: RowProps) {
 
     // "Rule of Hooks": React requires you to always call all hooks unconditionally.
     // No if-statements, early returns, or conditions should ever prevent a hook
     // from being called on every render.
     // StaticRow (this function) does NOT call any hooks directly.
-    // Its caller, SortableMediaItem, already called useSortable() unconditionally.
+    // Its caller, SwipeReorderRowItem, already called useSortable() unconditionally.
     // Here in StaticRow, if dragDisabled === true, we simply don't USE the hook's
     // potentially-error-throwing data (passed in via the `sortable` parameter).
     // This satisfies Rule of Hooks while safely ignoring potentially error-prone data when not needed.
+
+    const { setNodeRef, attributes, listeners, transform, transition, isDragging } = sortable;
 
     const style = dragDisabled
         ? {}
@@ -285,51 +282,53 @@ function StaticRow({ item, isEditMode, dragDisabled, sortable, onRequestDelete, 
           };
 
     return (
-        <div
-            ref={dragDisabled ? undefined : setNodeRef}
-            style={style}
-            className="flex items-center gap-2 p-3 bg-surface border-b border-border hover:bg-surface-raised active:bg-border transition-colors"
-        >
-            {/* Always-visible Details button */}
-            <button
-                onClick={() => navigate(`/mediaitem/${item.id}`)}
-                className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-medium shrink-0"
-            >
-                Details
-            </button>
+        // Outer wrapper carries the dnd-kit ref and drag transform/opacity.
+        // RowItem below provides the visuals (background, hover, border, padding).
+        <div ref={dragDisabled ? undefined : setNodeRef} style={style}>
+            <RowItemStyling>
+                {/* Always-visible right-action button (e.g. Details) — equivalent of swiping right */}
+                {swipeRightAction && (
+                    <button
+                        onClick={swipeRightAction.onPress}
+                        className="row-item-reveal-action-btn bg-blue-600"
+                    >
+                        {swipeRightAction.label}
+                    </button>
+                )}
 
-            {isEditMode && !dragDisabled && (
-                <span
-                    {...attributes}
-                    {...listeners}
-                    className="cursor-grab text-gray-400 select-none text-lg"
-                    title="Drag to reorder"
-                >
-                    ⠿
-                </span>
-            )}
+                {isEditMode && !dragDisabled && (
+                    <span
+                        {...attributes}
+                        {...listeners}
+                        className="row-item-drag-handle"
+                        title="Drag to reorder"
+                    >
+                        ⠿
+                    </span>
+                )}
 
-            <MediaItemRowContent
-                    firstString={item.name}
-                    secondString={'TODO: ADD CREATORS'}
-                    emojiIcon={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
-                />
+                {children}
 
-            {/* Always-visible Delete button */}
-            <button
-                onClick={() => onRequestDelete({ id: item.id, name: item.name })}
-                className="px-2 py-1 bg-red-600 text-white rounded text-xs font-medium shrink-0"
-            >
-                Delete
-            </button>
+                {/* Always-visible left-action button (e.g. Delete) — equivalent of swiping left */}
+                {swipeLeftAction && (
+                    <button
+                        onClick={swipeLeftAction.onPress}
+                        className="row-item-reveal-action-btn bg-red-600"
+                    >
+                        {swipeLeftAction.label}
+                    </button>
+                )}
 
-            <button
-                onClick={() => onRequestOptions?.(item)}
-                className="px-2 py-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 bg-transparent text-lg leading-none shrink-0"
-                title="More options"
-            >
-                ···
-            </button>
+                {onOptionsPress && (
+                    <button
+                        onClick={onOptionsPress}
+                        className="row-item-cancel-btn"
+                        title="More options"
+                    >
+                        ···
+                    </button>
+                )}
+            </RowItemStyling>
         </div>
     );
 }

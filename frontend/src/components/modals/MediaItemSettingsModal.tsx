@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import MediaItemRowContent from "../MediaItemRowContent";
+import RowItemContent from "../RowItemContent";
+import RowItemStyling from "../RowItemStyling";
 import MediaTypeLabel from "../MediaTypeLabel";
 import type { MediaItemSummary } from "../../types/mediaItem";
 
@@ -92,13 +93,13 @@ export default function MediaItemSettingsModal({currentMediaItem, onClose}: Prop
                     </div>
 
                     {/* Read-Only MediaItem Preview*/}
-                    <div className = "flex items-center gap-2 px-4 py-3 border-b border-border">
-                        <MediaItemRowContent
+                    <RowItemStyling>
+                        <RowItemContent
                             firstString={currentMediaItem.name}
                             secondString={'TODO: ADD CREATORS'}
                             emojiIcon={<MediaTypeLabel mediaTypeId={currentMediaItem.mediaTypeId} faded={true} />}
                         />
-                    </div>
+                    </RowItemStyling>
 
                     {/* The Menu Options*/}
                     <div className = "flex flex-col">

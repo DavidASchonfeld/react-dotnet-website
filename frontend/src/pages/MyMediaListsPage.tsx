@@ -10,7 +10,7 @@ import type { RootState, AppDispatch } from '../store/store';
 import { fetchMyLists, createList, deleteList } from '../store/mediaListsSlice';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
-import MediaItemRowContent from '../components/MediaItemRowContent';
+import RowItemContent from '../components/RowItemContent';
 
 
 
@@ -220,7 +220,9 @@ export default function MyMediaListsPage() {
         <div className='page'>
             {error && <h2>{error}</h2>}
 
-            <h1>My Lists</h1>
+            {/* tracking-tight reduces letter-spacing — standard for large display headings
+                to prevent characters from looking too spread out at bigger sizes */}
+            <h1 className="text-2xl font-bold tracking-tight">My Lists</h1>
             
             <div className = "flex gap-2">
 
@@ -241,14 +243,14 @@ export default function MyMediaListsPage() {
             
                 {mediaLists.map(mediaList => (
                     <div key={mediaList.id}
-                        className="card flex justify-between items-center"
+                        className="card flex justify-between items-stretch"
                         onClick={() => navigate(`/medialist/${mediaList.id}`)}
                     >
-                        <MediaItemRowContent
+                        <RowItemContent
                             firstString={mediaList.name}
                             secondString={`${mediaList.itemCount} items`}
 
-                            larger = {true}
+                            larger={true}
                             thirdString={mediaList.description ?? undefined}
                         />
                         

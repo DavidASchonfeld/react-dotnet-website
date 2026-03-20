@@ -92,21 +92,31 @@ export default function AdminManageAllUsersPage() {
                 <button onClick={ () => { getAllUsers(token!).then(setUserList)} }>Refresh</button>
 
                 {!loading && !error && (
-                    <table>
-                        <tbody>
-                        <tr>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Change Role</th>
-                            <th>Save</th>
-                        </tr>
+                    <table className="w-full text-sm">
+                        {/* text-text-muted: uses the semantic color token for secondary/dimmed text
+                                (auto-adjusts per theme — lighter than primary text, used for labels).
+                            tracking-wider: increases letter-spacing, standard for ALL-CAPS column headers
+                                 to improve readability at small sizes */}
+                        <thead className="bg-surface-raised text-text-muted uppercase text-xs tracking-wider">
+                            <tr>
+                                <th className="px-4 py-3 text-left">Username</th>
+                                <th className="px-4 py-3 text-left">Email</th>
+                                <th className="px-4 py-3 text-left">Change Role</th>
+                                <th className="px-4 py-3 text-left">Save</th>
+                            </tr>
+                        </thead>
+                        {/* divide-y: adds a top border to every child element except the first —
+                                 creates horizontal row separators without adding a border to the table itself.
+                            divide-border: uses the semantic --color-border token so dividers match
+                                 the current theme automatically */}
+                        <tbody className="divide-y divide-border">
                         {userList.map(eachUser => {
                             const isCurrentUser = eachUser.userName === userName;
                             return (
-                                <tr key={eachUser.id} className={isCurrentUser ? 'opacity-50': ''}>
-                                    <td>{eachUser.userName}</td>
-                                    <td>{eachUser.email}</td>
-                                    <td>
+                                <tr key={eachUser.id} className={`hover:bg-surface-raised transition-colors ${isCurrentUser ? 'opacity-50': ''}`}>
+                                    <td className="px-4 py-3">{eachUser.userName}</td>
+                                    <td className="px-4 py-3">{eachUser.email}</td>
+                                    <td className="px-4 py-3">
                                         <select
                                             name = "UserRole"
                                             id = {`${eachUser.id}_userRole`}
@@ -115,7 +125,7 @@ export default function AdminManageAllUsersPage() {
 
                                             // Initially, set the dropdown to the user's current RoleLevel.
                                             value = {selectedRoles[eachUser.id] ?? eachUser.roleLevel}
-                                            
+
                                             onChange = {(e) => setSelectedRoles({
                                                 ...selectedRoles,  // Keep the same values from before,
                                                 // except for this row's user.
@@ -127,7 +137,7 @@ export default function AdminManageAllUsersPage() {
                                             <option>Administrator</option>
                                         </select>
                                     </td>
-                                    <td>
+                                    <td className="px-4 py-3">
                                         {/* token! here means token is guaranteed.
                                         If there was no token, this page's error would run instead
                                         so the programming logic would never reach this line of code.*/}
@@ -139,7 +149,7 @@ export default function AdminManageAllUsersPage() {
                                             Save
                                         </button>
                                     </td>
-                                    
+
                             </tr>
                             );
                         })}

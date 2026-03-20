@@ -1,17 +1,24 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 
 
 export default function HomePage() {
 
+    // Import ability to navigate within this website
+    const navigate = useNavigate();
 
     return (
-        <div className="flex-col gap-3">
-            <h1>Media Favorites Website</h1>
-            This website is a place where you can browse submitted descriptions on Movies, Books and more, and create lists and favorites.
-            
-            <Link to = "/about">About Page</Link>
+        <div className="page">
+            <h1 className = "h1-styling">Media Favorites Website</h1>
+            <p>This website is a place where you can browse submitted descriptions on Movies, Books and more, and create lists and favorites.</p>
+
+            <div className="flex justify-center">
+                <button
+                    className="btn btn-secondary w-fit"
+                    onClick={() => navigate("/about")}
+                >About Page</button>
+            </div>
         </div>
-        
+
     );
 }

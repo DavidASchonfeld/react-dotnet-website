@@ -35,7 +35,7 @@ interface ThemeState {
 }
 
 const initialState: ThemeState = {
-    currentTheme: null
+    currentTheme: null,
 }
 
 const themeSlice = createSlice({
@@ -58,7 +58,7 @@ const themeSlice = createSlice({
                } else {
                    document.documentElement.setAttribute('data-theme', action.payload);
                } */
-        }
+        },
     }
 });
 

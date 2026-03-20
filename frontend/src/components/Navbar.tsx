@@ -168,7 +168,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
     //   -- gap-0 removes the gap between the icon and the now-invisible label.
     //      Without this, the 8px gap still takes up space to the right of the icon,
     //      which offsets it slightly left of true center even with justify-center.
-    const buttonClass = `flex items-center${effectiveMinimized ? ' justify-center gap-0' : ' gap-2'}${!isTop ? ` w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 transition-colors` : ''}`;
+    const buttonClass = `flex items-center${effectiveMinimized ? ' justify-center gap-0' : ' gap-2'} px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 transition-colors${!isTop ? ' w-full' : ''}`;
 
     // When isTop = true, put the navigation bar on the top of the screen
     // When isTop = false, put the navigation bar on the left of the screen
@@ -194,8 +194,9 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                 // justify-center centers items in top mode (horizontal bar).
                 // justify-start + pt-3 sm:pt-4 pins items to the top in left mode (vertical sidebar).
                 `fixed top-0 left-0 flex items-center
-                gap-y-1 sm:gap-y-2 gap-x-2 sm:gap-x-4 bg-black/60 rounded-xl
+                gap-y-1 sm:gap-y-2 gap-x-2 sm:gap-x-4 bg-black/60 backdrop-blur-md border border-white/10 shadow-lg
                 transition-all duration-300
+                ${isTop ? 'rounded-b-xl' : 'rounded-r-xl'}
                 ${isTop
                     ? `flex-row justify-center w-full ${effectiveMinimized ? 'h-9 sm:h-10' : 'h-11 sm:h-[60px]'}`
                     : `flex-col justify-start pt-3 sm:pt-4 ${effectiveMinimized ? 'w-12 sm:w-16' : 'w-[150px] sm:w-[200px]'} h-screen`
@@ -432,7 +433,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
             {/* When autoMinimized, the screen is too narrow to show all items, so the button is locked
                 and clicking it does nothing. The user can only expand by making the window wider. */}
             <button
-                className="flex items-center justify-center shrink-0"
+                className="flex items-center justify-center shrink-0 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 transition-colors"
                 onClick={() => { if (!autoMinimized) setManualMinimized(!manualMinimized) }}
             >
                 {isTop

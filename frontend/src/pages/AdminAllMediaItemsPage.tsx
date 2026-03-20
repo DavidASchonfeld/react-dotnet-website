@@ -2,7 +2,8 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../store/store";
 import { useEffect, useState } from "react";
 import { createMediaItemTHUNK, deleteMediaItemTHUNK, fetchAllApprovedMediaItemsForAdmin, fetchMediaItemDetail, patchMediaItemBasicInfoTHUNK } from "../store/mediaItemsSlice";
-import MediaItemRowContent from "../components/MediaItemRowContent";
+import RowItemContent from "../components/RowItemContent";
+import RowItemStyling from "../components/RowItemStyling";
 import MediaTypeLabel from "../components/MediaTypeLabel";
 import MediaItemFormModal from "../components/modals/MediaItemFormModal";
 import type { MediaItemDetail } from "../types/mediaItem";
@@ -132,10 +133,12 @@ export default function AdminAllMediaItemsPage() {
             
             {mediaItems.map(mediaItem => (
                 <div key={mediaItem.id}>
-                    <MediaItemRowContent
-                        firstString={mediaItem.name}
-                        emojiIcon={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
-                    />
+                    <RowItemStyling>
+                        <RowItemContent
+                            firstString={mediaItem.name}
+                            emojiIcon={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
+                        />
+                    </RowItemStyling>
                     <button onClick={() => handleEditClick(mediaItem.id)}>Edit</button>
                     <button onClick={() => setMediaItemToDeleteId(mediaItem.id)}>Delete</button>
                 </div>

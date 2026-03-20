@@ -1,6 +1,6 @@
 // React Libraries
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
 // dnd-kit
@@ -21,7 +21,8 @@ import {
 } from '../store/mediaListsSlice';
 import type { MediaItemSummary } from '../types/mediaItem';
 import MediaTypeLabel from '../components/MediaTypeLabel';
-import SortableMediaItem from '../components/SortableMediaItem';
+import SwipeReorderRowItem from '../components/SwipeReorderRowItem';
+import RowItemContent from '../components/RowItemContent';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 import { fetchRandomMediaItems } from '../store/mediaItemsSlice';
@@ -34,6 +35,7 @@ import MediaItemSettingsModal from '../components/modals/MediaItemSettingsModal'
 export default function MediaListDetailPage() {
 
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
 
     const { selectedMediaListDetail, status, error } = useSelector((state: RootState) => state.mediaLists);
     const mediaItems = useSelector((state: RootState) => state.mediaItems.mediaItems);
@@ -121,14 +123,20 @@ export default function MediaListDetailPage() {
     // dragDisabled=true  → no drag handles
     function renderFallbackItems(swipeDisabled: boolean, dragDisabled: boolean) {
         return orderedItems.map(item => (
-            <SortableMediaItem
+            <SwipeReorderRowItem
                 key={item.id}
-                item={item}
+                id={item.id}
                 isEditMode={isEditMode}
                 dragDisabled={dragDisabled}
                 swipeDisabled={swipeDisabled}
-                onRequestDelete={setConfirmRemoveItem}
-            />
+                swipeLeftAction={{ label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }}
+                swipeRightAction={{ label: '📑 Details', onPress: () => navigate(`/mediaitem/${item.id}`) }}
+            >
+                <RowItemContent
+                    firstString={item.name}
+                    emojiIcon={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
+                />
+            </SwipeReorderRowItem>
         ));
     }
 
@@ -160,8 +168,8 @@ export default function MediaListDetailPage() {
             {/*
                 Boundary nesting:
                   SwipeErrorBoundary (outermost)
-                    └── DragListErrorBoundary
-                          └── DndContext (normal operation — drag + swipe)
+                    |-- DragListErrorBoundary
+                          |-- DndContext (normal operation — drag + swipe)
 
                 If react-swipeable crashes  → SwipeErrorBoundary fallback: swipeDisabled=true (buttons always visible)
                 If dnd-kit crashes          → DragListErrorBoundary fallback: dragDisabled=true (no drag handles)
@@ -189,13 +197,19 @@ export default function MediaListDetailPage() {
                         >
                             <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                                 {orderedItems.map(item => (
-                                    <SortableMediaItem
+                                    <SwipeReorderRowItem
                                         key={item.id}
-                                        item={item}
+                                        id={item.id}
                                         isEditMode={isEditMode}
-                                        onRequestDelete={setConfirmRemoveItem}
-                                        onRequestOptions={setSettingsItem}
-                                    />
+                                        swipeLeftAction={{ label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }}
+                                        swipeRightAction={{ label: '📑 Details', onPress: () => navigate(`/mediaitem/${item.id}`) }}
+                                        onOptionsPress={() => setSettingsItem(item)}
+                                    >
+                                        <RowItemContent
+                                            firstString={item.name}
+                                            emojiIcon={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
+                                        />
+                                    </SwipeReorderRowItem>
                                 ))}
                             </div>
                         </SortableContext>

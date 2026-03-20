@@ -38,7 +38,7 @@ function App() {
 
   const { currentTheme } = useSelector((state: RootState) => state.theme);
 
-  // When Website loads, pull in all MediaType details
+// When Website loads, pull in all MediaType details
   // into a frontend store in Redux
   const { token } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
