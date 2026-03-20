@@ -16,7 +16,7 @@ const THEMES: { value: Theme | null; label: string }[] = [
     //    The JavaScript logic is in App.tsx, since that is where themes are loaded.
     //// Day-Night Cycle: Switches between 2 CSS themes above,
     ////    depending on time of day. Day = 7am-8pm, as defined in App.tsx
-    { value: 'ocean-dayNight', label: 'Ocean (Day/Night'},
+    { value: 'ocean-dayNight', label: 'Ocean (Day/Night)'},
     { value: 'forest-dayNight', label: 'Forest (Day/Night)'},
 ];
 
