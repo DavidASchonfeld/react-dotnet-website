@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MediaItemRowContent from "../MediaItemRowContent";
+import MediaTypeLabel from "../MediaTypeLabel";
 import type { MediaItemSummary } from "../../types/mediaItem";
 
 interface Props {
@@ -91,7 +92,10 @@ export default function MediaItemSettingsModal({currentMediaItem, onClose}: Prop
 
                     {/* Read-Only MediaItem Preview*/}
                     <div className = "flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                        <MediaItemRowContent item={currentMediaItem} />
+                        <MediaItemRowContent
+                            firstString={currentMediaItem.name}
+                            emojiIcon={<MediaTypeLabel mediaTypeId={currentMediaItem.mediaTypeId} faded={true} />}
+                        />
                     </div>
 
                     {/* The Menu Options*/}

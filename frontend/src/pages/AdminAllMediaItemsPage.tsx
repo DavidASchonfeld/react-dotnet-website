@@ -3,6 +3,7 @@ import type { AppDispatch, RootState } from "../store/store";
 import { useEffect, useState } from "react";
 import { createMediaItemTHUNK, deleteMediaItemTHUNK, fetchAllApprovedMediaItemsForAdmin, fetchMediaItemDetail, patchMediaItemBasicInfoTHUNK } from "../store/mediaItemsSlice";
 import MediaItemRowContent from "../components/MediaItemRowContent";
+import MediaTypeLabel from "../components/MediaTypeLabel";
 import MediaItemFormModal from "../components/modals/MediaItemFormModal";
 import type { MediaItemDetail } from "../types/mediaItem";
 import ConfirmModal from "../components/modals/ConfirmModal";
@@ -131,7 +132,10 @@ export default function AdminAllMediaItemsPage() {
             
             {mediaItems.map(mediaItem => (
                 <div key={mediaItem.id}>
-                    <MediaItemRowContent item={mediaItem} />
+                    <MediaItemRowContent
+                        firstString={mediaItem.name}
+                        emojiIcon={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
+                    />
                     <button onClick={() => handleEditClick(mediaItem.id)}>Edit</button>
                     <button onClick={() => setMediaItemToDeleteId(mediaItem.id)}>Delete</button>
                 </div>

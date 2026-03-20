@@ -69,7 +69,10 @@ export default function MediaItemDetailPage() {
     return (
         <div>
 
-            <MediaItemRowContent item={selectedMediaItemDetail} />
+            <MediaItemRowContent
+                firstString={selectedMediaItemDetail.name}
+                emojiIcon={<MediaTypeLabel mediaTypeId={selectedMediaItemDetail.mediaTypeId} faded={true} />}
+            />
 
             {selectedMediaItemDetail.canEdit && (
                 <button onClick = {() => setIsEditMode(prev => !prev)}>

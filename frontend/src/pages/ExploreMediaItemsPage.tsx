@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { fetchRandomMediaItems} from "../store/mediaItemsSlice";
 import { useNavigate } from "react-router-dom";
 import MediaItemRowContent from "../components/MediaItemRowContent";
+import MediaTypeLabel from "../components/MediaTypeLabel";
 import { EXPLORE_PAGE_ITEM_COUNT } from "../constants";
 
 
@@ -66,7 +67,10 @@ export default function ExploreMediaItemsPage() {
             
             {mediaItems.map(mediaItem => (
                 <div key={mediaItem.id} onClick={() => navigate(`/mediaitem/${mediaItem.id}`)}>
-                    <MediaItemRowContent item={mediaItem} />
+                    <MediaItemRowContent
+                        firstString={mediaItem.name}
+                        emojiIcon={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
+                    />
                 </div>
             ))}
         </div>

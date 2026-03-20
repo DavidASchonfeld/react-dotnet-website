@@ -1,4 +1,5 @@
 import MediaItemRowContent from '../MediaItemRowContent';
+import MediaTypeLabel from '../MediaTypeLabel';
 import type { MediaItemSummary } from '../../types/mediaItem';
 
 // This defines what the caller must pass in
@@ -44,7 +45,10 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
                     can clearly see which item the action is about. */}
                 {itemContext && (
                     <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-sm">
-                        <MediaItemRowContent item={itemContext} />
+                        <MediaItemRowContent
+                            firstString={itemContext.name}
+                            emojiIcon={<MediaTypeLabel mediaTypeId={itemContext.mediaTypeId} faded={true} />}
+                        />
                     </div>
                 )}
 

@@ -4,6 +4,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSwipeable } from 'react-swipeable';
 import MediaItemRowContent from './MediaItemRowContent';
+import MediaTypeLabel from './MediaTypeLabel';
 import type { MediaItemSummary } from '../types/mediaItem';
 import { AMOUNT_TO_SWIPE_HORIZONTALLY_TO_ACTIVATE_TRIGGER } from "../constants";
 
@@ -231,7 +232,10 @@ function SwipeableRow({ item, isEditMode, dragDisabled, sortable, onRequestDelet
                         ⠿
                     </span>
                 )}
-                <MediaItemRowContent item={item} />
+                <MediaItemRowContent
+                    firstString={item.name}
+                    emojiIcon={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
+                />
                 {/* More Options button
                      -- stopPropagation on mousedown prevents the
                         swipe handler (which also listens to mousedown)
@@ -305,7 +309,10 @@ function StaticRow({ item, isEditMode, dragDisabled, sortable, onRequestDelete, 
                 </span>
             )}
 
-            <MediaItemRowContent item={item} />
+            <MediaItemRowContent
+                    firstString={item.name}
+                    emojiIcon={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
+                />
 
             {/* Always-visible Delete button */}
             <button

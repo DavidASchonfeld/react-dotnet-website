@@ -53,6 +53,10 @@ a:hover {
   color: var(--color-primary-hover);
 }
 
+/* ─────────────────────────────────────────────
+   COLOR THEMES
+────────────────────────────────────────────── */
+
 
 /* ─────────────────────────────────────────────
    THEME: ocean-dark (DEFAULT — applied at :root)
@@ -140,8 +144,42 @@ a:hover {
     --color-danger:         #dc2626;
     --color-accent:         #d97706;
   }
+
+
+  /* ─────────────────────────────────────────────
+   Layer Components
+────────────────────────────────────────────── */
+  @layer components {
+    /* --- Page layout  ---*/
+    .page {
+      @apply max-w-2xl mx-auto px-4 py-6 space-y-4;
+    }
+
+    /* --- Buttons ---*/
+    .btn {
+      @apply px-4 py-2 rounded-md font-medium cursor-pointer
+             transition-all duration-150 active:scale-95
+             border border-transparent;
+    }
+    .btn-primary { @apply bg-primary text-white hover:bg-primary-hover;}
+    .btn-secondary { @apply bg-surface border-border text-text hover:bg-surface-raised;}
+    .bth-danger { @apply bg-danger text-white hover:opacity-90;}
+
+    /* --- Cards ---*/
+    .card {
+      @apply bg-surface border border-border rounded-lg p-4;
+    }
+  }
+
 }
+
+
+
+
+
+
 /* 
+Part of the old Index.css
 
 h1 {
   font-size: 3.2em;

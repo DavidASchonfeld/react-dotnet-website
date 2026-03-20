@@ -1,6 +1,6 @@
 // React.js Library
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
 
@@ -10,6 +10,7 @@ import type { RootState, AppDispatch } from '../store/store';
 import { fetchMyLists, createList, deleteList } from '../store/mediaListsSlice';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
+import MediaItemRowContent from '../components/MediaItemRowContent';
 
 
 
@@ -29,6 +30,9 @@ export default function MyMediaListsPage() {
         ...state.mediaLists,  // Unwrap the mediaList key/value-pair-objects and put them all into the output
         token: state.auth.token   // Telling where to specifically find the token value inside the RootState object
     }))
+
+    // Importing ability to Redirect
+    const navigate = useNavigate(); 
 
     
     const dispatch = useDispatch<AppDispatch>();
@@ -213,36 +217,50 @@ export default function MyMediaListsPage() {
 
 
     return (
-        <div>
+        <div className='page'>
             {error && <h2>{error}</h2>}
 
             <h1>My Lists</h1>
             
-            {/* Create MediaList Button */}
-            <button onClick={
-                () => setShowCreateModal(true)
-            }>+ Create List</button>
+            <div className = "flex gap-2">
+
+                {/* Create MediaList Button */}
+                <button onClick={
+                    () => setShowCreateModal(true)
+                }>+ Create List</button>
+                
+
+                {/* Refresh Button - Calls Refresh on Click: */}
+                {/* Remember, you need "() =>"" so the function
+                only runs when the button is clicked, instead
+                of when the button is rendered. */}
+                <button onClick={() => dispatch(fetchMyLists(token!))}>Refresh</button>
+                
+            </div>
+            <div className="flex flex-col gap-3">
             
+                {mediaLists.map(mediaList => (
+                    <div key={mediaList.id}
+                        className="card flex justify-between items-center"
+                        onClick={() => navigate(`/medialist/${mediaList.id}`)}
+                    >
+                        <MediaItemRowContent
+                            firstString={mediaList.name}
+                            secondString={`${mediaList.itemCount} items`}
 
-            {/* Refresh Button - Calls Refresh on Click: */}
-            {/* Remember, you need "() =>"" so the function
-            only runs when the button is clicked, instead
-            of when the button is rendered. */}
-            <button onClick={() => dispatch(fetchMyLists(token!))}>Refresh</button>
-            {mediaLists.map(mediaList => (
-                <div key={mediaList.id}>
-                    <Link to={`/medialist/${mediaList.id}`}>
-                        <h2>{mediaList.name}</h2>
-                    </Link>
-                    <p>{mediaList.description}</p>
-                    <p>{mediaList.itemCount}</p>
-                    
-                    <button onClick={
-                        () => setMediaListToDelete(mediaList.id)
-                    }>Delete</button>
-                </div>
-            ))}
+                            larger = {true}
+                            thirdString={mediaList.description ?? undefined}
+                        />
+                        
 
+                        <button onClick={
+                            () => setMediaListToDelete(mediaList.id)
+                        }>Delete</button>
+                    </div>
+                ))}
+
+            </div>
+          
 
             {/*
                 in showCreateModal,
