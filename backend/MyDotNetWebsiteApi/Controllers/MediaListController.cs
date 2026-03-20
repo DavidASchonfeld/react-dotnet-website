@@ -59,7 +59,7 @@ public class MediaListController : ControllerBase
     }
 
     [HttpPost("{mediaListId}/items/{mediaItemId}")]
-    public async Task<IActionResult> AddMediaItemToMediaList(int mediaListId, int mediaItemId, [FromBody] AddMediaItemToMediaList dto)
+    public async Task<IActionResult> AddMediaItemToMediaList(int mediaListId, int mediaItemId, [FromBody] AddMediaItemToMediaListDto dto)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var result = await _mediaListService.AddMediaItemToListAsync(mediaListId, mediaItemId, dto, requesterUserId);
@@ -75,7 +75,7 @@ public class MediaListController : ControllerBase
     }
 
     [HttpPatch("{mediaListId}/items/{mediaItemId}")]
-    public async Task<IActionResult> MoveMediaItemWithinMediaList(int mediaListId, int mediaItemId, [FromBody] MoveMediaItemWithinMediaList dto)
+    public async Task<IActionResult> MoveMediaItemWithinMediaList(int mediaListId, int mediaItemId, [FromBody] MoveMediaItemWithinMediaListDto dto)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var result = await _mediaListService.MoveMediaItemWithinMediaListAsync(mediaListId, mediaItemId, dto, requesterUserId);

@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../store/store";
 import { useEffect, useState } from "react";
 import { createMediaItemTHUNK, deleteMediaItemTHUNK, fetchAllApprovedMediaItemsForAdmin, fetchMediaItemDetail, patchMediaItemBasicInfoTHUNK } from "../store/mediaItemsSlice";
-import MediaTypeLabel from "../components/MediaTypeLabel";
+import MediaItemRowContent from "../components/MediaItemRowContent";
 import MediaItemFormModal from "../components/modals/MediaItemFormModal";
 import type { MediaItemDetail } from "../types/mediaItem";
 import ConfirmModal from "../components/modals/ConfirmModal";
@@ -131,8 +131,7 @@ export default function AdminAllMediaItemsPage() {
             
             {mediaItems.map(mediaItem => (
                 <div key={mediaItem.id}>
-                    <MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} />
-                    <span>{mediaItem.name}</span>
+                    <MediaItemRowContent item={mediaItem} />
                     <button onClick={() => handleEditClick(mediaItem.id)}>Edit</button>
                     <button onClick={() => setMediaItemToDeleteId(mediaItem.id)}>Delete</button>
                 </div>

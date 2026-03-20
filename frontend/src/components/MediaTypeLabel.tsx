@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from '../store/store';
 import { fetchSingleMediaType } from "../store/mediaTypesSlice";
 
-export default function MediaTypeLabel({mediaTypeId}: {mediaTypeId: number}){
+export default function MediaTypeLabel({mediaTypeId, faded}: {mediaTypeId: number, faded?: boolean}){
 
         const dispatch = useDispatch<AppDispatch>();
         const { token } = useSelector((state: RootState) => state.auth);
@@ -38,16 +38,22 @@ export default function MediaTypeLabel({mediaTypeId}: {mediaTypeId: number}){
                 Text:
                 font-medium controls the bold/heavy for the letters
                 text-sm controls the font size
+
+                ${faded ? 'bg-slate-500/15' : 'bg-slate-100'}
+                -- if faded == true, make the background (not the txt/icon) faded/very transparent
+                -- if faded == false, just it standard bg-slate-100.
+
             */}
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-slate-700 ${faded ? 'bg-slate-500/15' : 'bg-slate-100'}`}>
+
                 <span>{mediaType?.icon ?? ''}</span>
 
-            {/* The "..." below is to demonstrate that the name is still loading.
-            In the mediaTypeSlice, I have a fallback placeholder mediaType
-            so if the script cannot find info on the matching mediaTypeId,
-            the ... will still be replaced by that fallback's mediaType's Name
-            I hardcoded that fallback MediaType's Name to be "Unknown" and icon to "❓"*/}
-                <span>{mediaType?.name ?? '❓'}</span>
+                {/* The "..." below is to demonstrate that the name is still loading.
+                In the mediaTypeSlice, I have a fallback placeholder mediaType
+                so if the script cannot find info on the matching mediaTypeId,
+                the ... will still be replaced by that fallback's mediaType's Name
+                I hardcoded that fallback MediaType's Name to be "Unknown" and icon to "❓"*/}
+                <span className="hidden sm:inline">{mediaType?.name ?? '❓'}</span>
             </span>
             </>
         );

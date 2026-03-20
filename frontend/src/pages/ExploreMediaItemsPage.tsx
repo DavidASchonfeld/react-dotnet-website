@@ -2,14 +2,16 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../store/store";
 import { useEffect } from "react";
 import { fetchRandomMediaItems} from "../store/mediaItemsSlice";
-import MediaTypeLabel from "../components/MediaTypeLabel";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import MediaItemRowContent from "../components/MediaItemRowContent";
 import { EXPLORE_PAGE_ITEM_COUNT } from "../constants";
 
 
 export default function ExploreMediaItemsPage() {
 
 
+    // Importing ability to Redirect
+    const navigate = useNavigate(); 
     
     // Original, separate fetching from RootState
     // const { mediaItems, status, error } = useSelector((state: RootState) => state.mediaItems);
@@ -63,10 +65,8 @@ export default function ExploreMediaItemsPage() {
             >Refresh</button>
             
             {mediaItems.map(mediaItem => (
-                <div key={mediaItem.id}>
-                    <Link to = {`/mediaitem/${mediaItem.id}`}>{mediaItem.name}</Link>
-                    <MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} />
-                    
+                <div key={mediaItem.id} onClick={() => navigate(`/mediaitem/${mediaItem.id}`)}>
+                    <MediaItemRowContent item={mediaItem} />
                 </div>
             ))}
         </div>

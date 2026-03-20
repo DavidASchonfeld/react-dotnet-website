@@ -221,7 +221,7 @@ public class MediaListService : IMediaListService
     }
 
 
-    public async Task<ServiceResult<MediaListSummaryDto>> AddMediaItemToListAsync(int mediaListId, int mediaItemId, AddMediaItemToMediaList dto, string requesterId)
+    public async Task<ServiceResult<MediaListSummaryDto>> AddMediaItemToListAsync(int mediaListId, int mediaItemId, AddMediaItemToMediaListDto dto, string requesterId)
     {
         
         //// Fetch the User and MediaList Object and then Check Permissions:
@@ -301,7 +301,7 @@ public class MediaListService : IMediaListService
     }
 
 
-    public async Task<ServiceResult<MediaListSummaryDto>> MoveMediaItemWithinMediaListAsync(int mediaListId, int mediaItemId, MoveMediaItemWithinMediaList dto, string requesterId)
+    public async Task<ServiceResult<MediaListSummaryDto>> MoveMediaItemWithinMediaListAsync(int mediaListId, int mediaItemId, MoveMediaItemWithinMediaListDto dto, string requesterId)
     {
         
         // Fetch the User and MediaList Object and then Check Permissions:

@@ -9,6 +9,7 @@ import { clearSelectedMediaItemDetail} from '../store/mediaItemsSlice';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import { fetchMediaItemDetail, patchMediaItemBasicInfoTHUNK } from '../store/mediaItemsSlice';
 import MediaItemFormModal from '../components/modals/MediaItemFormModal';
+import MediaItemRowContent from '../components/MediaItemRowContent';
 
 
 
@@ -67,6 +68,8 @@ export default function MediaItemDetailPage() {
 
     return (
         <div>
+
+            <MediaItemRowContent item={selectedMediaItemDetail} />
 
             {selectedMediaItemDetail.canEdit && (
                 <button onClick = {() => setIsEditMode(prev => !prev)}>

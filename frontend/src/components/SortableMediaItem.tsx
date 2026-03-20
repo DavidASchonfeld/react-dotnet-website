@@ -5,6 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useSwipeable } from 'react-swipeable';
 import MediaItemRowContent from './MediaItemRowContent';
 import type { MediaItemSummary } from '../types/mediaItem';
+import { AMOUNT_TO_SWIPE_HORIZONTALLY_TO_ACTIVATE_TRIGGER } from "../constants";
 
 interface Props {
     item: MediaItemSummary;
@@ -17,7 +18,7 @@ interface Props {
 
 // Swipe must travel this many px to trigger an action; shorter swipes snap back.
 // absX from react-swipeable is CSS pixels — same unit on desktop and phone.
-const SNAP_THRESHOLD = 100;
+const horizontalSwipeAmountThreshold = AMOUNT_TO_SWIPE_HORIZONTALLY_TO_ACTIVATE_TRIGGER;
 
 
 // Inner component that calls useSwipeable (always called — rules of hooks)
@@ -136,8 +137,8 @@ function SwipeableRow({ item, isEditMode, dragDisabled, sortable, onRequestDelet
 
         // Direction-specific handlers only trigger the action if the swipe
         // travelled past SNAP_THRESHOLD. onSwiped (below) handles cleanup for all cases.
-        onSwipedLeft:  ({ absX }) => { if (absX > SNAP_THRESHOLD) onRequestDelete({ id: item.id, name: item.name }); },
-        onSwipedRight: ({ absX }) => { if (absX > SNAP_THRESHOLD) navigate(`/mediaitem/${item.id}`); },
+        onSwipedLeft:  ({ absX }) => { if (absX > horizontalSwipeAmountThreshold) onRequestDelete({ id: item.id, name: item.name }); },
+        onSwipedRight: ({ absX }) => { if (absX > horizontalSwipeAmountThreshold) navigate(`/mediaitem/${item.id}`); },
 
         // Fires after every swipe (Left, Right, Up, Down) — snaps the row back
         // and marks the gesture as done so the CSS transition re-enables.
