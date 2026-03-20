@@ -26,6 +26,7 @@ import ExploreMediaItemsPage from './pages/ExploreMediaItemsPage'
 import MediaItemDetailPage from './pages/MediaItemDetailPage'
 import AdminAllMediaItemsPage from './pages/AdminAllMediaItemsPage'
 import HomePage from './pages/HomePage'
+import { DAY_NIGHT_MAP, setCurrentTheme, type DayNightTheme, type Theme } from './store/themeSlice'
 
 
 
@@ -41,13 +42,58 @@ function App() {
     if (token) dispatch(fetchAllApprovedMediaTypes(token));
   }, [token, dispatch]);
 
+
+  // Handling Color Themes:
+  function resolveTheme(theme: Theme | null): string | null {
+    if (theme && theme in DAY_NIGHT_MAP){
+      const hour = new Date().getHours();
+      const { dayTheme, nightTheme } = DAY_NIGHT_MAP[theme as DayNightTheme];
+
+      // Between 7am and 20 (aka 8pm), it is day, so return ocean-light
+      // otherwise, return ocean-dark.
+      return ((hour >= 7) && (hour < 20)) ? dayTheme : nightTheme;
+    }
+    return theme;
+  }
+
   useEffect(() => {
-    if (currentTheme === null){
+
+    // Process the theme, if needed
+    // Note: Right now, as you see above, resolveTheme only is needed for day/night themes.
+    const resolvedTheme = resolveTheme(currentTheme);
+
+    // Load in the theme into the DOM
+    if (resolvedTheme === null){
       document.documentElement.removeAttribute('data-theme');
     } else {
-      document.documentElement.setAttribute('data-theme', currentTheme);
+      document.documentElement.setAttribute('data-theme', resolvedTheme);
     }
-  }, [currentTheme])  // runs on load, and whenever its dependency: "theme" changes
+
+    // If using a day/night theme:
+    // Re-check at the next hour boundary
+    // Yes, passing in currentTheme since that is the DayNightTheme
+    // (if I am using that theme as the main theme right now.)
+    if (currentTheme && currentTheme in DAY_NIGHT_MAP){
+      const now = new Date();
+      const msUntilNextHour = (60 - now.getMinutes()) * 60_000 - now.getSeconds() * 1000;
+      const timer = setTimeout(() => {
+
+        // Re-trigger by setting currentTheme = to the same theme,
+        // this will cause the resolveTheme() to start again,
+        // causing another time check to potentially
+        // change the theme from day to night or vice versa,
+        // or keep it since it is still day or night
+        dispatch(setCurrentTheme('ocean-dayNight'));
+
+      }, msUntilNextHour)
+
+      // Cleans up timer when App.tsx is closed.
+      // Also prevents multiple different timers stacking up over
+      // time every time a currentTheme changes before the hour fires.
+      return () => clearTimeout(timer);
+    }
+
+  }, [currentTheme, dispatch])  // runs on load, and whenever its dependency: "theme" changes
 
 
   // The entire Website Structure
