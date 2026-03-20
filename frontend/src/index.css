@@ -163,31 +163,105 @@ a:hover {
     --color-danger:         #dc2626;
     --color-accent:         #d97706;
   }
+}
 
 
-  /* ─────────────────────────────────────────────
-   Layer Components
+/* ─────────────────────────────────────────────
+   COMPONENT CLASSES
+   Centralized, reusable class groups that map
+   to common UI patterns across the app.
+
+   WHY THESE EXIST:
+   Instead of copy-pasting long Tailwind class strings
+   into every component, I define them once here so
+   they stay consistent and only need updating in one place.
+
+   NOTE: "text-text" reads the --color-text CSS variable
+   defined above in @theme, and "border-border" reads
+   --color-border. Tailwind v4 auto-generates utility
+   class names from every --color-* variable in @theme,
+   so "text-text" = color: var(--color-text), and
+   "border-border" = border-color: var(--color-border).
+   This means they automatically update when the theme changes.
 ────────────────────────────────────────────── */
-  @layer components {
-    /* --- Page layout  ---*/
-    .page {
-      @apply max-w-2xl mx-auto px-4 py-6 space-y-4;
-    }
+@layer components {
 
-    /* --- Buttons ---*/
-    .btn {
-      @apply px-4 py-2 rounded-md font-medium cursor-pointer
-             transition-all duration-150 active:scale-95
-             border border-transparent;
-    }
-    .btn-primary { @apply bg-primary text-white hover:bg-primary-hover;}
-    .btn-secondary { @apply bg-surface border-border text-text hover:bg-surface-raised;}
-    .bth-danger { @apply bg-danger text-white hover:opacity-90;}
+  /* --- Page layout --- */
+  .page {
+    @apply max-w-2xl mx-auto px-4 py-6 space-y-4;
+  }
 
-    /* --- Cards ---*/
-    .card {
-      @apply bg-surface border border-border rounded-lg p-4;
-    }
+  /* --- Buttons ---
+       .btn is the base — always pair it with a variant:
+       .btn-primary   → brand color (main actions)
+       .btn-secondary → subtle/outlined (cancel, back)
+       .btn-danger    → red (delete, destructive actions)
+  */
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium cursor-pointer
+           transition-all duration-150 active:scale-95
+           border border-transparent;
+  }
+  .btn-primary   { @apply bg-primary text-white hover:bg-primary-hover; }
+  .btn-secondary { @apply bg-surface border-border text-text hover:bg-surface-raised; }
+  .btn-danger    { @apply bg-danger text-white hover:opacity-90; }
+
+  /* --- Cards --- */
+  .card {
+    @apply bg-surface border border-border rounded-lg p-4;
+  }
+
+  /* --- Modal overlay ---
+       The dark semi-transparent backdrop that covers the whole
+       screen when a modal is open, drawing focus to the popup.
+       Tailwind explanation:
+         fixed     : positions relative to the viewport (stays put when scrolling)
+         inset-0   : stretches to fill the full screen (top/right/bottom/left all = 0)
+         bg-black/50 : black at 50% transparency (dims the page behind the modal)
+         z-50      : z-index:50, on top of everything else
+  */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 flex justify-center items-center z-50;
+  }
+
+  /* --- Modal panel ---
+       The floating popup box itself.
+       Tailwind explanation:
+         bg-surface-raised : uses the "floating element" color from the active theme
+         text-text         : uses the primary text color from the active theme
+         border-border     : uses the border color from the active theme
+         rounded-lg        : rounded corners
+         p-8               : padding of size 8 on all sides
+         min-w-72          : minimum width of 72 (= 18rem)
+         flex flex-col     : stacks children vertically in a column
+         gap-4             : adds gap of size 4 between each child element
+  */
+  .modal-panel {
+    @apply bg-surface-raised text-text border border-border
+           rounded-lg p-8 min-w-72 flex flex-col gap-4;
+  }
+
+  /* --- Form input ---
+       Standard text input, textarea, or select styling for forms/modals.
+       Tailwind explanation:
+         bg-surface    : one level below modal-panel, so inputs look "inset" aka drawn onto the panel.
+         text-text     : readable foreground color from the active theme
+         border-border : consistent border color from the active theme
+         rounded px-2 py-1 : standard small padding and rounding
+         w-full        : stretch to fill the parent's width
+  */
+  .form-input {
+    @apply bg-surface text-text border border-border
+           rounded px-2 py-1 w-full;
+  }
+
+  /* --- Menu item ---
+       Used for clickable rows inside dropdown menus and context menus.
+  */
+  .menu-item {
+    @apply relative flex items-center w-full px-4 py-2.5
+           text-sm text-text hover:bg-surface-raised
+           transition-colors duration-150;
   }
 
 }

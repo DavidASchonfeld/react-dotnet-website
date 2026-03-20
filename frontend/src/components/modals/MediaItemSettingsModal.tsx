@@ -71,27 +71,28 @@ export default function MediaItemSettingsModal({currentMediaItem, onClose}: Prop
             >
                 {/*  The Pop-up Menu  */}
                 <div
-                    // Tailind
+                    // Tailwind:
                     //  -- w-full: Make this as wide as the screen
                     //  -- max-w-lg: max width will be "large" size in Tailwind (512 pixels)
                     //  -- rounded-t-2xl: Only rounds the top left/right corners (bottom corners are square)
                     //  -- pb-8: Add 32px on the bottom. Its good breath room, but also important iPhones cut into part of the screen.
+                    //  -- bg-surface-raised: Uses the semantic "floating element" color from the active theme (see index.css @theme)
                     className={
-                        `w-full max-w-lg bg-white dark:bg-gray-800
+                        `w-full max-w-lg bg-surface-raised
                         rounded-t-2xl pb-8
                         transform transition-transform duration-300 ease-out
                         ${visible ? 'translate-y-0': 'translate-y-full'}
                     `}
                     onClick = {e => e.stopPropagation()}
                 >
-                 
+
                     {/* Drag Handle Icon */}
                     <div className = "flex justify-center pt-3 pb-2">
-                        <div className = "w-10 h-2 rounded-full bg-gray-400 dark:bg-gray-500" />
+                        <div className = "w-10 h-2 rounded-full bg-text-muted" />
                     </div>
 
                     {/* Read-Only MediaItem Preview*/}
-                    <div className = "flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                    <div className = "flex items-center gap-2 px-4 py-3 border-b border-border">
                         <MediaItemRowContent
                             firstString={currentMediaItem.name}
                             emojiIcon={<MediaTypeLabel mediaTypeId={currentMediaItem.mediaTypeId} faded={true} />}
@@ -144,7 +145,8 @@ function SettingsRow({icon, label, onClick}: {icon: string; label: string; onCli
             // Tailwind:
             //  -- active: when the user's finger/mouse is pressed down on this element
             //  -- gap-4: 16px between each child element (the icon span and the label span)
-            className="flex items-center gap-4 px-6 py-4 text-left text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-colors w-full"
+            //  -- text-text, hover:bg-surface, active:bg-border: all use semantic theme colors (see index.css @theme)
+            className="flex items-center gap-4 px-6 py-4 text-left text-text hover:bg-surface active:bg-border transition-colors w-full"
         >
             <span className="text-xl w-6 text-center">{icon}</span>
             <span className="text-base">{label}</span>

@@ -40,20 +40,23 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
     }
 
     return (
-        <div className = "bg-white dark:bg-gray-800 p-8 rounded-lg min-w-72 flex flex-col gap-4 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded px-2 py-1">
-
+        /* Modal panel — see .modal-panel in index.css for Tailwind breakdown */
+        <div className="modal-panel">
 
             <h2>{isEditMode ? 'Edit Media Item' : 'Create New Media Item'}</h2>
 
+            {/* See .form-input in index.css for Tailwind breakdown */}
             <input
                 placeholder="Name (Required)"
                 value = {name}
                 onChange={(e) => setName(e.target.value)}
+                className="form-input"
             />
             <input
                 placeholder="Description (Optional)"
                 value = {description}
                 onChange={(e) => setDescription(e.target.value)}
+                className="form-input"
             />
 
 
