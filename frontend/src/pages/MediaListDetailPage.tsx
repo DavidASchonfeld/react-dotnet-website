@@ -27,6 +27,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { fetchRandomMediaItems } from '../store/mediaItemsSlice';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
+import MediaItemSettingsModal from '../components/modals/MediaItemSettingsModal';
 
 
 
@@ -47,6 +48,7 @@ export default function MediaListDetailPage() {
     const [showAddBrowsePanel, setShowAddBrowsePanel] = useState(false);
     const [searchBarContent, setSearchBarContent] = useState('');
     const [confirmRemoveItem, setConfirmRemoveItem] = useState<{ id: number; name: string } | null>(null);
+    const [settingsItem, setSettingsItem] = useState<MediaItemSummary | null>(null);
 
     // Local ordered list — kept in sync with the Redux store, updated optimistically on drag
     const [orderedItems, setOrderedItems] = useState<MediaItemSummary[]>([]);
@@ -192,6 +194,7 @@ export default function MediaListDetailPage() {
                                         item={item}
                                         isEditMode={isEditMode}
                                         onRequestDelete={setConfirmRemoveItem}
+                                        onRequestOptions={setSettingsItem}
                                     />
                                 ))}
                             </div>
@@ -250,6 +253,12 @@ export default function MediaListDetailPage() {
                     onCancel={() => setIsEditModalOpen(false)}
                 />
             )}
+
+            {/* MediaItem Settings Modal */}
+            <MediaItemSettingsModal
+                currentMediaItem={settingsItem}
+                onClose={() => setSettingsItem(null)}
+            />
 
             {/* Confirm Modal for Removing Item from List */}
             {confirmRemoveItem && (

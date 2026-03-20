@@ -104,3 +104,11 @@ NavBar:
 If an album/series/franchise etc. is marked as explict, 
 my system should somehow handle that still
 For example, if someone has "Hide Explicit" Or "Hide PG-13 and Over", anything in that album/series/franchise should also be hidden.
+
+Implement this (And this page is referenced (and commented out) on
+frontend/src/components/Modals/MediaItemsSettingsModal.tsx)
+navigate(`/mediaitem/${currentMediaItem.id}/creators`);
+
+Are emoji-styles platform-specific, or could I somehow change the font of the emoji
+on the webpage to make them more professional/less colorful (since they weirdly contrast with
+the rest of the website's style)
