@@ -262,18 +262,14 @@ function StaticRow({ item, isEditMode, dragDisabled, sortable, onRequestDelete, 
 
     const { setNodeRef, attributes, listeners, transform, transition, isDragging } = sortable;
 
-    // "Rule of Hooks": means the React.js requires you
-    // to always call all hooks mentioned in the file unconditonally.
-    // meaning that NO if statements/returning early etc.
-    // should ever prevent the web hooks in the file from ever being called.
-    // This method (StaticRow) which is called by (SortableMediaItem)
-    // has no relation to the webhook directly. 
-    // This method's caller (SortableMediaItem) already called the hook,
-    // as React.js requires.
-    // Here, in this method, if dragDisabled == true,
-    // then this method would not pull from the hook's
-    // potentially error-throwing contents (which as passed into this method
-    // via the object "sortable")
+    // "Rule of Hooks": React requires you to always call all hooks unconditionally.
+    // No if-statements, early returns, or conditions should ever prevent a hook
+    // from being called on every render.
+    // StaticRow (this function) does NOT call any hooks directly.
+    // Its caller, SortableMediaItem, already called useSortable() unconditionally.
+    // Here in StaticRow, if dragDisabled === true, we simply don't USE the hook's
+    // potentially-error-throwing data (passed in via the `sortable` parameter).
+    // This satisfies Rule of Hooks while safely ignoring potentially error-prone data when not needed.
 
     const style = dragDisabled
         ? {}
