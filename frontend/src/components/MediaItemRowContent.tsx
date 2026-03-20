@@ -15,10 +15,10 @@ interface Props {
 export default function MediaItemRowContent({ firstString, secondString, thirdString, larger, photographOnLeft, emojiIcon }: Props) {
 
     return (
-        <div className={`flex flex-row items-center gap-3 w-full min-w-0 ${larger ? 'py-1' : ''}`}>
+        <div className={`flex flex-row items-center gap-3 w-full min-w-0 py-2`}>
 
             {/* Photograph — fixed size; replace placeholder with <img> when URL is available */}
-            <div className={`shrink-0 aspect-square bg-border rounded ${larger ? 'w-12 h-12' : 'w-10 h-10'}`}>
+            <div className={`shrink-0 aspect-square bg-border rounded flex items-center justify-center ${larger ? 'w-12 h-12' : 'w-10 h-10'}`}>
                 {photographOnLeft && (
                     <img src={photographOnLeft} alt="" className="w-full h-full object-cover rounded" />
                 )}
@@ -29,8 +29,11 @@ export default function MediaItemRowContent({ firstString, secondString, thirdSt
 
                 {/* Top Row: main name (truncated) + optional icon pinned to the right
                     truncate: If this text-filled item becomes too squished horizontally, the non-cut off text ends with "..."
+                    items-start (not items-center): top-aligns the title and emojiIcon so the title text starts
+                    flush with py-2, giving equal 8px padding above title and below the last text row.
+                    (items-center would add 2px of extra space above the title when emojiIcon is taller than text.)
                 */}
-                <div className="flex items-center gap-1 min-w-0">
+                <div className="flex items-start gap-1 min-w-0">
 
                     {/*
                         Tailwind:

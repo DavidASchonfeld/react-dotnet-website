@@ -311,6 +311,7 @@ function StaticRow({ item, isEditMode, dragDisabled, sortable, onRequestDelete, 
 
             <MediaItemRowContent
                     firstString={item.name}
+                    secondString={'TODO: ADD CREATORS'}
                     emojiIcon={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
                 />
 

@@ -69,6 +69,7 @@ export default function ExploreMediaItemsPage() {
                 <div key={mediaItem.id} onClick={() => navigate(`/mediaitem/${mediaItem.id}`)}>
                     <MediaItemRowContent
                         firstString={mediaItem.name}
+                        secondString={'TODO: ADD CREATORS'}
                         emojiIcon={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
                     />
                 </div>

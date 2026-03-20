@@ -71,6 +71,7 @@ export default function MediaItemDetailPage() {
 
             <MediaItemRowContent
                 firstString={selectedMediaItemDetail.name}
+                secondString={'TODO: ADD CREATORS'}
                 emojiIcon={<MediaTypeLabel mediaTypeId={selectedMediaItemDetail.mediaTypeId} faded={true} />}
             />
 

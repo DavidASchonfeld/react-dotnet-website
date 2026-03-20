@@ -95,6 +95,7 @@ export default function MediaItemSettingsModal({currentMediaItem, onClose}: Prop
                     <div className = "flex items-center gap-2 px-4 py-3 border-b border-border">
                         <MediaItemRowContent
                             firstString={currentMediaItem.name}
+                            secondString={'TODO: ADD CREATORS'}
                             emojiIcon={<MediaTypeLabel mediaTypeId={currentMediaItem.mediaTypeId} faded={true} />}
                         />
                     </div>
