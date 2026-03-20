@@ -158,7 +158,7 @@ function SwipeableRow({ item, isEditMode, dragDisabled, sortable, onRequestDelet
             // Tailwind
             // overflow-hidden: clips the colored background labels so they stay
             //     hidden until the row is swiped to reveal them.
-            className="relative overflow-hidden border-b border-gray-200 dark:border-gray-700"
+            className="relative overflow-hidden border-b border-border"
         >
             {/* Details background — revealed by swiping right.
             Both backgrounds are full-width and centered so the label appears
@@ -214,7 +214,7 @@ function SwipeableRow({ item, isEditMode, dragDisabled, sortable, onRequestDelet
                     transition: isSwiping ? 'none' : 'transform 0.2s ease',
                 }}
                 // select-none: prevents text-highlight when the user click-drags horizontally
-                className="relative z-10 bg-white dark:bg-gray-800 flex items-center gap-2 p-3 select-none"
+                className="relative z-10 bg-surface flex items-center gap-2 p-3 select-none hover:bg-surface-raised active:bg-border transition-colors"
             >
                 {isEditMode && !dragDisabled && (
                     <span
@@ -288,7 +288,7 @@ function StaticRow({ item, isEditMode, dragDisabled, sortable, onRequestDelete, 
         <div
             ref={dragDisabled ? undefined : setNodeRef}
             style={style}
-            className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+            className="flex items-center gap-2 p-3 bg-surface border-b border-border hover:bg-surface-raised active:bg-border transition-colors"
         >
             {/* Always-visible Details button */}
             <button

@@ -18,7 +18,7 @@ export default function MediaItemRowContent({ firstString, secondString, thirdSt
         <div className={`flex flex-row items-center gap-3 w-full min-w-0 ${larger ? 'py-1' : ''}`}>
 
             {/* Photograph — fixed size; replace placeholder with <img> when URL is available */}
-            <div className={`shrink-0 aspect-square text-text-muted rounded ${larger ? 'w-12 h-12' : 'w-10 h-10'}`}>
+            <div className={`shrink-0 aspect-square bg-border rounded ${larger ? 'w-12 h-12' : 'w-10 h-10'}`}>
                 {photographOnLeft && (
                     <img src={photographOnLeft} alt="" className="w-full h-full object-cover rounded" />
                 )}
@@ -46,20 +46,20 @@ export default function MediaItemRowContent({ firstString, secondString, thirdSt
                                       -- CSS: "flex-basis: 0%": it starts from a base size of 0
                                                   rather than its natural content size.
                     */}
-                    <span className="truncate text-sm font-medium flex-1 text-left">{firstString}</span>
+                    <span className="truncate text-base font-medium flex-1 text-left text-text">{firstString}</span>
                     {emojiIcon}
                 </div>
 
                 {/* Second Row: optional secondary string (e.g. content rating + creators) */}
                 {secondString && (
-                    <div className="flex items-center gap-1 min-w-0 text-xs text-text-muted">
+                    <div className="flex items-center gap-1 min-w-0 text-xs text-text/90">
                         <span className="truncate text-left">{secondString}</span>
                     </div>
                 )}
 
                 {/* Third Row: only rendered in larger mode */}
                 {larger && thirdString && (
-                    <div className="flex items-center gap-1 min-w-0 text-xs text-text-muted">
+                    <div className="flex items-center gap-1 min-w-0 text-xs text-text/90">
                         <span className="truncate text-left">{thirdString}</span>
                     </div>
                 )}
