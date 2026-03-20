@@ -34,6 +34,23 @@ Redux-Persist
 -- Backend API (in the Backend half of this project)
 
 
+## Data Between React Components/Layers
+
+In React, data flows down (parent -> child via props), never up
+
+A child cannot push a variable up to its parent. The only tools a child has to communicate upwards are:
+-- Callbacks: parent passes a function down, child calls it (including passing in required values as parameters)
+-- Lifted State: parent owns the state (a type of variable that automatically gets a setter method)
+                and passes both the value and the setter method down.
+-- Shared External Store: 
+              -- Redux/ReduxTK (Redux Toolkit) (Located in my "stores" folder" aka the "slices" files.),
+              -- Context (what I used before Redux, a JavaScript file with variables saved inside.),
+              -- etc.
+For parents, the only tools they have to communicate downwards are:
+-- Props: Passing values, objects or functions down to a child.
+-- Shared External Store: Redux, Context (see above section for details)
+
+
 ############### Generated from Vite ###################
 
 # React + TypeScript + Vite

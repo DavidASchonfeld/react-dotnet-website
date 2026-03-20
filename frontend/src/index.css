@@ -24,6 +24,25 @@
   --color-role-moderator: #94a3b8; /* Slate,  All objects associated with Moderator role will have this color */
 }
 
+/* --- Variables to keep track of padding to use when navbar.tsx is on the top or on the left,
+       to ensure that page content is moved to never be behind/blocked by the navbar.tsx */
+:root {
+  --navbar-top-height: 44px;             /* = h-11 */
+  --navbar-top-minimized-height: 36px;   /* = h-9 */
+  --navbar-left-width: 150px;            /* = w-[150px] */
+  --navbar-left-minimized-width: 48px;   /* = w-12 */
+}
+
+@media (min-width: 640px) {
+  :root {
+    --navbar-top-height: 60px;            /* = sm:h-[60px] */
+    --navbar-top-minimized-height: 40px;  /* = sm:h-10 */
+    --navbar-left-width: 200px;           /* = sm:w-[200px] */
+    --navbar-left-minimized-width: 64px;  /* = sm:w-16 */
+  }
+}
+
+/* --- Default -- */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -36,8 +55,8 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  /* display: flex;
+  place-items: center; */
   min-width: 320px;
   min-height: 100vh;
   background-color: var(--color-bg);

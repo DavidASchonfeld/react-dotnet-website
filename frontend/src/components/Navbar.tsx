@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from "react-redux";
 
 // Importing from My Files
@@ -8,7 +8,15 @@ import { clearCredentials } from "../store/authSlice";
 
 
 
-export default function Navbar() {
+interface NavbarProps {
+    isTop: boolean;
+    setIsTop: (value: boolean) => void;
+    // onMinimizedChange: called whenever the navbar's effective minimized state changes.
+    // App.tsx uses this to know which padding variable to apply to <main>.
+    onMinimizedChange: (minimized: boolean) => void;
+}
+
+export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarProps) {
     // export: So this function can be used in other files
     // default: The default function that is referenced when this file is imported. This is an optional tag
 
@@ -26,9 +34,6 @@ export default function Navbar() {
     // which avoids the "calling setState synchronously in an effect" linter error.
     const [overflowing, setOverflowing] = useState(() => window.innerWidth < 640)
 
-    const [isTop, setIsTop] = useState(true)
-    // useState(true) means that default value is true
-
     // autoMinimized: derived (not its own state). True only when BOTH:
     //   -- the nav is in top mode (isTop), AND
     //   -- the window is too narrow (overflowing).
@@ -40,7 +45,49 @@ export default function Navbar() {
     // True if the user manually minimized OR the screen is too narrow.
     const effectiveMinimized = manualMinimized || autoMinimized
 
-    
+    // Notify App.tsx whenever effectiveMinimized changes so it can switch
+    // between the normal and minimized padding CSS variables on <main>.
+    // useCallback wraps onMinimizedChange so the effect dependency is stable
+    // (avoids re-running the effect on every render just because the prop reference changed).
+    // Unlike isTop, which is this component's in-house variable,
+    // effectiveMinimized is technically not 1 variable,
+    // but instead a value based on a series of if statements between multiple sources,
+    // one of whom must stay in Navbar.tsx, so therefore the effectiveMinimzed
+    // variable must remain inside Navbar.tsx
+    // 
+    // 
+    const cachedOnMinimizedChange = useCallback((minimized: boolean) => onMinimizedChange(minimized), [onMinimizedChange])
+
+    // Remember, this below means that it runs
+    // when the component first renders
+    // and again anytime one of its dependency's values change
+    // the dependencies are:
+    //    "effectiveMinimized" (the value that determines whether this Navbar is minimized or not). 
+    //    stableOnMinimized function: a callback caching the results of anytime it ran "onMinimizedChange(AMinimizedValue)" in the past
+    //        Remember, onMinimizedChange is the function passed in by this component (navbar)'s parent aka App.tsx
+    //        so the function onMinimizedChange(newMinimizedBooleanValue) only runs when the minimizedValue changes
+    //        so it is like a notification with the new Minimized value so App.tsx can move the padding
+    //        as soon as it gets that function called.
+    //     Why didn't I just give the App.tsx that minimized variable?
+    //     Because minimized is defined like this (as seen in earlier lines in this smae file:)
+    //        const effectiveMinimized = manualMinimized || autoMinimized
+    //        so since const autoMinimized = isTop && overflowing
+    //        that means const effectiveMinimized = manualMinimized || (isTop && overflowing)
+    //        so effectiveMinmized IS partially made of the "overflowing variable",
+    //        which is completely dependent on/reliant on the Navbar-specific window.eventListener,
+    //        which would be extremely hard to handle if I had passed App.tsx that variable.
+    // For isTop, both Navbar and App use it, so isTop could be a variable in either class.
+    // Since it is a "tie", React prefers storing it in the parent of the relationship, so in App.tsx.
+    // So this is why isTop is stored as a variable in App.tsx.
+    // Technically, I could also do the same as OnMinimumChange but for isTop,
+    // but React convention states that in a tie, the parent (in this case App.tsx)
+    // should own the variable.
+    //     
+    useEffect(() => {
+        cachedOnMinimizedChange(effectiveMinimized)
+    }, [effectiveMinimized, cachedOnMinimizedChange])
+
+
 
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
