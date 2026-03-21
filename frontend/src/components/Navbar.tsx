@@ -432,15 +432,18 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
             */}
             {/* When autoMinimized, the screen is too narrow to show all items, so the button is locked
                 and clicking it does nothing. The user can only expand by making the window wider. */}
-            <button
-                className="flex items-center justify-center shrink-0 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 transition-colors"
-                onClick={() => { if (!autoMinimized) setManualMinimized(!manualMinimized) }}
-            >
-                {isTop
-                    ? (effectiveMinimized ? '▼' : '▲')
-                    : (effectiveMinimized ? '▶' : '◀')
-                }
-            </button>
+            {/* Update: Now, when autoMinimzed, hide the expand/minimze button. */}
+            {!autoMinimized && 
+                <button
+                    className="flex items-center justify-center shrink-0 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 transition-colors"
+                    onClick={() => { if (!autoMinimized) setManualMinimized(!manualMinimized) }}
+                >
+                    {isTop
+                        ? (effectiveMinimized ? '▼' : '▲')
+                        : (effectiveMinimized ? '▶' : '◀')
+                    }
+                </button>
+            }
         </nav>
     )
     // !manualMinimized = opposite of the manualMinimized value

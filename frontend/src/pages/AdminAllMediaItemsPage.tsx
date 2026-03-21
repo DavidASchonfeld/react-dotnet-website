@@ -131,7 +131,7 @@ export default function AdminAllMediaItemsPage() {
 
     return (
         <AnimatedPage>
-        <div>
+        <div className = "page">
             <h1>Admininstrator: All Media Items</h1>
             <button
                 onClick = {() => setShowCreateModal(true)}

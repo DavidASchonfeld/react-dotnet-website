@@ -38,11 +38,18 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
                     </RowItemStyling>
                 )}
 
-                <h2>{title}</h2>
+                <h1 className='h1-styling'>{title}</h1>
                 <p>{message}</p>
-                <div className="flex gap-2">
-                    <button onClick={onCancel}>Cancel</button>
-                    <button onClick={onConfirm}>{confirmLabel}</button>
+                {/* In Tailwind, regular and default options always exist
+                For md: that's for medium size (and larger) screens
+                For lg: that's for large size (and larger screens
+                // This is helpful for scaling items based on the screen size
+                */}
+                <div className="flex gap-1 md:gap-3 lg:gap-5 justify-center">
+                    <button className="btn btn-secondary w-fit"
+                        onClick={onCancel}>Cancel</button>
+                    <button className="btn btn-secondary w-fit"
+                        onClick={onConfirm}>{confirmLabel}</button>
                 </div>
             </div>
         </div>

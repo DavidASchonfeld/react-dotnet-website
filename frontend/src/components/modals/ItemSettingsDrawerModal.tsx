@@ -1,29 +1,25 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import RowItemContent from "../RowItemContent";
-import RowItemStyling from "../RowItemStyling";
-import MediaTypeLabel from "../MediaTypeLabel";
-import type { MediaItemSummary } from "../../types/mediaItem";
+import { useEffect, useState, type ReactNode } from "react";
 
 interface Props {
-    currentMediaItem: MediaItemSummary | null;  // null = closed
+    open: boolean;
     onClose: () => void;
+    preview?: ReactNode;
+    children: (close: () => void) => ReactNode;
+    
+
+    //TODO Delete these comments from old code
+    // currentMediaItem: MediaItemSummary | null;  // null = closed
+    
 }
 
-export default function MediaItemSettingsModal({currentMediaItem, onClose}: Props){
+export default function ItemSettingsDrawerModal({open, onClose, preview, children}: Props){
 
         // 'visible' drives the CSS slide-up/slide-down animation
         //  visible is separate from the item variable because
         //  visible is related to the animation showing/hiding the modal.
 
         const [visible, setVisible] = useState(false);
-        const navigate = useNavigate();
-
-        // navigator.share = the native iOS/Android/desktop share sheet (like Spotify).
-        // This is the default Share popup that you see whenever you click Share on your iPhone.
-        // Supported on Chrome/Safari/Edge on macOS & Windows, but NOT Firefox desktop.
-        // When unavailable, the button becomes a "Copy Link" button instead.
-        const canNativeShare = typeof navigator.share === 'function';
+        
 
         // When a new MediaItemItem is passed in, show this modal
         // by animating the modal coming up
@@ -31,7 +27,7 @@ export default function MediaItemSettingsModal({currentMediaItem, onClose}: Prop
         // and when its dependency's (listed at end of this useEffect)
         // value changes
         useEffect(() => {
-            if (currentMediaItem) {
+            if (open) {
 
                 // the Animation (outside of React.JS) is told to start rendering
                 // Yes, outside of React.JS so this doesn't accidentally
@@ -45,10 +41,11 @@ export default function MediaItemSettingsModal({currentMediaItem, onClose}: Prop
                 // Below is the cleanup for this (disposing this when this component closes)
                 return () => cancelAnimationFrame(id);
             }
-        }, [currentMediaItem]);
+        }, [open]);
 
         function close() {
             setVisible(false);
+
             // Wait 300ms for the slidedown animation to finish
             // before telling this object's parent
             setTimeout(onClose, 300);
@@ -56,7 +53,7 @@ export default function MediaItemSettingsModal({currentMediaItem, onClose}: Prop
 
         // If there is no currentMediaItem,
         // this modal will not render
-        if (!currentMediaItem) return null;
+        if (!open) return null;
 
         return (
             <div
@@ -93,42 +90,31 @@ export default function MediaItemSettingsModal({currentMediaItem, onClose}: Prop
                     </div>
 
                     {/* Read-Only MediaItem Preview*/}
-                    <RowItemStyling>
+                    {/* <RowItemStyling>
                         <RowItemContent
                             firstString={currentMediaItem.name}
                             secondString={'TODO: ADD CREATORS'}
                             emojiIcon={<MediaTypeLabel mediaTypeId={currentMediaItem.mediaTypeId} faded={true} />}
                         />
-                    </RowItemStyling>
+                    </RowItemStyling> */}
+                    {/* The "preview" is a passed-in ReactNode that is at the top of the settigns bar,
+                    to be used as a stylized way to tell the user which item they are editing.
+                    I prefer passing in
+                        <RowItemStyling
+                            <RowItemContent />
+                        </RowItemStyling>*/}
+                    {preview}
+
+
+
+
 
                     {/* The Menu Options*/}
                     <div className = "flex flex-col">
-                        <SettingsRow
-                            icon="🔗"
-                            label={canNativeShare ? "Share" : "Copy Link"}
-                            onClick={() => {
-                                const url = `${window.location.origin}/mediaitem/${currentMediaItem.id}`;
-                                if (canNativeShare) {
-                                    // .catch() swallows the AbortError thrown when the user
-                                    // dismisses the native share sheet without sharing.
-                                    navigator.share({ title: currentMediaItem.name, url }).catch(() => {});
-                                } else {
-                                    navigator.clipboard.writeText(url).catch(() => {});
-                                }
-                                close();
-                            }}
-                        />
-                        <SettingsRow
-                            icon="📄"
-                            label="Go to Details"
-                            onClick={() => { navigate(`/mediaitem/${currentMediaItem.id}`); close(); }}
-                        />
-                        {/* TODO: Implement this page: navigate(`/mediaitem/${currentMediaItem.id}/creators`);                         
-                        <SettingsRow
-                            icon="👤"
-                            label="View Creators"
-                            onClick={() => { navigate(`/mediaitem/${currentMediaItem.id}/creators`); close(); }}
-                        /> */}
+
+                        {/* This means that this modal is calling its children as a function,
+                        passing in the close function as a parameter*/}
+                        {children(close)}
                     </div>
 
 
@@ -140,10 +126,11 @@ export default function MediaItemSettingsModal({currentMediaItem, onClose}: Prop
         );
 }
 
-function SettingsRow({icon, label, onClick}: {icon: string; label: string; onClick: () => void }) {
+export function SettingsRow({icon, label, onClick}: {icon: string; label: string; onClick: () => void }) {
     return (
         <button
             onClick={onClick}
+
             // Tailwind:
             //  -- active: when the user's finger/mouse is pressed down on this element
             //  -- gap-4: 16px between each child element (the icon span and the label span)

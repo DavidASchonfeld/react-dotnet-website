@@ -76,7 +76,8 @@ export default function LoginOrRegisterPage() {
 
         <AnimatedPage>
             <form onSubmit={handleSubmit}>
-            <div className="flex flex-col border-2 border-solid rounded-md shadow-xl m-10 gap-4">
+                {/* old Styling"flex flex-col border-2 border-solid rounded-md shadow-xl m-10 gap-4" */}
+            <div className="page">
                 
 
                 <div className="flex flex-row">

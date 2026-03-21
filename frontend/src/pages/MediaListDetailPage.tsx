@@ -22,13 +22,14 @@ import {
 import type { MediaItemSummary } from '../types/mediaItem';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import SwipeReorderRowItem from '../components/SwipeReorderRowItem';
+import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 import { fetchRandomMediaItems } from '../store/mediaItemsSlice';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
-import MediaItemSettingsModal from '../components/modals/MediaItemSettingsModal';
+import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
 import AnimatedPage from '../components/AnimatedPage';
 import { safeToast } from '../utils/safeToast';
 
@@ -38,6 +39,7 @@ export default function MediaListDetailPage() {
 
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+
 
     const { selectedMediaListDetail, status, error } = useSelector((state: RootState) => state.mediaLists);
     const mediaItems = useSelector((state: RootState) => state.mediaItems.mediaItems);
@@ -51,13 +53,35 @@ export default function MediaListDetailPage() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [showAddBrowsePanel, setShowAddBrowsePanel] = useState(false);
     const [searchBarContent, setSearchBarContent] = useState('');
+
+    // This is about showing/not showing the modal
+    // for confirming if a user wants to remove the selected MediaItem in the <ConfirmModal> section
+    // from the current MediaList
+    // The actual dispatch to remove is located later in this file, 
     const [confirmRemoveItem, setConfirmRemoveItem] = useState<{ id: number; name: string } | null>(null);
+
     const [settingsItem, setSettingsItem] = useState<MediaItemSummary | null>(null);
 
     // Local ordered list — kept in sync with the Redux store, updated optimistically on drag
     const [orderedItems, setOrderedItems] = useState<MediaItemSummary[]>([]);
     // Shown as an inline banner when a drag-reorder fails to save; cleared on dismiss
     const [reorderError, setReorderError] = useState<string | null>(null);
+
+
+
+
+
+    // navigator.share = the native iOS/Android/desktop share sheet (like Spotify).
+    // This is the default Share popup that you see whenever you click Share on your iPhone.
+    // Supported on Chrome/Safari/Edge on macOS & Windows, but NOT Firefox desktop.
+    // When unavailable, the button becomes a "Copy Link" button instead.
+    const canNativeShare = typeof navigator.share === 'function';
+
+
+
+
+
+
 
     useEffect(() => {
         dispatch(fetchListDetail({ token: token!, mediaListId: parseInt(id!) }));
@@ -143,9 +167,33 @@ export default function MediaListDetailPage() {
     }
 
 
+    // This is using the ternary operator:
+    // const theVariable = if_this_is_true ? "set_this_value" : "otherwise_set_value"
+
+    // If the settingsItem is set (aka the variable that the settingsMenu will focus on)
+    // then build the RowItem component
+    // otherwise, set the "preview" variable to undefined
+
+    const preview = settingsItem ? (
+        <RowItemStyling>
+            <RowItemContent
+                firstString={settingsItem.name}
+                secondString={'TODO: ADD CREATORS'}
+                emojiIcon={<MediaTypeLabel mediaTypeId={settingsItem.mediaTypeId} faded={true} />}
+            />
+        </RowItemStyling>
+    ) : undefined;
+
+
+
+
+
+
+
+
     return (
         <AnimatedPage>
-        <div>
+        <div className = "page">
             {/* -- Reorder error banner -- */}
             {reorderError && (
                 <div className="bg-red-100 text-red-800 px-4 py-2 flex justify-between items-center">
@@ -308,10 +356,72 @@ export default function MediaListDetailPage() {
             )}
 
             {/* MediaItem Settings Modal */}
-            <MediaItemSettingsModal
-                currentMediaItem={settingsItem}
+            <ItemSettingsDrawerModal
+
+                // !! casts the variable into a bool
+                // here open = true if I have a settingsItem in memory
+                open={!!settingsItem}
+
+                // onClose: pass in a function that it calls once it is finished closing.
+                //  In this case, I am passing in () => setSettingsItem(null),
+                //  which tells it that right after closing, run the code setSettingsItem(null) immediately
+                // (technically, after the MediaItemSettingsModal finishes animating its exit animation)
                 onClose={() => setSettingsItem(null)}
-            />
+                preview={preview}
+            >
+
+                {/* This is a function which takes "close" as a parameter and returns JSX.
+                {(close) => <SomeRow />}
+                In MediaItemSettingsModal.tsx, it doesn't render the JSX items directly,
+                but instead treats them as one big function with a parameter to call MediaItemSettingsModal's close function.
+                {children(close)}
+                This is the only way give the passed-in JSX items
+                the ability to call MediaItemSettingsModal's exclusive/private function.
+                */}
+                {/* Render prop: the only way to access close() from here, since it is
+                a local variable inside MediaItemSettingsModal — not reachable any other way.
+                The modal calls children(close), handing us its close so our rows can trigger
+                the animated close sequence instead of abruptly destroying the modal. */}
+
+                {/* 
+                    JSX (JavaScript XML) is what we always "return" in React components.
+                    (Technically, we could also return, null, a number and a few other small variable types)
+                */}
+                
+                {(close) => (<>
+                    <SettingsRow
+                        icon="🔗"
+                        label={canNativeShare ? "Share" : "Copy Link"}
+                        onClick={() => {
+                            const url = `${window.location.origin}/mediaitem/${settingsItem!.id}`;
+                            if (canNativeShare) {
+                                // .catch() swallows the AbortError thrown when the user
+                                // dismisses the native share sheet without sharing.
+                                navigator.share({ title: settingsItem!.name, url }).catch(() => {});
+                            } else {
+                                navigator.clipboard.writeText(url).catch(() => {});
+                            }
+                            close();
+                        }}
+                    />
+                    <SettingsRow
+                        icon="📄"
+                        label="Go to Details"
+                        onClick={() => { navigate(`/mediaitem/${settingsItem!.id}`); close(); }}
+                    />
+                    <SettingsRow
+                        icon="⛓️‍💥"
+                        label="Remove from list - Button to be implemented"
+                        onClick={() => { setConfirmRemoveItem({ id: settingsItem!.id, name: settingsItem!.name }); close(); }}
+                    />
+                    {/* TODO: Implement this page: navigate(`/mediaitem/${settingsItwm!.id}/creators`);
+                    <SettingsRow
+                        icon="👤"
+                        label="View Creators"
+                        onClick={() => { navigate(`/mediaitem/${settingsItem!.id}/creators`); close(); }}
+                    /> */}
+                </>)}
+            </ItemSettingsDrawerModal>
 
             {/* Confirm Modal for Removing Item from List */}
             {confirmRemoveItem && (

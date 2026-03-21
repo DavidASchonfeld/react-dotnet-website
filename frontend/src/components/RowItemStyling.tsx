@@ -11,7 +11,7 @@ interface Props {
 // Use this directly when no swipe or drag-and-drop behaviour is needed.
 // SwipeReorderRowItem applies the same visual style internally for its swipeable case,
 // and uses this component directly for its static (swipe-disabled) case.
-export default function RowItemStyling({ children, onClick, variant = 'phone' }: Props) {
+export default function RowItemStyling({ children, onClick, variant}: Props) {
     return (
         <div
             onClick={onClick}

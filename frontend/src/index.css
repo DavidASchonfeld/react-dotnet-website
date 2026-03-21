@@ -199,7 +199,8 @@ a:hover {
 
   /* --- Page layout --- */
   .page {
-    @apply max-w-2xl mx-auto px-4 py-6 space-y-4;
+    /* Here, It is padding, but I am also adding "border border-border rounded-lg" to add nice looking borders for each page. */
+    @apply max-w-2xl mx-auto px-4 py-6 space-y-4 border border-border rounded-lg;
     /* fade-up is a CSS-only fallback animation; AnimatedPage (Framer Motion) handles this normally */
   }
 
@@ -306,6 +307,7 @@ a:hover {
        Base visual style for a list row: background, hover/active states,
        border separator, and horizontal padding.
        Add cursor-pointer inline when the row is clickable.
+       Note: This is homemade
   */
   .row-item {
     @apply flex items-center gap-2 px-3

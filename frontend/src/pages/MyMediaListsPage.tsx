@@ -271,8 +271,12 @@ export default function MyMediaListsPage() {
                         />
                         
 
-                        <button onClick={
-                            () => setMediaListToDelete(mediaList.id)
+                        <button 
+                        className="btn btn-secondary w-fit"
+                        onClick={
+                            // e.stopPropagation() prevents this button's click event from bubbling up
+                            // to the parent div's onClick, which would otherwise also trigger navigation.
+                            (e) => { e.stopPropagation(); setMediaListToDelete(mediaList.id); }
                         }>Delete</button>
                     </div>
                 ))}

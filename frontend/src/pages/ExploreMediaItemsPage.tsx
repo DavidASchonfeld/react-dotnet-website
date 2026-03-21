@@ -20,7 +20,7 @@ export default function ExploreMediaItemsPage() {
     // const { mediaItems, status, error } = useSelector((state: RootState) => state.mediaItems);
     // const { token } = useSelector((state:RootState) => state.auth);
     // Consolidated into 1 Request for Fetching from RootState:
-    const { mediaItems, status, token } = useSelector((state: RootState) => ({
+    const { mediaItems, status, token, error } = useSelector((state: RootState) => ({
         ...state.mediaItems,  // Unwrap the mediaList key/value-pair-objects and put them all into the output
         token: state.auth.token   // Telling where to specifically find the token value inside the RootState object
     }))
@@ -81,12 +81,15 @@ export default function ExploreMediaItemsPage() {
 
     return (
         <AnimatedPage>
-        <div>
-            <h1>Explore Media Items</h1>
+        <div className ="card flex-col">
+            <h1 className = "h1-styling">Explore Media Items</h1>
             <button
+                // mx-auto automatically sets margins left/right to auto, which centers this button because its parent container div has "flex"
+                className = "btn btn-secondary w-fit mx-auto"
                 onClick = {() => dispatch(fetchRandomMediaItems({token: token!, amount: amount}))}
             >Refresh</button>
-            
+            <br />
+            {error}
             {mediaItems.map(mediaItem => (
                 <RowItemStyling key={mediaItem.id} onClick={() => navigate(`/mediaitem/${mediaItem.id}`)}>
                     <RowItemContent

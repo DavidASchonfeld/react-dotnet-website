@@ -70,7 +70,7 @@ export default function MediaItemDetailPage() {
 
     return (
         <AnimatedPage>
-        <div>
+        <div className = "page">
 
             <RowItemStyling>
                 <RowItemContent

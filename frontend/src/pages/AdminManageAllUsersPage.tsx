@@ -89,7 +89,7 @@ export default function AdminManageAllUsersPage() {
 
     return (
         <AnimatedPage>
-            <div>
+            <div className = "page">
 
             
 
