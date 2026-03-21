@@ -228,8 +228,11 @@ app.MapControllers();
  // to the user to make that admin user.
  // The "using" means that after this code chunk, this scope will be cleaned up/disposed when the block is finished
  // (so it releases its connection the Database)
+ // The line right below Runs on startup
 using (var scope = app.Services.CreateScope()) 
 {
+
+
 
     // Pulls .NET's built-in UserManager for CRUDing users.
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
@@ -251,6 +254,13 @@ using (var scope = app.Services.CreateScope())
 
     // Definition for this method is below, in this same Program.cs file.
     await SeedInitialAdminAsync(userManager, config, logger);
+
+
+    // Add database:
+    // AppDbContext is a file I created in backend/MyDotNetWebsiteApi/Data/AppDbContext.cs
+    // In this file (yes, Program.cs lines 17-20)
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();  // Applies any unapplied migrations (if all migrations are applied already, this is still fine to call.)
 }
 
 
