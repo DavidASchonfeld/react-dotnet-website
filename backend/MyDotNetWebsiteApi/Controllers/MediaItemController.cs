@@ -46,6 +46,15 @@ public class MediaItemController : ControllerBase
         return result.ToActionResult(this);
     }
 
+    // Search approved MediaItems by name (authenticated users only; results capped server-side at 20)
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] string q, [FromQuery] int limit = 10, [FromQuery] int? mediaTypeId = null)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaItemService.SearchAsync(q, limit, mediaTypeId, requesterUserId);
+        return result.ToActionResult(this);
+    }
+
     [HttpPost("create")]
     public async Task<IActionResult> CreateMediaItem([FromBody] CreateMediaItemDto dto)
     {

@@ -82,6 +82,23 @@ public class MediaListController : ControllerBase
         return result.ToActionResult(this);
     }
 
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchMyLists([FromQuery] string q, [FromQuery] int limit = 10)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaListService.SearchMyListsAsync(q, limit, requesterUserId);
+        return result.ToActionResult(this);
+    }
+
+    // Search ALL MediaLists the requester has permission to see (owner || admin || public)
+    [HttpGet("searchAll")]
+    public async Task<IActionResult> SearchAllLists([FromQuery] string q, [FromQuery] int limit = 10)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaListService.SearchAllListsAsync(q, limit, requesterUserId);
+        return result.ToActionResult(this);
+    }
+
     [HttpPatch("{mediaListId}/reorder")]
     public async Task<IActionResult> ReorderItems(int mediaListId, [FromBody] ReorderMediaListItemsDto dto)
     {

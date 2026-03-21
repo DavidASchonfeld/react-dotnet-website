@@ -1,6 +1,6 @@
 // React Libraries
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
 // My Code
@@ -12,16 +12,18 @@ import MediaItemFormModal from '../components/modals/MediaItemFormModal';
 import RowItemContent from '../components/RowItemContent';
 import RowItemStyling from '../components/RowItemStyling';
 import AnimatedPage from '../components/AnimatedPage';
-import { fetchMyLists } from '../store/mediaListsSlice';
-import { addMediaItemToList, removeMediaItemFromList } from '../services/mediaListService';
+import { addMediaItemToList, removeMediaItemFromList, searchMediaLists } from '../services/mediaListService';
+import { useSearch } from '../hooks/useSearch';
 import { getMediaItemLists } from '../services/mediaItemService';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
+import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
 import { safeToast } from '../utils/safeToast';
+import type { MediaListSummary } from '../types/mediaList';
 
 
 
 export default function MediaItemDetailPage() {
-    
+
 
     // useParams() reads the :id from the URL
     // Ex: /mediaitem/42 -> id ="42". (passed as a string)
@@ -40,23 +42,38 @@ export default function MediaItemDetailPage() {
     const { id } = useParams<{ id: string }>();
 
     // Get Details of selected MediaItem from store (aka Redux)(and if store doesn't have it, it will send commands to Service which will send HTTP requests to backend)
-    const { selectedMediaItemDetail, status, error } = useSelector((state: RootState) => state.mediaItems); 
+    const { selectedMediaItemDetail, status, error } = useSelector((state: RootState) => state.mediaItems);
 
     const { token } = useSelector((state: RootState) => state.auth);
-    
+
     const dispatch = useDispatch<AppDispatch>();
 
+    const navigate = useNavigate();
+
+    // navigator.share = the native iOS/Android/desktop share sheet (like Spotify).
+    // This is the default Share popup that you see whenever you click Share on your iPhone.
+    // Supported on Chrome/Safari/Edge on macOS & Windows, but NOT Firefox desktop.
+    // When unavailable, the button becomes a "Copy Link" button instead.
+    const canNativeShare = typeof navigator.share === 'function';
+
     const [isEditMode, setIsEditMode] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
 
 
     //// Objects for ManageLinkModal.tsx Component
 
     // States + Selectors
-    const { mediaLists } = useSelector((state: RootState) => state.mediaLists);
     const [showLinkModal, setShowLinkModal] = useState(false);
     const [memberListIds, setMemberListIds] = useState<Set<number> | null>(null);
     const [modifiableListIds, setModifiableListIds] = useState<Set<number> | null>(null);
     const [listsLoading, setListsLoading] = useState(false);
+
+    // Server-side list search state for ManageLinkModal
+    const {
+        results: listSearchResults,
+        isSearching: isListSearching,
+        handleSearchChange: handleListSearchChange,
+    } = useSearch<MediaListSummary>((query) => searchMediaLists(token!, query, 10));
 
     // Function to call List Membership directly from API,
     // bypassing Redux
@@ -91,14 +108,14 @@ export default function MediaItemDetailPage() {
 
         if (modifiableCount === 0) return 'Add to List';
         if (modifiableCount === 1){
-            const list = mediaLists.find(l => memberListIds.has(l.id) && modifiableListIds?.has(l.id));
-            return list ? `Saved to "${list.name}"`: "Saved to 1 list";
+            // We can't look up the list name from Redux anymore (fetchMyLists was removed),
+            // so fall back to the count string for the single-list case too.
+            return "Saved to 1 list";
         }
 
         // Else, if the item is in 2+ modifiable lists:
         return `Saved to ${modifiableCount} lists`;
     }
-
 
     // Runs only once (unless any of its dependencies (dispatch, token, id) changes)
     useEffect(()=> {
@@ -111,34 +128,17 @@ export default function MediaItemDetailPage() {
         // This prevents seeing the previous list's data
         // when loading/navigating to a different list.
 
-
-
-
-        // Add for ManageLinkModal.tsx
         if (token){
-            dispatch(fetchMyLists(token));  // populates mediaLists in Redux
             loadMembership();
         }
-        
 
-
-
-
-
-
-
-
-
-
-        
         // () => {} means that this function runs when this component unmounts (aka leaves the screen)
         return () => {
             dispatch(clearSelectedMediaItemDetail());
         };
 
 
-
-    }, [dispatch, token, id]); 
+    }, [dispatch, token, id]);
 
 
 
@@ -159,12 +159,27 @@ export default function MediaItemDetailPage() {
                 />
             </RowItemStyling>
 
-            {selectedMediaItemDetail.canEdit && (
-                <button onClick = {() => setIsEditMode(prev => !prev)}>
-                    {isEditMode ? 'Exit "Edit Mode"' : 'Edit'}
+            {/* -- Header -- */}
+            <div className="flex flex-wrap gap-2">
+                <button
+                    className="btn btn-secondary w-fit"
+                    onClick={() => navigate(-1)}>
+                    ⬅︎ Back
                 </button>
-            )}
-            
+                {selectedMediaItemDetail.canEdit && (
+                    <button
+                        className="btn btn-secondary w-fit"
+                        onClick={() => setIsEditMode(prev => !prev)}>
+                        {isEditMode ? 'Exit "Edit Mode"' : 'Edit'}
+                    </button>
+                )}
+                <button
+                    className="btn btn-secondary w-fit"
+                    onClick={() => setSettingsOpen(true)}>
+                    ⋯
+                </button>
+            </div>
+
             {isEditMode ? (
                 <>
                     {/* Edit Mode */}
@@ -195,30 +210,24 @@ export default function MediaItemDetailPage() {
                     {selectedMediaItemDetail.publishedDateTime && (
                         <p>{new Date(selectedMediaItemDetail.publishedDateTime).toLocaleDateString()}</p>
                     )}
-
-                    <button
-                        className="btn btn-secondary fit-w"
-                        onClick={() => setShowLinkModal(true)}>
-                        {getButtonLabel()}
-                    </button>
                 </>
             )}
 
             {showLinkModal && (
                 <ManageLinkModal
                     modalTitle='Add/Remove from List'
-                    searchPlaceholder='Search lists'
-                    candidates={mediaLists.map(l => ({
+                    searchPlaceholder='Search your lists (min. 2 characters)...'
+                    onSearchChange={handleListSearchChange}
+                    candidates={listSearchResults.map(l => ({
                         id: l.id.toString(),
                         primaryLabel: l.name,
                         secondaryLabel: l.description ?? undefined,
                         countLabel: `${l.itemCount} items`,
-                        hasModifyLinkAccess: modifiableListIds?.has(l.id) ?? false
+                        hasModifyLinkAccess: l.canEdit
                     }))}
-                    candidatesLoading={listsLoading}
+                    candidatesLoading={isListSearching}
                     // Convert Set<number> → Set<string> at the modal boundary
                     initialLinkedIds={new Set([...(memberListIds ?? new Set())].map(String))}
-                    showModifiableFilter={true}
                     onAdd={async (itemId) => {
                         // itemId is the list's id (as string); selectedMediaItemDetail.id is the item being linked
                         await addMediaItemToList(token!, parseInt(itemId), selectedMediaItemDetail!.id, {})
@@ -238,7 +247,48 @@ export default function MediaItemDetailPage() {
                 />
             )}
 
-            
+            {/* MediaItem Settings Drawer */}
+            {/* !! casts the variable into a bool — open = true if settingsOpen is true */}
+            <ItemSettingsDrawerModal
+                open={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+            >
+                {/* Render prop: the only way to access close() from here, since it is
+                a local variable inside ItemSettingsDrawerModal — not reachable any other way.
+                The modal calls children(close), handing us its close so our rows can trigger
+                the animated close sequence instead of abruptly destroying the modal. */}
+                {(close) => (<>
+                    <SettingsRow
+                        icon="🔗"
+                        label={canNativeShare ? "Share" : "Copy Link"}
+                        onClick={() => {
+                            const url = `${window.location.origin}/mediaitem/${selectedMediaItemDetail.id}`;
+                            if (canNativeShare) {
+                                // .catch() swallows the AbortError thrown when the user
+                                // dismisses the native share sheet without sharing.
+                                navigator.share({ title: selectedMediaItemDetail.name, url }).catch(() => {});
+                            } else {
+                                navigator.clipboard.writeText(url).catch(() => {});
+                            }
+                            close();
+                        }}
+                    />
+                    <SettingsRow
+                        icon="📋"
+                        label={getButtonLabel()}
+                        onClick={() => { setShowLinkModal(true); close(); }}
+                    />
+                    {selectedMediaItemDetail.canEdit && (
+                        <SettingsRow
+                            icon="✏️"
+                            label={isEditMode ? 'Exit "Edit Mode"' : 'Edit'}
+                            onClick={() => { setIsEditMode(prev => !prev); close(); }}
+                        />
+                    )}
+                </>)}
+            </ItemSettingsDrawerModal>
+
+
         </div>
         </AnimatedPage>
     )

@@ -1,8 +1,8 @@
-import { AnimatePresence } from 'framer-motion';
 import RowItemContent from '../RowItemContent';
 import RowItemStyling from '../RowItemStyling';
 import MediaTypeLabel from '../MediaTypeLabel';
 import type { MediaItemSummary } from '../../types/mediaItem';
+import AnimatedPage from '../AnimatedPage';
 
 // This defines what the caller must pass in
 interface Props {
@@ -20,7 +20,7 @@ interface Props {
 export default function ConfirmModal({ title, message, confirmLabel = "Confirm", onConfirm, onCancel, itemContext }: Props)
 {
     return (
-        <AnimatePresence>
+        <AnimatedPage>
             {/* Dark backdrop — see .modal-overlay in index.css for Tailwind breakdown */}
         <div key="overlay" className="modal-overlay">
             {/* The Modal aka Popup — see .modal-panel in index.css for Tailwind breakdown */}
@@ -53,6 +53,6 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
                 </div>
             </div>
         </div>
-        </AnimatePresence>
+        </AnimatedPage>
     )
 }

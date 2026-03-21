@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { VisibilityStatus } from '../../types/enums';
+import AnimatedPage from '../AnimatedPage';
 
 // This defines what the caller must pass in
 interface Props {
@@ -37,7 +37,7 @@ export default function MediaListFormModal({
     }
 
     return (
-        <AnimatePresence>
+        <AnimatedPage>
 
             {/* Dark backdrop — see .modal-overlay in index.css for Tailwind breakdown */}
             <div key="overlay" className="modal-overlay">
@@ -81,6 +81,6 @@ export default function MediaListFormModal({
                     </div>
                 </div>
             </div>
-        </AnimatePresence>
+        </AnimatedPage>
     );
 }

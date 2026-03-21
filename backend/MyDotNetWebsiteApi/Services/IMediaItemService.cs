@@ -7,5 +7,6 @@ public interface IMediaItemService
     Task<ServiceResult<bool>> DeleteMediaItemAsync(int mediaItemId, string requesterUserId);
     Task<ServiceResult<MediaItemDetailDto>> PatchMediaItemBasicInfoAsync(int mediaItemId, UpdateMediaItemBasicInfoDto dto, string requesterUserId);
     Task<ServiceResult<List<MediaListSummaryDto>>> GetListsContainingItemAsync(int mediaItemId, string requesterUserId);
+    Task<ServiceResult<List<MediaItemSummaryDto>>> SearchAsync(string query, int limit, int? mediaTypeId, string requesterUserId);
 
 }

@@ -236,7 +236,51 @@ export async function moveMediaItemWithinMediaList(token: string, mediaListId: n
         throw new Error("Failed to move 1 MediaItem to a different position within MediaList")
 
     const dataToReceive: MediaListSummary = await response.json();
-    
+
     return dataToReceive;
 
+}
+
+
+// Search the current user's own MediaLists by name (server-side, per-keystroke, results capped by backend)
+export async function searchMediaLists(token: string, query: string, limit: number = 10): Promise<MediaListSummary[]> {
+    const params = new URLSearchParams({ q: query, limit: String(limit) });
+
+    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/search?${params}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        // No body needed for this API call.
+    });
+
+    if (!response.ok)
+        throw new Error("Failed to search media lists");
+
+    const data: MediaListSummary[] = await response.json();
+    return data;
+}
+
+
+// Search ALL MediaLists visible to the requester (owner || admin || public).
+// Unlike searchMediaLists (which only searches the current user's own lists),
+// this searches across all lists the requester has permission to see.
+export async function searchAllMediaLists(token: string, query: string, limit: number = 10): Promise<MediaListSummary[]> {
+    const params = new URLSearchParams({ q: query, limit: String(limit) });
+
+    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/searchAll?${params}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        // No body needed for this API call.
+    });
+
+    if (!response.ok)
+        throw new Error("Failed to search all media lists");
+
+    const data: MediaListSummary[] = await response.json();
+    return data;
 }

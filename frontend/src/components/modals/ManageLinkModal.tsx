@@ -4,6 +4,7 @@ import { safeToast } from "../../utils/safeToast";
 import RowItemContent from "../RowItemContent";
 import RowItemStyling from "../RowItemStyling";
 import ConfirmModal from "./ConfirmModal";
+import AnimatedPage from '../AnimatedPage';
 
 interface LinkRowItem {
     id: string;
@@ -18,6 +19,8 @@ interface LinkRowItem {
 interface ManageLinkModalProps {
     modalTitle: string;
     searchPlaceholder?: string;
+    // Called on every keystroke so the parent can drive server-side search
+    onSearchChange?: (query: string) => void;
 
     candidates: LinkRowItem[];   // All items the user can link to.
     candidatesLoading: boolean;  // Show loading symbol when loading
@@ -52,6 +55,7 @@ interface ManageLinkModalProps {
 export default function ManageLinkModal({
     modalTitle,
     searchPlaceholder,
+    onSearchChange,
     candidates,
     candidatesLoading,
 
@@ -111,7 +115,7 @@ export default function ManageLinkModal({
 
     return (
         <>
-
+        <AnimatedPage>
             {/* Backdrop — click outside to close */}
             <div className="fixed inset-0 bg-black/40 z-40" onClick={() => onClose(linkedIds)} />
 
@@ -129,7 +133,7 @@ export default function ManageLinkModal({
                     <input
                         placeholder={searchPlaceholder ?? 'Search...'}
                         value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
+                        onChange={e => { setSearchQuery(e.target.value); onSearchChange?.(e.target.value); }}
                         className="w-full"
                     />
                 </div>
@@ -219,6 +223,7 @@ export default function ManageLinkModal({
                     />
                 );
             })()}
+            </AnimatedPage>
         </>
     )
 

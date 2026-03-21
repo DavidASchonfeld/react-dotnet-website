@@ -133,6 +133,28 @@ export async function patchMediaItemBasicInfo(token: string, mediaItemId: number
 }
 
 
+// Search approved MediaItems by name (server-side, per-keystroke, results capped by backend)
+export async function searchMediaItems(token: string, query: string, limit: number = 10, mediaTypeId?: number): Promise<MediaItemSummary[]> {
+    const params = new URLSearchParams({ q: query, limit: String(limit) });
+    if (mediaTypeId !== undefined) params.set('mediaTypeId', String(mediaTypeId));
+
+    const response = await fetch(`${BACKEND_BASE_URL}/api/mediaitem/search?${params}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        // No body needed for this API call.
+    });
+
+    if (!response.ok)
+        throw new Error("Failed to search media items");
+
+    const data: MediaItemSummary[] = await response.json();
+    return data;
+}
+
+
 // Returns all MediaLists (that the requester can see) which contain this MediaItem,
 // each with canEdit indicating whether the requester can modify that list's membership.
 export async function getMediaItemLists(token: string, mediaItemId: number): Promise<MediaListSummary[]> {

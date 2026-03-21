@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { AnimatePresence } from "framer-motion";
 import { useSelector } from "react-redux";
 import type { MediaItemDetail } from "../../types/mediaItem";
 import type { RootState } from "../../store/store";
 
 import Select, { type SingleValue } from 'react-select';
 import MediaTypeLabel from "../MediaTypeLabel";
+import AnimatedPage from "../AnimatedPage";
 
 interface Props {
     existingItem?: MediaItemDetail;  // optional. If not here, the mode is to create a MediaItem
@@ -41,7 +41,7 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
     }
 
     return (
-        <AnimatePresence>
+        <AnimatedPage>
 
         {/* Modal panel — see .modal-panel in index.css for Tailwind breakdown */}
         <div key="panel" className="modal-panel">
@@ -102,6 +102,6 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
 
             <button onClick={handleSubmit}>{isEditMode ? 'Save Changes' : 'Create'}</button>
         </div>
-        </AnimatePresence>
+        </AnimatedPage>
     );
 }

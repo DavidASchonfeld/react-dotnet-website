@@ -412,5 +412,74 @@ public class MediaListService : IMediaListService
     }
 
 
+    public async Task<ServiceResult<List<MediaListSummaryDto>>> SearchMyListsAsync(string query, int limit, string requesterUserId)
+    {
+        if (query.Length < 2)
+            return ServiceResult<List<MediaListSummaryDto>>.BadRequest("Search query must be at least 2 characters.");
+
+        limit = Math.Min(limit, 20);  // Server-side cap — ignore whatever limit the client sent
+
+        var queryLower = query.ToLower();
+        var results = await _context.MediaLists
+            .Where(l => l.SubmittedById == requesterUserId && l.Name.ToLower().Contains(queryLower))
+            .OrderBy(l => l.Name)
+            .Take(limit)
+            .Select(l => new MediaListSummaryDto
+            {
+                Id = l.Id,
+                Name = l.Name,
+                SubmittedById = l.SubmittedById,
+                Description = l.Description,
+                VisibilityStatus = l.VisibilityStatus,
+                ItemCount = l.ItemLinks.Count,
+                CanEdit = true  // SearchMyLists only returns lists the user submitted, so they always own them
+            })
+            .ToListAsync();
+
+        return ServiceResult<List<MediaListSummaryDto>>.Ok(results);
+    }
+
+
+    // Search ALL MediaLists the requester has permission to see.
+    // Mirrors CanSeeList() from PermissionHelper: owner || IsAdministrator || Public.
+    // Note: only Administrators (not Moderators) bypass visibility — CanSeeList uses IsAdministrator, not IsModeratorOrAdmin.
+    public async Task<ServiceResult<List<MediaListSummaryDto>>> SearchAllListsAsync(string query, int limit, string requesterUserId)
+    {
+        if (query.Length < 2)
+            return ServiceResult<List<MediaListSummaryDto>>.BadRequest("Search query must be at least 2 characters.");
+
+        limit = Math.Min(limit, 20);  // Server-side cap — ignore whatever limit the client sent
+
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return ServiceResult<List<MediaListSummaryDto>>.Unauthorized();
+
+        
+        bool isAdmin = PermissionHelper.IsAdministrator(requesterUser);
+        bool canModify = PermissionHelper.IsModeratorOrAdmin(requesterUser);  // Used for CanEdit projection
+
+        var queryLower = query.ToLower();
+        var results = await _context.MediaLists
+            .Where(l =>
+                l.SubmittedById == requesterUserId
+                || isAdmin
+                || l.VisibilityStatus == VisibilityStatus.Public)
+            .Where(l => l.Name.ToLower().Contains(queryLower))
+            .OrderBy(l => l.Name)
+            .Take(limit)
+            .Select(l => new MediaListSummaryDto
+            {
+                Id = l.Id,
+                Name = l.Name,
+                SubmittedById = l.SubmittedById,
+                Description = l.Description,
+                VisibilityStatus = l.VisibilityStatus,
+                ItemCount = l.ItemLinks.Count,
+                CanEdit = l.SubmittedById == requesterUserId || canModify
+            })
+            .ToListAsync();
+
+        return ServiceResult<List<MediaListSummaryDto>>.Ok(results);
+    }
+
 
 }

@@ -26,12 +26,14 @@ import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
-import { fetchRandomMediaItems } from '../store/mediaItemsSlice';
+import { searchMediaItems } from '../services/mediaItemService';
+import { useSearch } from '../hooks/useSearch';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
 import AnimatedPage from '../components/AnimatedPage';
 import { safeToast } from '../utils/safeToast';
+import ManageLinkModal from '../components/modals/ManageLinkModal';
 
 
 
@@ -42,7 +44,6 @@ export default function MediaListDetailPage() {
 
 
     const { selectedMediaListDetail, status, error } = useSelector((state: RootState) => state.mediaLists);
-    const mediaItems = useSelector((state: RootState) => state.mediaItems.mediaItems);
     const { token } = useSelector((state: RootState) => state.auth);
 
     const dispatch = useDispatch<AppDispatch>();
@@ -52,7 +53,14 @@ export default function MediaListDetailPage() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [showAddBrowsePanel, setShowAddBrowsePanel] = useState(false);
-    const [searchBarContent, setSearchBarContent] = useState('');
+
+    // Server-side search state for the Add Item modal
+    const {
+        results: searchResults,
+        isSearching,
+        handleSearchChange,
+        clearResults: clearSearchResults,
+    } = useSearch<MediaItemSummary>((query) => searchMediaItems(token!, query, 10));
 
     // This is about showing/not showing the modal
     // for confirming if a user wants to remove the selected MediaItem in the <ConfirmModal> section
@@ -107,10 +115,6 @@ export default function MediaListDetailPage() {
 
     const mediaListId = selectedMediaListDetail.id;
     const existingIds = new Set(selectedMediaListDetail?.listContent.map(i => i.id));
-    const filteredCandidates = mediaItems.filter(
-        item => !existingIds.has(item.id) &&
-        item.name.toLowerCase().includes(searchBarContent.toLowerCase())
-    );
 
     function handleToggleEditMode() {
         if (isEditMode) setShowAddBrowsePanel(false);
@@ -203,29 +207,33 @@ export default function MediaListDetailPage() {
             )}
 
             {/* -- Header -- */}
-            <button
+            <div className="flex flex-wrap gap-2">
+                <button
                     className="btn btn-secondary w-fit"
                     onClick={() => navigate("/my-medialists")}
                 >⬅︎ Back to My Lists</button>
-
-
-
-            {selectedMediaListDetail.canEdit && (
-                <button
-                className="btn btn-secondary w-fit "
-                onClick={handleToggleEditMode}>
-                    {isEditMode ? 'Exit "Edit Mode"' : 'Edit'}
-                </button>
-            )}
+                {selectedMediaListDetail.canEdit && (
+                    <button
+                        className="btn btn-secondary w-fit"
+                        onClick={handleToggleEditMode}>
+                        {isEditMode ? 'Exit "Edit Mode"' : 'Edit'}
+                    </button>
+                )}
+                {isEditMode && (
+                    <button
+                        className="btn btn-secondary w-fit"
+                        onClick={() => setIsEditModalOpen(true)}>
+                        Edit List's Basic Info
+                    </button>
+                )}
+            </div>
 
             {/* -- List Info -- */}
             <h1 className="h1-styling">{selectedMediaListDetail.name}</h1>
             <br />
             <p>{selectedMediaListDetail.description}</p>
             <br/>
-            {isEditMode && <button 
-                className = "btn btn-secondary w-fit"
-                onClick={() => setIsEditModalOpen(true)}>Edit List's Basic Info</button>}
+            
 
             {/* -- List Content -- */}
             {/*
@@ -280,59 +288,38 @@ export default function MediaListDetailPage() {
                 </ErrorBoundary>
             </ErrorBoundary>
 
-            {/* -- Add Item to List  --press to show "Add Items" Browser Panel (Edit Mode only) */}
+            {/* -- Add Item to List — press to open the search modal (Edit Mode only) */}
             {isEditMode && !showAddBrowsePanel && (
                 <button
                 className = "btn btn-secondary w-fit"
                 onClick={() => {
+                    clearSearchResults();
                     setShowAddBrowsePanel(true);
-                    if (mediaItems.length === 0) dispatch(fetchRandomMediaItems({ token: token!, amount: 5 }));
-                }}>+ Add Item (Browse Panel)</button>
+                }}>+ Add Item</button>
             )}
 
-            {/* -- "Add Items" Browser Panel -- */}
+            {/* -- Add Item Modal — server-side search per keystroke; no Redux mediaItems used here -- */}
             {isEditMode && showAddBrowsePanel && (
-                <AnimatedPage>
-                <div className="modal-panel">
-                    
-                    <h3>Add an Item</h3>
-                    <input
-                        placeholder="Search (this random list) by name..."
-                        value={searchBarContent}
-                        onChange={(e) => setSearchBarContent(e.target.value)}
-                    />
-
-                    <button
-                        className="btn btn-secondary w-fit "
-                        onClick={() => dispatch(fetchRandomMediaItems({ token: token!, amount: 5 }))}>
-                        Browse More Random MediaItems
-                    </button>
-
-                    <button
-                    className="btn btn-secondary w-fit "
-                    onClick={() => setShowAddBrowsePanel(false)}>Cancel</button>
-
-                    {filteredCandidates.map(item => (
-                        <div key={item.id}>
-                            <span>{item.name}</span>
-                            <MediaTypeLabel mediaTypeId={item.mediaTypeId} />
-                            <button
-                            className="btn btn-secondary w-fit"
-                            onClick={async () => {
-                                try {
-                                    await dispatch(addItemToList({ token: token!, mediaListId, mediaItemId: item.id, mediaItem: item })).unwrap();
-                                    safeToast.success('Item added');
-                                } catch {
-                                    safeToast.error('Failed to add item');
-                                }
-                            }}>
-                                Add
-                            </button>
-                        </div>
-                    ))}
-                    
-                </div>
-                </AnimatedPage>
+                <ManageLinkModal
+                    modalTitle="Add Items to List"
+                    searchPlaceholder="Search by name (min. 2 characters)..."
+                    onSearchChange={handleSearchChange}
+                    candidates={searchResults
+                        .filter(item => !existingIds.has(item.id))
+                        .map(item => ({
+                            id: String(item.id),
+                            primaryLabel: item.name,
+                            labelComponent: <MediaTypeLabel mediaTypeId={item.mediaTypeId} />,
+                        }))}
+                    candidatesLoading={isSearching}
+                    initialLinkedIds={new Set()}
+                    onAdd={async (id) => {
+                        const item = searchResults.find(i => String(i.id) === id)!;
+                        await dispatch(addItemToList({ token: token!, mediaListId, mediaItemId: item.id, mediaItem: item })).unwrap();
+                        safeToast.success('Item added');
+                    }}
+                    onClose={() => setShowAddBrowsePanel(false)}
+                />
             )}
 
             {/* Edit MediaList's Basic Info Modal */}
@@ -411,7 +398,7 @@ export default function MediaListDetailPage() {
                     />
                     <SettingsRow
                         icon="⛓️‍💥"
-                        label="Remove from list - Button to be implemented"
+                        label="Remove from List"
                         onClick={() => { setConfirmRemoveItem({ id: settingsItem!.id, name: settingsItem!.name }); close(); }}
                     />
                     {/* TODO: Implement this page: navigate(`/mediaitem/${settingsItwm!.id}/creators`);

@@ -259,7 +259,7 @@ export default function MyMediaListsPage() {
             
                 {mediaLists.map(mediaList => (
                     <div key={mediaList.id}
-                        className="card flex justify-between items-stretch"
+                        className="card flex justify-between items-stretch cursor-pointer"
                         onClick={() => navigate(`/medialist/${mediaList.id}`)}
                     >
                         <RowItemContent

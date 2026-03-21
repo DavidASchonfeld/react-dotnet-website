@@ -173,6 +173,29 @@ public class MediaItemService : IMediaItemService
     }
 
 
+    public async Task<ServiceResult<List<MediaItemSummaryDto>>> SearchAsync(string query, int limit, int? mediaTypeId, string requesterUserId)
+    {
+        if (query.Length < 2)
+            return ServiceResult<List<MediaItemSummaryDto>>.BadRequest("Search query must be at least 2 characters.");
+
+        limit = Math.Min(limit, 20);  // Server-side cap — ignore whatever limit the client sent
+
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return ServiceResult<List<MediaItemSummaryDto>>.Unauthorized();
+
+        var queryLower = query.ToLower();
+        var results = await _context.MediaItems
+            .Where(i => i.IsApproved && i.Name.ToLower().Contains(queryLower))
+            .Where(i => mediaTypeId == null || i.MediaTypeId == mediaTypeId)
+            .OrderBy(i => i.Name)
+            .Take(limit)
+            .Select(i => new MediaItemSummaryDto { Id = i.Id, Name = i.Name, MediaTypeId = i.MediaTypeId })
+            .ToListAsync();
+
+        return ServiceResult<List<MediaItemSummaryDto>>.Ok(results);
+    }
+
+
     public async Task<ServiceResult<List<MediaListSummaryDto>>> GetListsContainingItemAsync(int mediaItemId, string requesterUserId)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);

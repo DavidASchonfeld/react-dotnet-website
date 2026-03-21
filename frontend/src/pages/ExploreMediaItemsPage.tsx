@@ -16,14 +16,8 @@ export default function ExploreMediaItemsPage() {
     // Importing ability to Redirect
     const navigate = useNavigate(); 
     
-    // Original, separate fetching from RootState
-    // const { mediaItems, status, error } = useSelector((state: RootState) => state.mediaItems);
-    // const { token } = useSelector((state:RootState) => state.auth);
-    // Consolidated into 1 Request for Fetching from RootState:
-    const { mediaItems, status, token, error } = useSelector((state: RootState) => ({
-        ...state.mediaItems,  // Unwrap the mediaList key/value-pair-objects and put them all into the output
-        token: state.auth.token   // Telling where to specifically find the token value inside the RootState object
-    }))
+    const { mediaItems, status, error } = useSelector((state: RootState) => state.mediaItems);
+    const token = useSelector((state: RootState) => state.auth.token);
 
 
     const dispatch = useDispatch<AppDispatch>();
