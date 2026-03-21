@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { VisibilityStatus } from '../../types/enums';
 
 // This defines what the caller must pass in
@@ -36,9 +37,10 @@ export default function MediaListFormModal({
     }
 
     return (
-        <>
+        <AnimatePresence>
+
             {/* Dark backdrop — see .modal-overlay in index.css for Tailwind breakdown */}
-            <div className="modal-overlay">
+            <div key="overlay" className="modal-overlay">
 
                 {/* The Modal aka Popup — see .modal-panel in index.css for Tailwind breakdown */}
                 <div className="modal-panel">
@@ -68,7 +70,7 @@ export default function MediaListFormModal({
                         >
                             <option value = {VisibilityStatus.Private}>Private</option>
                             {/* <option value = {VisibilityStatus.Shared}>Shared</option> TODO: Implement Sharing.*/}
-                            <option value = {VisibilityStatus.Public}>Public</option>
+                            {/* <option value = {VisibilityStatus.Public}>Public</option> TODO: Implement Submission/Approval System*/}
                         </select>
                     )}
                     <div className="flex gap-2">
@@ -79,6 +81,6 @@ export default function MediaListFormModal({
                     </div>
                 </div>
             </div>
-        </>
+        </AnimatePresence>
     );
 }

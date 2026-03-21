@@ -7,6 +7,7 @@ import RowItemContent from "../components/RowItemContent";
 import RowItemStyling from "../components/RowItemStyling";
 import MediaTypeLabel from "../components/MediaTypeLabel";
 import { EXPLORE_PAGE_ITEM_COUNT } from "../constants";
+import AnimatedPage from "../components/AnimatedPage";
 
 
 export default function ExploreMediaItemsPage() {
@@ -36,7 +37,7 @@ export default function ExploreMediaItemsPage() {
         } catch(err) {
             console.error(err);
         }
-    }, [dispatch, token]);
+    }, [dispatch, token, amount]);
 
     // The scroll-up too much automatically refreshes the list of MediaItems.
     useEffect( () => {
@@ -54,7 +55,7 @@ export default function ExploreMediaItemsPage() {
         }
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
-    }, [dispatch, token]);
+    }, [dispatch, token, amount]);
 
 
 
@@ -67,16 +68,19 @@ export default function ExploreMediaItemsPage() {
                 separate placeholder block that visually represents one row item that
                 will appear once data loads. Without them there is nothing to animate. */}
             <div className="animate-pulse space-y-3">
+                <RowItemStyling>
+                    <div className="h-14 bg-surface-raised rounded-lg" />
+                </RowItemStyling>
+                {/* <div className="h-14 bg-surface-raised rounded-lg" />
                 <div className="h-14 bg-surface-raised rounded-lg" />
                 <div className="h-14 bg-surface-raised rounded-lg" />
-                <div className="h-14 bg-surface-raised rounded-lg" />
-                <div className="h-14 bg-surface-raised rounded-lg" />
-                <div className="h-14 bg-surface-raised rounded-lg" />
+                <div className="h-14 bg-surface-raised rounded-lg" /> */}
             </div>
         </div>
     );
 
     return (
+        <AnimatedPage>
         <div>
             <h1>Explore Media Items</h1>
             <button
@@ -93,6 +97,7 @@ export default function ExploreMediaItemsPage() {
                 </RowItemStyling>
             ))}
         </div>
+        </AnimatedPage>
     );
 
 }

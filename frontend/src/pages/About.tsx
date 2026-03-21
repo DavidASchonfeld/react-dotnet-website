@@ -1,8 +1,10 @@
 import { ThemePicker } from "../components/ThemePicker";
+import AnimatedPage from "../components/AnimatedPage";
 
 export default function About(){
 
     return (
+        <AnimatedPage>
         <div className="page">
             <h1 className="h1-styling">About Page</h1>
             <p>This website is created by David Schonfeld.</p>
@@ -44,5 +46,6 @@ export default function About(){
                 <ThemePicker />
             </div>
         </div>
+        </AnimatedPage>
     )
 }

@@ -8,6 +8,8 @@ import MediaTypeLabel from "../components/MediaTypeLabel";
 import MediaItemFormModal from "../components/modals/MediaItemFormModal";
 import type { MediaItemDetail } from "../types/mediaItem";
 import ConfirmModal from "../components/modals/ConfirmModal";
+import AnimatedPage from "../components/AnimatedPage";
+import { safeToast } from "../utils/safeToast";
 
 
 export default function AdminAllMediaItemsPage() {
@@ -52,8 +54,10 @@ export default function AdminAllMediaItemsPage() {
                 }
             })).unwrap();  // Unwrap lets me catch the error here into this try block
             setShowCreateModal(false);
+            safeToast.success('Media item created');
         } catch (err) {
             console.error(err);
+            safeToast.error('Failed to create media item');
         }
     }
 
@@ -69,8 +73,10 @@ export default function AdminAllMediaItemsPage() {
                 }
             })).unwrap();  // Unwrap lets me catch the error here into this try block
             setMediaItemToEdit(null);
+            safeToast.success('Media item updated');
         } catch (err) {
             console.error(err);
+            safeToast.error('Failed to update media item');
         }
     }
 
@@ -79,9 +85,11 @@ export default function AdminAllMediaItemsPage() {
         try {
             await dispatch(deleteMediaItemTHUNK({token: token!, mediaItemId: mediaItemToDeleteId})).unwrap();
             setMediaItemToDeleteId(null);
+            safeToast.success('Media item deleted');
         } catch (err) {
             console.error(err);
             setMediaItemToDeleteId(null);
+            safeToast.error('Failed to delete media item');
         }
     }
 
@@ -122,6 +130,7 @@ export default function AdminAllMediaItemsPage() {
 
 
     return (
+        <AnimatedPage>
         <div>
             <h1>Admininstrator: All Media Items</h1>
             <button
@@ -158,6 +167,7 @@ export default function AdminAllMediaItemsPage() {
                 />
             )}
         </div>
+        </AnimatedPage>
     );
 
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { useSelector } from "react-redux";
 import type { MediaItemDetail } from "../../types/mediaItem";
 import type { RootState } from "../../store/store";
@@ -40,8 +41,10 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
     }
 
     return (
-        /* Modal panel — see .modal-panel in index.css for Tailwind breakdown */
-        <div className="modal-panel">
+        <AnimatePresence>
+
+        {/* Modal panel — see .modal-panel in index.css for Tailwind breakdown */}
+        <div key="panel" className="modal-panel">
 
             <h2>{isEditMode ? 'Edit Media Item' : 'Create New Media Item'}</h2>
 
@@ -98,7 +101,7 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
             <button onClick={onCancel}>Cancel</button>
 
             <button onClick={handleSubmit}>{isEditMode ? 'Save Changes' : 'Create'}</button>
-
         </div>
+        </AnimatePresence>
     );
 }

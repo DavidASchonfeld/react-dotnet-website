@@ -11,6 +11,7 @@ import { fetchMediaItemDetail, patchMediaItemBasicInfoTHUNK } from '../store/med
 import MediaItemFormModal from '../components/modals/MediaItemFormModal';
 import RowItemContent from '../components/RowItemContent';
 import RowItemStyling from '../components/RowItemStyling';
+import AnimatedPage from '../components/AnimatedPage';
 
 
 
@@ -68,6 +69,7 @@ export default function MediaItemDetailPage() {
     if (!selectedMediaItemDetail) return null
 
     return (
+        <AnimatedPage>
         <div>
 
             <RowItemStyling>
@@ -120,6 +122,7 @@ export default function MediaItemDetailPage() {
 
             
         </div>
+        </AnimatedPage>
     )
 
 

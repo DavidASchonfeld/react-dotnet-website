@@ -44,7 +44,7 @@
 
 /* --- Default -- */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter Variable', system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
@@ -190,11 +190,17 @@ a:hover {
    "border-border" = border-color: var(--color-border).
    This means they automatically update when the theme changes.
 ────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @layer components {
 
   /* --- Page layout --- */
   .page {
     @apply max-w-2xl mx-auto px-4 py-6 space-y-4;
+    /* fade-up is a CSS-only fallback animation; AnimatedPage (Framer Motion) handles this normally */
   }
 
   /* --- Buttons ---
@@ -231,10 +237,16 @@ a:hover {
 
   /* --- Cards --- */
   .card {
-    @apply bg-surface border border-border rounded-lg overflow-hidden;
+    @apply bg-surface border border-border rounded-lg overflow-hidden
+           transition-shadow transition-transform hover:shadow-lg hover:-translate-y-0.5;
   }
   .card-padding-4 {
     @apply p-4;
+  }
+
+  /* --- Toast --- */
+  .toast-base {
+    @apply bg-surface-raised border border-border text-text rounded-lg shadow-xl;
   }
 
   /* --- Modal overlay ---

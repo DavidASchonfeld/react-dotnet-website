@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import AnimatedPage from "../components/AnimatedPage";
 
 
 
@@ -8,6 +9,7 @@ export default function HomePage() {
     const navigate = useNavigate();
 
     return (
+        <AnimatedPage>
         <div className="page">
             <h1 className = "h1-styling">Media Favorites Website</h1>
             <p>This website is a place where you can browse submitted descriptions on Movies, Books and more, and create lists and favorites.</p>
@@ -19,6 +21,6 @@ export default function HomePage() {
                 >About Page</button>
             </div>
         </div>
-
+        </AnimatedPage>
     );
 }

@@ -1,6 +1,6 @@
 // React Libraries
 import { useEffect, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
 // dnd-kit
@@ -29,6 +29,8 @@ import { fetchRandomMediaItems } from '../store/mediaItemsSlice';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import MediaItemSettingsModal from '../components/modals/MediaItemSettingsModal';
+import AnimatedPage from '../components/AnimatedPage';
+import { safeToast } from '../utils/safeToast';
 
 
 
@@ -142,27 +144,40 @@ export default function MediaListDetailPage() {
 
 
     return (
+        <AnimatedPage>
         <div>
             {/* -- Reorder error banner -- */}
             {reorderError && (
                 <div className="bg-red-100 text-red-800 px-4 py-2 flex justify-between items-center">
                     <span>{reorderError}</span>
-                    <button onClick={() => setReorderError(null)} className="ml-4 font-bold">✕</button>
+                    <button onClick={() => setReorderError(null)} className="btn btn-secondary w-fit ml-4 font-bold">✕</button>
                 </div>
             )}
 
             {/* -- Header -- */}
-            <Link to="/my-medialists">⬅︎ Back to My Lists</Link>
+            <button
+                    className="btn btn-secondary w-fit"
+                    onClick={() => navigate("/my-medialists")}
+                >⬅︎ Back to My Lists</button>
+
+
+
             {selectedMediaListDetail.canEdit && (
-                <button onClick={handleToggleEditMode}>
+                <button
+                className="btn btn-secondary w-fit "
+                onClick={handleToggleEditMode}>
                     {isEditMode ? 'Exit "Edit Mode"' : 'Edit'}
                 </button>
             )}
 
             {/* -- List Info -- */}
-            <h1>{selectedMediaListDetail.name}</h1>
+            <h1 className="h1-styling">{selectedMediaListDetail.name}</h1>
+            <br />
             <p>{selectedMediaListDetail.description}</p>
-            {isEditMode && <button onClick={() => setIsEditModalOpen(true)}>Edit List's Basic Info</button>}
+            <br/>
+            {isEditMode && <button 
+                className = "btn btn-secondary w-fit"
+                onClick={() => setIsEditModalOpen(true)}>Edit List's Basic Info</button>}
 
             {/* -- List Content -- */}
             {/*
@@ -171,8 +186,8 @@ export default function MediaListDetailPage() {
                     |-- DragListErrorBoundary
                           |-- DndContext (normal operation — drag + swipe)
 
-                If react-swipeable crashes  → SwipeErrorBoundary fallback: swipeDisabled=true (buttons always visible)
-                If dnd-kit crashes          → DragListErrorBoundary fallback: dragDisabled=true (no drag handles)
+                If react-swipeable crashes  -->  SwipeErrorBoundary fallback: swipeDisabled=true (buttons always visible)
+                If dnd-kit crashes          -->  DragListErrorBoundary fallback: dragDisabled=true (no drag handles)
             */}
             <ErrorBoundary
                 label="SwipeList"
@@ -219,7 +234,9 @@ export default function MediaListDetailPage() {
 
             {/* -- Add Item to List  --press to show "Add Items" Browser Panel (Edit Mode only) */}
             {isEditMode && !showAddBrowsePanel && (
-                <button onClick={() => {
+                <button
+                className = "btn btn-secondary w-fit"
+                onClick={() => {
                     setShowAddBrowsePanel(true);
                     if (mediaItems.length === 0) dispatch(fetchRandomMediaItems({ token: token!, amount: 5 }));
                 }}>+ Add Item (Browse Panel)</button>
@@ -227,30 +244,47 @@ export default function MediaListDetailPage() {
 
             {/* -- "Add Items" Browser Panel -- */}
             {isEditMode && showAddBrowsePanel && (
-                <div>
+                <AnimatedPage>
+                <div className="modal-panel">
+                    
                     <h3>Add an Item</h3>
                     <input
-                        placeholder="Search by name..."
+                        placeholder="Search (this random list) by name..."
                         value={searchBarContent}
                         onChange={(e) => setSearchBarContent(e.target.value)}
                     />
 
-                    <button onClick={() => dispatch(fetchRandomMediaItems({ token: token!, amount: 5 }))}>
+                    <button
+                        className="btn btn-secondary w-fit "
+                        onClick={() => dispatch(fetchRandomMediaItems({ token: token!, amount: 5 }))}>
                         Browse More Random MediaItems
                     </button>
 
-                    <button onClick={() => setShowAddBrowsePanel(false)}>Cancel</button>
+                    <button
+                    className="btn btn-secondary w-fit "
+                    onClick={() => setShowAddBrowsePanel(false)}>Cancel</button>
 
                     {filteredCandidates.map(item => (
                         <div key={item.id}>
                             <span>{item.name}</span>
                             <MediaTypeLabel mediaTypeId={item.mediaTypeId} />
-                            <button onClick={() => dispatch(addItemToList({ token: token!, mediaListId, mediaItemId: item.id, mediaItem: item }))}>
+                            <button
+                            className="btn btn-secondary w-fit"
+                            onClick={async () => {
+                                try {
+                                    await dispatch(addItemToList({ token: token!, mediaListId, mediaItemId: item.id, mediaItem: item })).unwrap();
+                                    safeToast.success('Item added');
+                                } catch {
+                                    safeToast.error('Failed to add item');
+                                }
+                            }}>
                                 Add
                             </button>
                         </div>
                     ))}
+                    
                 </div>
+                </AnimatedPage>
             )}
 
             {/* Edit MediaList's Basic Info Modal */}
@@ -260,8 +294,13 @@ export default function MediaListDetailPage() {
                     initialName={selectedMediaListDetail.name}
                     initialDescription={selectedMediaListDetail.description}
                     initialVisibility={selectedMediaListDetail.visibilityStatus}
-                    onConfirm={(name, description, visibility) => {
-                        dispatch(patchBasicInfoList({ token: token!, mediaListId, data: { name, description, visibilityStatus: visibility } }));
+                    onConfirm={async (name, description, visibility) => {
+                        try {
+                            await dispatch(patchBasicInfoList({ token: token!, mediaListId, data: { name, description, visibilityStatus: visibility } })).unwrap();
+                            safeToast.success('List updated');
+                        } catch {
+                            safeToast.error('Failed to update list');
+                        }
                         setIsEditModalOpen(false);
                     }}
                     onCancel={() => setIsEditModalOpen(false)}
@@ -280,13 +319,19 @@ export default function MediaListDetailPage() {
                     title={`Remove "${confirmRemoveItem.name}"`}
                     message="This item will be removed from the list."
                     confirmLabel="Remove"
-                    onConfirm={() => {
-                        dispatch(removeItemFromList({ token: token!, mediaListId, mediaItemId: confirmRemoveItem.id }));
+                    onConfirm={async () => {
+                        try {
+                            await dispatch(removeItemFromList({ token: token!, mediaListId, mediaItemId: confirmRemoveItem.id })).unwrap();
+                            safeToast.success('Item removed');
+                        } catch {
+                            safeToast.error('Failed to remove item');
+                        }
                         setConfirmRemoveItem(null);
                     }}
                     onCancel={() => setConfirmRemoveItem(null)}
                 />
             )}
         </div>
+        </AnimatedPage>
     );
 }

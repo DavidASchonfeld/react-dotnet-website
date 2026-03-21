@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'framer-motion';
 import RowItemContent from '../RowItemContent';
 import RowItemStyling from '../RowItemStyling';
 import MediaTypeLabel from '../MediaTypeLabel';
@@ -19,9 +20,9 @@ interface Props {
 export default function ConfirmModal({ title, message, confirmLabel = "Confirm", onConfirm, onCancel, itemContext }: Props)
 {
     return (
-        <>
+        <AnimatePresence>
             {/* Dark backdrop — see .modal-overlay in index.css for Tailwind breakdown */}
-        <div className="modal-overlay">
+        <div key="overlay" className="modal-overlay">
             {/* The Modal aka Popup — see .modal-panel in index.css for Tailwind breakdown */}
             <div className="modal-panel">
 
@@ -45,7 +46,6 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
                 </div>
             </div>
         </div>
-
-        </>
+        </AnimatePresence>
     )
 }

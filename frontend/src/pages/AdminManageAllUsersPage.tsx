@@ -7,6 +7,8 @@ import type { RootState } from '../store/store';
 import { getAllUsers, updateUserRole } from '../services/usersService';
 import type { UserSummary } from '../services/usersService';
 import type { UserRole } from '../types/userRole';
+import AnimatedPage from '../components/AnimatedPage';
+import { safeToast } from '../utils/safeToast';
 
 
 
@@ -25,6 +27,15 @@ export default function AdminManageAllUsersPage() {
     // so I can easily change one in a dropdown menu and then click Save to send
     // that change to the backend
     const [selectedRoles, setSelectedRoles] = useState<Record<string, string>>({});
+
+    async function handleSaveRole(userId: string, role: UserRole) {
+        try {
+            await updateUserRole(token!, userId, role);
+            safeToast.success('Role updated');
+        } catch {
+            safeToast.error('Failed to update role');
+        }
+    }
 
 
     useEffect(() => {
@@ -77,6 +88,7 @@ export default function AdminManageAllUsersPage() {
 
 
     return (
+        <AnimatedPage>
             <div>
 
             
@@ -144,7 +156,7 @@ export default function AdminManageAllUsersPage() {
                                         <button
                                             disabled = {isCurrentUser}
                                             className = {isCurrentUser ? 'cursor-not-allowed opacity-50': ''}
-                                            onClick={() => updateUserRole(token!, eachUser.id, selectedRoles[eachUser.id] as UserRole)}
+                                            onClick={() => handleSaveRole(eachUser.id, selectedRoles[eachUser.id] as UserRole)}
                                         >
                                             Save
                                         </button>
@@ -157,9 +169,10 @@ export default function AdminManageAllUsersPage() {
                     </table>
                 )}
                 
-                
-                 
+
+
             </div>
+        </AnimatedPage>
         );
 
 }

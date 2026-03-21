@@ -11,6 +11,8 @@ import { fetchMyLists, createList, deleteList } from '../store/mediaListsSlice';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import RowItemContent from '../components/RowItemContent';
+import AnimatedPage from '../components/AnimatedPage';
+import { safeToast } from '../utils/safeToast';
 
 
 
@@ -82,14 +84,16 @@ export default function MyMediaListsPage() {
             // now that the MediaList objected was deleted
 
             
+            safeToast.success('List deleted');
         } catch (err) {
             console.error(err);
+            safeToast.error('Failed to delete list');
 
-            
+
             // Close the Modal Window:
             setMediaListToDelete(null);
 
-            // In the return section for HTML/JavaScript below, 
+            // In the return section for HTML/JavaScript below,
             // this webpage displays the error in this section
             // (This section only appears if error is not null.)
             // {error && <h2>{error}</h2>}
@@ -138,8 +142,10 @@ export default function MyMediaListsPage() {
             // Manually reset the UI Modal
             //   The other UI-related parts for that modal are now in the frontend/src/components/modals/CreateListModal.tsx file
             setShowCreateModal(false);  // Hide the modal
+            safeToast.success('List created');
         } catch (err) {
             console.error(err);
+            safeToast.error('Failed to create list');
         }
     }
 
@@ -208,7 +214,13 @@ export default function MyMediaListsPage() {
 
     
 
-    if (status === 'loading') return <div>Loading...</div>
+    if (status === 'loading') return (
+        <div className="page">
+            <div className="animate-pulse space-y-3">
+                <div className="h-14 bg-surface-raised rounded-lg" />
+            </div>
+        </div>
+    );
     if (error) return <div>{error}</div>
     if (!token) return null;  // Putting this here is important
     // to tell people who read this code that this component
@@ -217,6 +229,7 @@ export default function MyMediaListsPage() {
 
 
     return (
+        <AnimatedPage>
         <div className='page'>
             {error && <h2>{error}</h2>}
 
@@ -224,19 +237,22 @@ export default function MyMediaListsPage() {
                 to prevent characters from looking too spread out at bigger sizes */}
             <h1 className="text-2xl font-bold tracking-tight">My Lists</h1>
             
-            <div className = "flex gap-2">
+            <div className = "flex gap-2 justify-center">
 
                 {/* Create MediaList Button */}
-                <button onClick={
+                <button className="btn btn-secondary w-fit" onClick={
                     () => setShowCreateModal(true)
-                }>+ Create List</button>
+                }> + Create List</button>
                 
 
                 {/* Refresh Button - Calls Refresh on Click: */}
                 {/* Remember, you need "() =>"" so the function
                 only runs when the button is clicked, instead
                 of when the button is rendered. */}
-                <button onClick={() => dispatch(fetchMyLists(token!))}>Refresh</button>
+                <button className="btn btn-secondary w-fit"
+                onClick={
+                    () => dispatch(fetchMyLists(token!))
+                }> ⟳ Refresh</button>
                 
             </div>
             <div className="flex flex-col gap-3">
@@ -292,7 +308,8 @@ export default function MyMediaListsPage() {
                 />
              )}
 
-             
+
         </div>
+        </AnimatedPage>
     );
 }

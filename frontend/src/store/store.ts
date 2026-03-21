@@ -10,6 +10,7 @@ import mediaListsReducer from './mediaListsSlice';
 import mediaItemsReducer from './mediaItemsSlice';
 import mediaTypesReducer from './mediaTypesSlice';
 import themeReducer from './themeSlice';
+import toastReducer from './toastSlice';
 
 
 
@@ -20,7 +21,8 @@ const rootReducer = combineReducers({
     mediaLists: mediaListsReducer,
     mediaItems: mediaItemsReducer,
     mediaTypes: mediaTypesReducer,
-    theme: themeReducer
+    theme: themeReducer,
+    toast: toastReducer
 })
 
 // ---- Persist config -----

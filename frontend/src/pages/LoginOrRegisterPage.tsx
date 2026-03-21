@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
+import AnimatedPage from "../components/AnimatedPage";
 
 // Import from My Files
 import type { AppDispatch, RootState } from "../store/store";
@@ -72,8 +73,8 @@ export default function LoginOrRegisterPage() {
     };
 
     return (
-    
-        <>
+
+        <AnimatedPage>
             <form onSubmit={handleSubmit}>
             <div className="flex flex-col border-2 border-solid rounded-md shadow-xl m-10 gap-4">
                 
@@ -155,8 +156,7 @@ export default function LoginOrRegisterPage() {
                 </div>
             
             </form>
-            
-       </>
+        </AnimatedPage>
     )
     /* {errorString && <h3>{errorString}</h3>} means that this <h3> object
        is only shown when errorString is not null. That way, if errorString is null, we won't have an empty <h3> there */

@@ -2,13 +2,17 @@ import './App.css'
 
 // My Additional Imports
 //// React Router (External Library)
-import {Routes, Route} from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { AnimatePresence } from 'framer-motion'
+import { Toaster } from 'sonner'
 
 // My Code:
 /// Component
 import ProtectedRoute from './components/ProtectedRoute'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import FallbackToaster from './components/FallbackToaster'
 
 /// All Pages
 import About from './pages/About'
@@ -33,6 +37,7 @@ import { useState } from 'react'
 
 function App() {
 
+  const location = useLocation()
   const [isTop, setIsTop] = useState(true)
   const [isMinimized, setIsMinimized] = useState(false)
 
@@ -121,7 +126,8 @@ function App() {
         ? { paddingTop: isMinimized ? 'var(--navbar-top-minimized-height)' : 'var(--navbar-top-height)' }
         : { paddingLeft: isMinimized ? 'var(--navbar-left-minimized-width)' : 'var(--navbar-left-width)' }
       }>
-      <Routes>
+      <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
         <Route path = "/" element = {<HomePage />} />
         <Route path = "/about" element = {<About />} />
         <Route path = "/login" element = {<LoginOrRegisterPage />} />
@@ -173,7 +179,16 @@ function App() {
 
 
       </Routes>
+      </AnimatePresence>
       </main>
+      <ErrorBoundary label="Toaster" fallback={null}>
+        <Toaster
+          position="bottom-right"
+          richColors
+          toastOptions={{ classNames: { toast: 'toast-base' } }}
+        />
+      </ErrorBoundary>
+      <FallbackToaster />
     </>
   )
   
