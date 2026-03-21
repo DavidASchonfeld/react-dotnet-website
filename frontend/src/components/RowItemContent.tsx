@@ -6,13 +6,13 @@ interface Props {
     thirdString?: string;
     larger?: boolean;
     photographOnLeft?: string;  // image URL; placeholder shown if omitted
-    emojiIcon?: ReactNode;
+    labelPill?: ReactNode;
 }
 
 // Generic row content for any named object.
-// Layout: [Photo or placeholder] | [flex-col: [firstString + emojiIcon] / [secondString] / [thirdString (larger only)]]
+// Layout: [Photo or placeholder] | [flex-col: [firstString + labelPill] / [secondString] / [thirdString (larger only)]]
 // Used as the children of SwipeReorderRowItem (swipe + drag) and RowItem (visual styling only), and other pages/modals.
-export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, emojiIcon }: Props) {
+export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, labelPill }: Props) {
 
     return (
         <div className="flex flex-row items-stretch gap-3 w-full min-w-0">
@@ -35,9 +35,9 @@ export default function RowItemContent({ firstString, secondString, thirdString,
 
                 {/* Top Row: main name (truncated) + optional icon pinned to the right
                     truncate: If this text-filled item becomes too squished horizontally, the non-cut off text ends with "..."
-                    items-start (not items-center): top-aligns the title and emojiIcon so the title text starts
+                    items-start (not items-center): top-aligns the title and labelPill so the title text starts
                     flush with py-2, giving equal 8px padding above title and below the last text row.
-                    (items-center would add 2px of extra space above the title when emojiIcon is taller than text.)
+                    (items-center would add 2px of extra space above the title when labelPill is taller than text.)
                 */}
                 <div className="flex items-start gap-1 min-w-0">
 
@@ -56,7 +56,7 @@ export default function RowItemContent({ firstString, secondString, thirdString,
                                                   rather than its natural content size.
                     */}
                     <span className="truncate text-[15px] font-medium flex-1 text-left text-text leading-tight">{firstString}</span>
-                    {emojiIcon}
+                    {labelPill}
                 </div>
 
                 {/* Second Row: optional secondary string (e.g. content rating + creators) */}

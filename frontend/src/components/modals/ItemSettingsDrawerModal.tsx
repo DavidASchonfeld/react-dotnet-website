@@ -94,7 +94,7 @@ export default function ItemSettingsDrawerModal({open, onClose, preview, childre
                         <RowItemContent
                             firstString={currentMediaItem.name}
                             secondString={'TODO: ADD CREATORS'}
-                            emojiIcon={<MediaTypeLabel mediaTypeId={currentMediaItem.mediaTypeId} faded={true} />}
+                            labelPill={<MediaTypeLabel mediaTypeId={currentMediaItem.mediaTypeId} faded={true} />}
                         />
                     </RowItemStyling> */}
                     {/* The "preview" is a passed-in ReactNode that is at the top of the settigns bar,

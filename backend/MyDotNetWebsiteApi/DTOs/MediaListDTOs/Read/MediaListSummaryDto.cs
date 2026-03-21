@@ -6,4 +6,5 @@ public class MediaListSummaryDto
     public string? Description {get; set;}
     public VisibilityStatus VisibilityStatus {get; set;}
     public int ItemCount {get; set;}
+    public bool CanEdit {get; set;}
 }

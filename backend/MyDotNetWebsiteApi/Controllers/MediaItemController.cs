@@ -62,6 +62,14 @@ public class MediaItemController : ControllerBase
         return result.ToActionResult(this);
     }
 
+    [HttpGet("{mediaItemId}/lists")]
+    public async Task<IActionResult> GetListsContainingItem(int mediaItemId)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaItemService.GetListsContainingItemAsync(mediaItemId, requesterUserId);
+        return result.ToActionResult(this);
+    }
+
     // Patching Non-Linked (aka Basic) Items
     [HttpPatch("{mediaItemId}")]
     public async Task<IActionResult> UpdateMediaItem(int mediaItemId, [FromBody] UpdateMediaItemBasicInfoDto dto)

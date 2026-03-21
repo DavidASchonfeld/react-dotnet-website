@@ -173,6 +173,35 @@ public class MediaItemService : IMediaItemService
     }
 
 
+    public async Task<ServiceResult<List<MediaListSummaryDto>>> GetListsContainingItemAsync(int mediaItemId, string requesterUserId)
+    {
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return ServiceResult<List<MediaListSummaryDto>>.Unauthorized();
+
+        var allMatchingLists = await _context.MediaLists
+            .Include(l => l.ItemLinks)
+            .Where(l => l.ItemLinks.Any(link => link.MediaItemId == mediaItemId))
+            .ToListAsync();
+
+        // Filter to only lists the requester can see (owner, admin, or public)
+        var visibleLists = allMatchingLists
+            .Where(l => PermissionHelper.CanSeeList(requesterUser, l))
+            .Select(l => new MediaListSummaryDto
+            {
+                Id = l.Id,
+                Name = l.Name,
+                SubmittedById = l.SubmittedById,
+                Description = l.Description,
+                VisibilityStatus = l.VisibilityStatus,
+                ItemCount = l.ItemLinks.Count,
+                CanEdit = PermissionHelper.CanModifyOrDeleteList(requesterUser, l)
+            })
+            .ToList();
+
+        return ServiceResult<List<MediaListSummaryDto>>.Ok(visibleLists);
+    }
+
+
 
 
 

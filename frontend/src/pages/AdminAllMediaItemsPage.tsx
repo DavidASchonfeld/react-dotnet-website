@@ -145,7 +145,7 @@ export default function AdminAllMediaItemsPage() {
                     <RowItemStyling>
                         <RowItemContent
                             firstString={mediaItem.name}
-                            emojiIcon={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
+                            labelPill={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
                         />
                     </RowItemStyling>
                     <button onClick={() => handleEditClick(mediaItem.id)}>Edit</button>

@@ -33,7 +33,7 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
                     <RowItemStyling>
                         <RowItemContent
                             firstString={itemContext.name}
-                            emojiIcon={<MediaTypeLabel mediaTypeId={itemContext.mediaTypeId} faded={true} />}
+                            labelPill={<MediaTypeLabel mediaTypeId={itemContext.mediaTypeId} faded={true} />}
                         />
                     </RowItemStyling>
                 )}

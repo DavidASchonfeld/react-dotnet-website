@@ -160,7 +160,7 @@ export default function MediaListDetailPage() {
             >
                 <RowItemContent
                     firstString={item.name}
-                    emojiIcon={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
+                    labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
                 />
             </SwipeReorderRowItem>
         ));
@@ -179,7 +179,7 @@ export default function MediaListDetailPage() {
             <RowItemContent
                 firstString={settingsItem.name}
                 secondString={'TODO: ADD CREATORS'}
-                emojiIcon={<MediaTypeLabel mediaTypeId={settingsItem.mediaTypeId} faded={true} />}
+                labelPill={<MediaTypeLabel mediaTypeId={settingsItem.mediaTypeId} faded={true} />}
             />
         </RowItemStyling>
     ) : undefined;
@@ -270,7 +270,7 @@ export default function MediaListDetailPage() {
                                     >
                                         <RowItemContent
                                             firstString={item.name}
-                                            emojiIcon={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
+                                            labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
                                         />
                                     </SwipeReorderRowItem>
                                 ))}

@@ -1,5 +1,6 @@
 import { BACKEND_BASE_URL } from "../config";
 import type { CreateMediaItemRequest, PatchMediaItemBasicInfoRequest, MediaItemDetail, MediaItemSummary } from "../types/mediaItem";
+import type { MediaListSummary } from "../types/mediaList";
 
 
 
@@ -127,6 +128,26 @@ export async function patchMediaItemBasicInfo(token: string, mediaItemId: number
         throw new Error("Failed to patch MediaItem's basic information")
 
     const dataToReceive: MediaItemDetail = await response.json();
-    
+
     return dataToReceive;
+}
+
+
+// Returns all MediaLists (that the requester can see) which contain this MediaItem,
+// each with canEdit indicating whether the requester can modify that list's membership.
+export async function getMediaItemLists(token: string, mediaItemId: number): Promise<MediaListSummary[]> {
+    const response = await fetch(`${BACKEND_BASE_URL}/api/mediaitem/${mediaItemId}/lists`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        // No body needed for this API call.
+    });
+
+    if (!response.ok)
+        throw new Error("Failed to fetch lists containing this media item");
+
+    const data: MediaListSummary[] = await response.json();
+    return data;
 }

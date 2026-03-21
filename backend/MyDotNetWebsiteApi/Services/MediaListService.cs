@@ -66,14 +66,15 @@ public class MediaListService : IMediaListService
         .CountAsync();
 
     
-    private static MediaListSummaryDto ToSummaryDto(MediaList mediaListObject, int itemCount) => new()
+    private static MediaListSummaryDto ToSummaryDto(MediaList mediaListObject, int itemCount, bool canEdit = true) => new()
     {
         Id = mediaListObject.Id,
         Name = mediaListObject.Name,
         SubmittedById = mediaListObject.SubmittedById,
         Description = mediaListObject.Description,
         VisibilityStatus = mediaListObject.VisibilityStatus,
-        ItemCount = itemCount
+        ItemCount = itemCount,
+        CanEdit = canEdit
     };
 
 
@@ -91,7 +92,8 @@ public class MediaListService : IMediaListService
                 SubmittedById = l.SubmittedById,
                 Description = l.Description,
                 VisibilityStatus = l.VisibilityStatus,
-                ItemCount = l.ItemLinks.Count
+                ItemCount = l.ItemLinks.Count,
+                CanEdit = true  // GetMyLists only returns lists the user submitted, so they always own them
             })
             .ToListAsync();
         return ServiceResult<List<MediaListSummaryDto>>.Ok(lists);

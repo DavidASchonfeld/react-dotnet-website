@@ -95,7 +95,7 @@ export default function ExploreMediaItemsPage() {
                     <RowItemContent
                         firstString={mediaItem.name}
                         secondString={'TODO: ADD CREATORS'}
-                        emojiIcon={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
+                        labelPill={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
                     />
                 </RowItemStyling>
             ))}

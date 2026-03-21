@@ -24,6 +24,7 @@ export interface MediaListSummary
     submittedById: string | null;
     visibilityStatus: VisibilityStatus;
     itemCount: number;
+    canEdit: boolean;
 }
 
 export interface MediaListDetail
