@@ -39,12 +39,12 @@ export default function MediaTypeLabel({mediaTypeId, faded}: {mediaTypeId: numbe
                 font-medium controls the bold/heavy for the letters
                 text-sm controls the font size
 
-                ${faded ? 'bg-slate-500/15' : 'bg-slate-100'}
+                ${faded ? 'bg-border/60' : 'bg-surface-raised'}
                 -- if faded == true, make the background (not the txt/icon) faded/very transparent
-                -- if faded == false, just it standard bg-slate-100.
+                -- if faded == false, use the theme's raised surface color.
 
             */}
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-slate-700 ${faded ? 'bg-slate-500/15' : 'bg-slate-100'}`}>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-text ${faded ? 'bg-border/60' : 'bg-surface-raised'}`}>
 
                 <span>{mediaType?.icon ?? ''}</span>
 

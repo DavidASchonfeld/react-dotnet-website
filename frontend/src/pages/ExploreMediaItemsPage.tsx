@@ -75,7 +75,7 @@ export default function ExploreMediaItemsPage() {
 
     return (
         <AnimatedPage>
-        <div className ="card flex-col">
+        <div className ="page flex-col">
             <h1 className = "h1-styling">Explore Media Items</h1>
             <button
                 // mx-auto automatically sets margins left/right to auto, which centers this button because its parent container div has "flex"
@@ -84,15 +84,17 @@ export default function ExploreMediaItemsPage() {
             >Refresh</button>
             <br />
             {error}
-            {mediaItems.map(mediaItem => (
-                <RowItemStyling key={mediaItem.id} onClick={() => navigate(`/mediaitem/${mediaItem.id}`)}>
-                    <RowItemContent
-                        firstString={mediaItem.name}
-                        secondString={'TODO: ADD CREATORS'}
-                        labelPill={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
-                    />
-                </RowItemStyling>
-            ))}
+            <div>
+                {mediaItems.map(mediaItem => (
+                    <RowItemStyling key={mediaItem.id} onClick={() => navigate(`/mediaitem/${mediaItem.id}`)}>
+                        <RowItemContent
+                            firstString={mediaItem.name}
+                            secondString={'TODO: ADD CREATORS'}
+                            labelPill={<MediaTypeLabel mediaTypeId={mediaItem.mediaTypeId} faded={true} />}
+                        />
+                    </RowItemStyling>
+                ))}
+            </div>
         </div>
         </AnimatedPage>
     );

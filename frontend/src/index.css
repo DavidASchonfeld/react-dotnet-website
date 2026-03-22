@@ -347,11 +347,11 @@ a:hover {
     @apply relative overflow-hidden border-b border-border;
   }
   .row-item-swipe-reveal-left {
-    @apply absolute inset-0 flex items-center justify-center
+    @apply absolute inset-0 flex items-center justify-start pl-4
            bg-blue-600 text-white text-lg font-medium;
   }
   .row-item-swipe-reveal-right {
-    @apply absolute inset-0 flex items-center justify-center
+    @apply absolute inset-0 flex items-center justify-end pr-4
            bg-red-600 text-white text-lg font-medium;
   }
   .row-item-swipe-content {
