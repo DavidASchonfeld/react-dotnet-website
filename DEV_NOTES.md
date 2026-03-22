@@ -48,3 +48,31 @@ Removing the environment variables does not delete the admin user
 **Keep 'JwtSettings__Secret' permanently. This is needed for every HTTPRequest to validate JWT tokens.**
 
 Never reuse dev credentials (username/password) in production
+
+
+
+
+##
+Deploying
+-- I created an account in Render (by using my Github account),
+Step 1: Choose Service -> I choose "New Web Service"
+-- In Tab "Git Provider", click the Git icon to give Github permission to give Render 
+---- I have Render access only to the Git repo to my react-dotnet project (aka this project)
+---- Set the "Root Directory" to "backend/MyDotNetWebsiteApi" so it knows to only look at backend
+---- Setting Environment Variables:
+------ JwtSettings__Secret: a long random string (generate one, keep it private)
+------ CorsSettings__AllowedOrigin: My Render frontend URL (set this after deploying frontend)
+------- 1st Admin Account
+----------- SeedAdmin__UserName
+----------- SeedAdmin__Password
+----------- SeedAdmin__Email
+------- ASPNETCORE_ENVIRONMENT: Production
+------- ASPNETCORE_URLS http://+:8080  <- I need to add that since the end of the Dockerfile automaticlaly exposes that port, so I need to expose that in Render
+
+For "Dockerfile Path", I need to set the path to my Dockerfile, which is just "/" (aka it is at the root" (since I set my root to "backend/MyDotNetWebsiteApi")
+For "Docker Build Context Directory": backend/MyDotNetWebsiteApi
+
+
+Warning copy-pasted from Render website for Free Tier (I am using Free Tier for now): "Upgrade to enable more features
+Free instances spin down after periods of inactivity. They do not support SSH access, scaling, one-off jobs, or persistent disks. Select any paid instance type to enable these features."
+

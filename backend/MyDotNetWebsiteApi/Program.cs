@@ -231,7 +231,11 @@ app.MapControllers();
  // The line right below Runs on startup
 using (var scope = app.Services.CreateScope()) 
 {
-
+    // Add database:
+    // AppDbContext is a file I created in backend/MyDotNetWebsiteApi/Data/AppDbContext.cs
+    // In this file (yes, Program.cs lines 17-20)
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();  // Applies any unapplied migrations (if all migrations are applied already, this is still fine to call.)
 
 
     // Pulls .NET's built-in UserManager for CRUDing users.
@@ -255,12 +259,6 @@ using (var scope = app.Services.CreateScope())
     // Definition for this method is below, in this same Program.cs file.
     await SeedInitialAdminAsync(userManager, config, logger);
 
-
-    // Add database:
-    // AppDbContext is a file I created in backend/MyDotNetWebsiteApi/Data/AppDbContext.cs
-    // In this file (yes, Program.cs lines 17-20)
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();  // Applies any unapplied migrations (if all migrations are applied already, this is still fine to call.)
 }
 
 
