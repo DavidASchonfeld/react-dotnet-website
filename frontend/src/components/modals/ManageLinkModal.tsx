@@ -164,7 +164,7 @@ export default function ManageLinkModal({
                         {tabs.map((tab, i) => (
                             <button
                                 key={tab.label}
-                                className={`flex-1 py-2 text-sm ${activeTabIndex === i ? 'font-semibold border-b-2 border-current' : 'opacity-60'}`}
+                                className={`flex-1 py-2 text-sm ${activeTabIndex === i ? 'font-semibold border-b-2 border-primary text-primary' : 'text-text-muted'}`}
                                 onClick={() => setActiveTabIndex(i)}
                             >{tab.label}</button>
                         ))}
@@ -190,7 +190,7 @@ export default function ManageLinkModal({
                                     onClick={() => !pendingToAdd && item.hasModifyLinkAccess !== false && handleToggle(item.id)}
                                 >
                                     {/* Check Mark / Loading Indicator */}
-                                    <span className="w-5 text-center shrink-0">
+                                    <span className="w-5 text-center shrink-0 text-primary">
                                         {pendingToAdd ? '…' : linked ? '✓' : ''}
                                     </span>
                                     <RowItemStyling>

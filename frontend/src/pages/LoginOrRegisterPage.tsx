@@ -83,13 +83,13 @@ export default function LoginOrRegisterPage() {
                 <div className="flex flex-row">
                     <button
                         type="button"
-                        className={`px-4 py-2 w-full ${!isRegistering ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+                        className={`px-4 py-2 w-full ${!isRegistering ? 'border-b-2 border-primary text-primary' : 'text-text-muted'}`}
                         onClick={() => setIsRegistering(false)}>
                         Login
                     </button>
                     <button
                         type="button"
-                        className={`px-4 py-2 w-full ${isRegistering ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+                        className={`px-4 py-2 w-full ${isRegistering ? 'border-b-2 border-primary text-primary' : 'text-text-muted'}`}
                         onClick={() => setIsRegistering(true)}>
                         Register
                     </button>
@@ -98,7 +98,7 @@ export default function LoginOrRegisterPage() {
                 {authError && <h3>{authError}</h3>}
                 
                 <input
-                    className = "w-full px-4" /* Adds a little padding on left/right of this object */
+                    className="form-input"
                     value = {userName}  /* React.js controls the value */
 
                     /* every time input changes (aka after every keystroke),
@@ -111,7 +111,7 @@ export default function LoginOrRegisterPage() {
                     
                     
                     <input
-                        className = "w-full px-4" /* Adds a little padding on left/right of this object */
+                        className="form-input"
                         value={email}
                         onChange= {e => setEmail(e.target.value)}
                         placeholder="Email"
@@ -126,9 +126,9 @@ export default function LoginOrRegisterPage() {
 
                 
                 <input
-                    className = "w-full px-4" /* Adds a little padding on left/right of this object */
+                    className="form-input"
 
-                    /* Makes this input field the standard "password" field where 
+                    /* Makes this input field the standard "password" field where
                        where every character you type inside is represented by a generic filled circle character */
                     type = "password"
 
@@ -149,7 +149,7 @@ export default function LoginOrRegisterPage() {
                 <button
                 type = "submit"
                 disabled= {authStatus === 'loading'} 
-                className="w-full bg-blue-500 text-gray-500 py-2 rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isRegistering ? "Register" : "Login"}
                 </button>
