@@ -4,24 +4,37 @@ import { createSlice, type PayloadAction} from '@reduxjs/toolkit';
 
 
 
-export type CssTheme = 
+export type CssTheme =
 
 // CSS Color Themes, all specified in frontend/src/index.css
-    | 'ocean-dark'
-    | 'ocean-light'
-    | 'forest-dark'
-    | 'forest-light';
+    | 'ocean-dark'     | 'ocean-light'
+    | 'forest-dark'    | 'forest-light'
+    | 'sunset-dark'    | 'sunset-light'    // Warm analogous (color wheel warm side)
+    | 'lavender-dark'  | 'lavender-light'  // Cool analogous (color wheel cool side)
+    | 'crimson-dark'   | 'crimson-light'   // Monochromatic red
+    | 'amber-dark'     | 'amber-light'     // Warm tertiary (near-complementary to blue)
+    | 'midnight-dark'  | 'midnight-light'; // Cool triadic / split-complementary
 
 // JavaScript-Specific Themes
 //// Day-Night Themes (Switch between 2 CSS themes, depending on the time of day)
 //// JavaScript logic lives in frontend/src/App.tsx, because that is where the code to detect/change themes is located.
 export type DayNightTheme =
     | 'ocean-dayNight'
-    | 'forest-dayNight';
+    | 'forest-dayNight'
+    | 'sunset-dayNight'
+    | 'lavender-dayNight'
+    | 'crimson-dayNight'
+    | 'amber-dayNight'
+    | 'midnight-dayNight';
 
 export const DAY_NIGHT_MAP: Record<DayNightTheme, {dayTheme: CssTheme; nightTheme: CssTheme }> = {
-    'ocean-dayNight' : { dayTheme: 'ocean-light', nightTheme: 'ocean-dark'},
-    'forest-dayNight' : { dayTheme: 'forest-light', nightTheme: 'forest-dark'},
+    'ocean-dayNight'    : { dayTheme: 'ocean-light',    nightTheme: 'ocean-dark'    },
+    'forest-dayNight'   : { dayTheme: 'forest-light',   nightTheme: 'forest-dark'   },
+    'sunset-dayNight'   : { dayTheme: 'sunset-light',   nightTheme: 'sunset-dark'   },
+    'lavender-dayNight' : { dayTheme: 'lavender-light', nightTheme: 'lavender-dark' },
+    'crimson-dayNight'  : { dayTheme: 'crimson-light',  nightTheme: 'crimson-dark'  },
+    'amber-dayNight'    : { dayTheme: 'amber-light',    nightTheme: 'amber-dark'    },
+    'midnight-dayNight' : { dayTheme: 'midnight-light', nightTheme: 'midnight-dark' },
 };
 
 

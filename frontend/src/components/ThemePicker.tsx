@@ -7,17 +7,32 @@ const THEMES: { value: Theme | null; label: string }[] = [
     { value: null, label: 'Auto (OS)'},
 
     // Defined in frontend/src/index.css
-    { value: 'ocean-dark', label: 'Ocean Dark'},
-    { value: 'ocean-light', label: 'Ocean Light'},
-    { value: 'forest-dark', label: 'Forest Dark'},
-    { value: 'forest-light', label: 'Forest Light'},
+    { value: 'ocean-dark',     label: 'Ocean Dark'     },
+    { value: 'ocean-light',    label: 'Ocean Light'    },
+    { value: 'forest-dark',    label: 'Forest Dark'    },
+    { value: 'forest-light',   label: 'Forest Light'   },
+    { value: 'sunset-dark',    label: 'Sunset Dark'    },
+    { value: 'sunset-light',   label: 'Sunset Light'   },
+    { value: 'lavender-dark',  label: 'Lavender Dark'  },
+    { value: 'lavender-light', label: 'Lavender Light' },
+    { value: 'crimson-dark',   label: 'Crimson Dark'   },
+    { value: 'crimson-light',  label: 'Crimson Light'  },
+    { value: 'amber-dark',     label: 'Amber Dark'     },
+    { value: 'amber-light',    label: 'Amber Light'    },
+    { value: 'midnight-dark',  label: 'Midnight Dark'  },
+    { value: 'midnight-light', label: 'Midnight Light' },
 
     // JavaScript-Affected
     //    The JavaScript logic is in App.tsx, since that is where themes are loaded.
     //// Day-Night Cycle: Switches between 2 CSS themes above,
     ////    depending on time of day. Day = 7am-8pm, as defined in App.tsx
-    { value: 'ocean-dayNight', label: 'Ocean (Day/Night)'},
-    { value: 'forest-dayNight', label: 'Forest (Day/Night)'},
+    { value: 'ocean-dayNight',    label: 'Ocean (Day/Night)'    },
+    { value: 'forest-dayNight',   label: 'Forest (Day/Night)'   },
+    { value: 'sunset-dayNight',   label: 'Sunset (Day/Night)'   },
+    { value: 'lavender-dayNight', label: 'Lavender (Day/Night)' },
+    { value: 'crimson-dayNight',  label: 'Crimson (Day/Night)'  },
+    { value: 'amber-dayNight',    label: 'Amber (Day/Night)'    },
+    { value: 'midnight-dayNight', label: 'Midnight (Day/Night)' },
 ];
 
 export function ThemePicker() {

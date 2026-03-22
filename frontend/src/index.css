@@ -151,6 +151,181 @@ a:hover {
 }
 
 /* ─────────────────────────────────────────────
+   THEME: sunset-dark
+   Warm analogous colors — red → orange → yellow (color wheel warm side)
+────────────────────────────────────────────── */
+[data-theme="sunset-dark"] {
+  --color-bg:             #150600;
+  --color-surface:        #2a1000;
+  --color-surface-raised: #3d1a08;
+  --color-border:         #6b2f10;
+  --color-text:           #fff7ed; /* orange-50 */
+  --color-text-muted:     #fb923c; /* orange-400 */
+  --color-primary:        #f97316; /* orange-500 */
+  --color-primary-hover:  #ea580c; /* orange-600 */
+  --color-danger:         #ef4444;
+  --color-accent:         #facc15; /* yellow-400 */
+  --color-btn-hover:      rgba(255, 255, 255, 0.10);
+}
+
+/* ─────────────────────────────────────────────
+   THEME: sunset-light
+────────────────────────────────────────────── */
+[data-theme="sunset-light"] {
+  --color-bg:             #fff7ed; /* orange-50 */
+  --color-surface:        #ffffff;
+  --color-surface-raised: #ffedd5; /* orange-100 */
+  --color-border:         #fdba74; /* orange-300 */
+  --color-text:           #7c2d12; /* orange-900 */
+  --color-text-muted:     #ea580c; /* orange-600 */
+  --color-primary:        #ea580c; /* orange-600 */
+  --color-primary-hover:  #c2410c; /* orange-700 */
+  --color-danger:         #dc2626;
+  --color-accent:         #ca8a04; /* yellow-600 */
+  --color-btn-hover:      rgba(0, 0, 0, 0.07);
+}
+
+/* ─────────────────────────────────────────────
+   THEME: lavender-dark
+   Cool analogous colors — purple → violet (color wheel cool side)
+────────────────────────────────────────────── */
+[data-theme="lavender-dark"] {
+  --color-bg:             #0d0514;
+  --color-surface:        #1a0d28;
+  --color-surface-raised: #27143d;
+  --color-border:         #4a2d6e;
+  --color-text:           #faf5ff; /* purple-50 */
+  --color-text-muted:     #c084fc; /* purple-400 */
+  --color-primary:        #a855f7; /* purple-500 */
+  --color-primary-hover:  #9333ea; /* purple-600 */
+  --color-danger:         #ef4444;
+  --color-accent:         #f59e0b;
+  --color-btn-hover:      rgba(255, 255, 255, 0.10);
+}
+
+/* ─────────────────────────────────────────────
+   THEME: lavender-light
+────────────────────────────────────────────── */
+[data-theme="lavender-light"] {
+  --color-bg:             #faf5ff; /* purple-50 */
+  --color-surface:        #ffffff;
+  --color-surface-raised: #f3e8ff; /* purple-100 */
+  --color-border:         #d8b4fe; /* purple-300 */
+  --color-text:           #3b0764; /* purple-950 */
+  --color-text-muted:     #9333ea; /* purple-600 */
+  --color-primary:        #9333ea; /* purple-600 */
+  --color-primary-hover:  #7e22ce; /* purple-700 */
+  --color-danger:         #dc2626;
+  --color-accent:         #d97706;
+  --color-btn-hover:      rgba(0, 0, 0, 0.07);
+}
+
+/* ─────────────────────────────────────────────
+   THEME: crimson-dark
+   Monochromatic — single hue (red/rose) in varying values
+────────────────────────────────────────────── */
+[data-theme="crimson-dark"] {
+  --color-bg:             #0f0506;
+  --color-surface:        #1f0a0d;
+  --color-surface-raised: #2e1016;
+  --color-border:         #5e1a22;
+  --color-text:           #fff1f2; /* rose-50 */
+  --color-text-muted:     #fb7185; /* rose-400 */
+  --color-primary:        #f43f5e; /* rose-500 */
+  --color-primary-hover:  #e11d48; /* rose-600 */
+  --color-danger:         #ef4444;
+  --color-accent:         #f59e0b;
+  --color-btn-hover:      rgba(255, 255, 255, 0.10);
+}
+
+/* ─────────────────────────────────────────────
+   THEME: crimson-light
+────────────────────────────────────────────── */
+[data-theme="crimson-light"] {
+  --color-bg:             #fff1f2; /* rose-50 */
+  --color-surface:        #ffffff;
+  --color-surface-raised: #ffe4e6; /* rose-100 */
+  --color-border:         #fda4af; /* rose-300 */
+  --color-text:           #881337; /* rose-900 */
+  --color-text-muted:     #e11d48; /* rose-600 */
+  --color-primary:        #e11d48; /* rose-600 */
+  --color-primary-hover:  #be123c; /* rose-700 */
+  --color-danger:         #dc2626;
+  --color-accent:         #d97706;
+  --color-btn-hover:      rgba(0, 0, 0, 0.07);
+}
+
+/* ─────────────────────────────────────────────
+   THEME: amber-dark
+   Warm tertiary colors — yellow-orange (near-complementary to blue)
+────────────────────────────────────────────── */
+[data-theme="amber-dark"] {
+  --color-bg:             #140c00;
+  --color-surface:        #211500;
+  --color-surface-raised: #30200a;
+  --color-border:         #57350a; /* yellow-900 */
+  --color-text:           #fffbeb; /* amber-50 */
+  --color-text-muted:     #fbbf24; /* amber-400 */
+  --color-primary:        #f59e0b; /* amber-500 */
+  --color-primary-hover:  #d97706; /* amber-600 */
+  --color-danger:         #ef4444;
+  --color-accent:         #84cc16; /* lime-500 — complement on warm wheel */
+  --color-btn-hover:      rgba(255, 255, 255, 0.10);
+}
+
+/* ─────────────────────────────────────────────
+   THEME: amber-light
+────────────────────────────────────────────── */
+[data-theme="amber-light"] {
+  --color-bg:             #fffbeb; /* amber-50 */
+  --color-surface:        #ffffff;
+  --color-surface-raised: #fef3c7; /* amber-100 */
+  --color-border:         #fcd34d; /* amber-300 */
+  --color-text:           #78350f; /* amber-900 */
+  --color-text-muted:     #d97706; /* amber-600 */
+  --color-primary:        #d97706; /* amber-600 */
+  --color-primary-hover:  #b45309; /* amber-700 */
+  --color-danger:         #dc2626;
+  --color-accent:         #65a30d; /* lime-600 */
+  --color-btn-hover:      rgba(0, 0, 0, 0.07);
+}
+
+/* ─────────────────────────────────────────────
+   THEME: midnight-dark
+   Cool triadic / split-complementary — indigo → deep blue-violet
+────────────────────────────────────────────── */
+[data-theme="midnight-dark"] {
+  --color-bg:             #06071a;
+  --color-surface:        #0f1033;
+  --color-surface-raised: #1a1b4b; /* indigo-950 */
+  --color-border:         #312e81; /* indigo-900 */
+  --color-text:           #eef2ff; /* indigo-50 */
+  --color-text-muted:     #818cf8; /* indigo-400 */
+  --color-primary:        #6366f1; /* indigo-500 */
+  --color-primary-hover:  #4f46e5; /* indigo-600 */
+  --color-danger:         #ef4444;
+  --color-accent:         #f59e0b;
+  --color-btn-hover:      rgba(255, 255, 255, 0.10);
+}
+
+/* ─────────────────────────────────────────────
+   THEME: midnight-light
+────────────────────────────────────────────── */
+[data-theme="midnight-light"] {
+  --color-bg:             #eef2ff; /* indigo-50 */
+  --color-surface:        #ffffff;
+  --color-surface-raised: #e0e7ff; /* indigo-100 */
+  --color-border:         #a5b4fc; /* indigo-300 */
+  --color-text:           #1e1b4b; /* indigo-950 */
+  --color-text-muted:     #4f46e5; /* indigo-600 */
+  --color-primary:        #4f46e5; /* indigo-600 */
+  --color-primary-hover:  #4338ca; /* indigo-700 */
+  --color-danger:         #dc2626;
+  --color-accent:         #d97706;
+  --color-btn-hover:      rgba(0, 0, 0, 0.07);
+}
+
+/* ─────────────────────────────────────────────
    DAY / NIGHT AUTO-DETECTION
    If no data-theme is set, respect the OS preference.
    When data-theme IS set, it overrides this.
