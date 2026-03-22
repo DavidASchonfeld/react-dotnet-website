@@ -72,6 +72,22 @@ Step 1: Choose Service -> I choose "New Web Service"
 For "Dockerfile Path", I need to set the path to my Dockerfile, which is just "/" (aka it is at the root" (since I set my root to "backend/MyDotNetWebsiteApi")
 For "Docker Build Context Directory": backend/MyDotNetWebsiteApi
 
+Now, I will deploy Frontend
+
+Click "New Static Site"
+-- Choose a unique name: react-dotnet-website-frontend
+-- Root Directory: frontend
+-- Build Command npm run build
+-- Publish Directory: dist
+Add one environment variable:
+VITE_API_URL: https://react-dotnet-website.onrender.com
+
+
+
+
+
+
+
 
 Warning copy-pasted from Render website for Free Tier (I am using Free Tier for now): "Upgrade to enable more features
 Free instances spin down after periods of inactivity. They do not support SSH access, scaling, one-off jobs, or persistent disks. Select any paid instance type to enable these features."

@@ -24,7 +24,10 @@
     /// Commenting out this line to enable Enums.
     // "erasableSyntaxOnly": true, 
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+
+    // Setting line below to False so my website can use @fontsource-variable/inter
+    "noUncheckedSideEffectImports": false
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/pages/_archive"]
 }
