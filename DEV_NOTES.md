@@ -71,6 +71,7 @@ Step 1: Choose Service -> I choose "New Web Service"
 
 For "Dockerfile Path", I need to set the path to my Dockerfile, which is just "/" (aka it is at the root" (since I set my root to "backend/MyDotNetWebsiteApi")
 For "Docker Build Context Directory": backend/MyDotNetWebsiteApi
+I am paying for the $7/month for my backend on Render.
 
 Now, I will deploy Frontend
 
@@ -83,10 +84,7 @@ Add one environment variable:
 VITE_API_URL: https://react-dotnet-website.onrender.com
 
 Now, both my backend and frontend are both deployed succesfully.
-Note: I added a warning in my README and on my webpage's Homepage about the Spin out.
 
-
-Render (Warning about Free Instances, which I am using right now)::
-Warning copy-pasted from Render website for Free Tier (I am using Free Tier for now): "Upgrade to enable more features
-Free instances spin down after periods of inactivity. They do not support SSH access, scaling, one-off jobs, or persistent disks. Select any paid instance type to enable these features."
-
+Note: Since I gave Render permission to look at 1 of my Github repositories, Render has the ability to just pull from my Github.
+So yes, every time I push my commits to Github, Render automatically re-deploys both my frontend and my backend.
+It makes it really easy to publish and publish changes too.
