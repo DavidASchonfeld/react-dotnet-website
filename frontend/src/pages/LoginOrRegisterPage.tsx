@@ -98,7 +98,7 @@ export default function LoginOrRegisterPage() {
                 {authError && <h3>{authError}</h3>}
                 
                 <input
-                    className = "px-4" /* Adds a little padding on left/right of this object */
+                    className = "w-full px-4" /* Adds a little padding on left/right of this object */
                     value = {userName}  /* React.js controls the value */
 
                     /* every time input changes (aka after every keystroke),
@@ -111,7 +111,7 @@ export default function LoginOrRegisterPage() {
                     
                     
                     <input
-                        className = "px-4" /* Adds a little padding on left/right of this object */
+                        className = "w-full px-4" /* Adds a little padding on left/right of this object */
                         value={email}
                         onChange= {e => setEmail(e.target.value)}
                         placeholder="Email"
@@ -126,7 +126,7 @@ export default function LoginOrRegisterPage() {
 
                 
                 <input
-                    className = "px-4" /* Adds a little padding on left/right of this object */
+                    className = "w-full px-4" /* Adds a little padding on left/right of this object */
 
                     /* Makes this input field the standard "password" field where 
                        where every character you type inside is represented by a generic filled circle character */
