@@ -279,6 +279,7 @@ export default function MediaListDetailPage() {
                                     >
                                         <RowItemContent
                                             firstString={item.name}
+                                            secondString={'TODO: ADD CREATORS'}
                                             labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
                                         />
                                     </SwipeReorderRowItem>
@@ -343,10 +344,13 @@ export default function MediaListDetailPage() {
                     initialVisibility={selectedMediaListDetail.visibilityStatus}
                     onConfirm={async (name, description, visibility) => {
                         try {
-                            await dispatch(patchBasicInfoList({ token: token!, mediaListId, data: { name, description, visibilityStatus: visibility } })).unwrap();
-                            safeToast.success('List updated');
-                        } catch {
-                            safeToast.error('Failed to update list');
+                            await safeToast.promise(
+                                dispatch(patchBasicInfoList({ token: token!, mediaListId, data: { name, description, visibilityStatus: visibility } })).unwrap(),
+                                { loading: 'Saving...', success: 'List updated', error: 'Failed to update list' }
+                            );
+                        } catch (err) {
+                            console.error(err);
+                            // Error toast already shown by safeToast.promise above
                         }
                         setIsEditModalOpen(false);
                     }}
@@ -430,10 +434,13 @@ export default function MediaListDetailPage() {
                     confirmLabel="Remove"
                     onConfirm={async () => {
                         try {
-                            await dispatch(removeItemFromList({ token: token!, mediaListId, mediaItemId: confirmRemoveItem.id })).unwrap();
-                            safeToast.success('Item removed');
-                        } catch {
-                            safeToast.error('Failed to remove item');
+                            await safeToast.promise(
+                                dispatch(removeItemFromList({ token: token!, mediaListId, mediaItemId: confirmRemoveItem.id })).unwrap(),
+                                { loading: 'Removing...', success: 'Item removed', error: 'Failed to remove item' }
+                            );
+                        } catch (err) {
+                            console.error(err);
+                            // Error toast already shown by safeToast.promise above
                         }
                         setConfirmRemoveItem(null);
                     }}

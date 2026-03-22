@@ -290,7 +290,7 @@ function StaticRow({ isEditMode, dragDisabled, sortable, swipeLeftAction, swipeR
                 {swipeRightAction && (
                     <button
                         onClick={swipeRightAction.onPress}
-                        className="row-item-reveal-action-btn bg-blue-600"
+                        className="row-item-reveal-action-btn bg-primary"
                     >
                         {swipeRightAction.label}
                     </button>
@@ -313,7 +313,7 @@ function StaticRow({ isEditMode, dragDisabled, sortable, swipeLeftAction, swipeR
                 {swipeLeftAction && (
                     <button
                         onClick={swipeLeftAction.onPress}
-                        className="row-item-reveal-action-btn bg-red-600"
+                        className="row-item-reveal-action-btn bg-danger"
                     >
                         {swipeLeftAction.label}
                     </button>

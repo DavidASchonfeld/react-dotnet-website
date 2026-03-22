@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-export type ToastType = 'success' | 'error' | 'info' | 'warning';
+export type ToastType = 'success' | 'error' | 'info' | 'warning' | 'loading';
 
 interface Toast {
     id: string;
@@ -31,10 +31,13 @@ const toastSlice = createSlice({
         // I do not want/need to input an id since I am going to automatically set the id to the current daytime
         // to guarantee that each Toast has a unique id and since Toasts are meant to be discarded,
         // (and since users never see Toast's ids) its original id does not matter anyway so the original id value can be discarded.
-        addToast: (state, action: PayloadAction<Omit<Toast, 'id'>>) => {
+        addToast: (state, action: PayloadAction<Omit<Toast, 'id'> & { id?: string }>) => {
 
             // "..." in front of a variable tells that variable to unwrap all of its values into this object
-            state.toasts.push({ ...action.payload, id: Date.now().toString() });
+            // Use the provided id if given (needed for loading toasts — we need to know the id
+            // ahead of time so safeToast.promise can remove the loading toast when the promise settles).
+            // For all other toasts, auto-generate a unique id from the current timestamp.
+            state.toasts.push({ ...action.payload, id: action.payload.id ?? Date.now().toString() });
         },
         removeToast: (state, action: PayloadAction<string>) => {
             state.toasts = state.toasts.filter(t => t.id !== action.payload);

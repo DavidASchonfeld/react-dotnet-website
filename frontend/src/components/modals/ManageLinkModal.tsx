@@ -139,28 +139,28 @@ export default function ManageLinkModal({
             <div className="modal-overlay" onClick={() => onClose(linkedIds)}>
             <AnimatedPage>
             {/* Modal panel */}
-            <div className="w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] flex flex-col bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden"
+            <div className="w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] flex flex-col bg-surface-raised text-text rounded-xl shadow-xl overflow-hidden"
                  onClick={e => e.stopPropagation()}>
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                     <h2 className="font-semibold text-lg">{modalTitle}</h2>
                     <button className="btn btn-secondary w-fit" onClick={() => onClose(linkedIds)}>✕</button>
                 </div>
 
                 {/* Search bar */}
-                <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                <div className="px-4 py-2 border-b border-border">
                     <input
                         placeholder={searchPlaceholder ?? 'Search...'}
                         value={searchQuery}
                         onChange={e => { setSearchQuery(e.target.value); onSearchChange?.(e.target.value); }}
-                        className="w-full"
+                        className="form-input w-full"
                     />
                 </div>
 
                 {/* Tab bar — only shown in tabbed mode (when `tabs` is provided) */}
                 {tabs && (
-                    <div className="flex border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex border-b border-border">
                         {tabs.map((tab, i) => (
                             <button
                                 key={tab.label}

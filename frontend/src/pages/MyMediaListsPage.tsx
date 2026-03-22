@@ -63,31 +63,31 @@ export default function MyMediaListsPage() {
             // Old function having this .tsx file calling the API function directly,
             // before I implemented using Redux. Now, instead, this component
             // dispatches (Aka calls a synchronous function to call those API calls),
-            // with all of that logic in the deleteList AsyncThunk 
+            // with all of that logic in the deleteList AsyncThunk
             // in frontend/src/store/mediaListsSlice.ts
             //    await deleteMediaList(token!, mediaListToDelete);
 
 
             // .unwrap() so this try/catch block can catch errors.
-            await dispatch(deleteList({ token: token!, mediaListId: mediaListToDelete})).unwrap();
+            await safeToast.promise(
+                dispatch(deleteList({ token: token!, mediaListId: mediaListToDelete})).unwrap(),
+                { loading: 'Deleting...', success: 'List deleted', error: 'Failed to delete list' }
+            );
 
 
             // Below only occurs if the deleteMediaList() succeeds
 
-            setMediaListToDelete(null);
-
-
-            // Since the deleteList's asyncThunk's fulfilled logic 
+            // Since the deleteList's asyncThunk's fulfilled logic
             // (in frontend/src/store/mediaListsSlice.ts)
             // already removes the deleted list in our frontend storage,
-            // then this function does not need to call fetchMyLists again to get the updated list 
+            // then this function does not need to call fetchMyLists again to get the updated list
             // now that the MediaList objected was deleted
 
-            
-            safeToast.success('List deleted');
+            setMediaListToDelete(null);
+
         } catch (err) {
             console.error(err);
-            safeToast.error('Failed to delete list');
+            // Error toast already shown by safeToast.promise above
 
 
             // Close the Modal Window:
@@ -117,19 +117,22 @@ export default function MyMediaListsPage() {
             // Use unwrap() so this try/catch block can catch errors
             // createList is an asyncThunk I created
             // in frontend/src/store/mediaListsSlice.ts
-            await dispatch(createList({
+            await safeToast.promise(
+                dispatch(createList({
 
 
-                // Since this page is only accessible if a user is logged in, I know that token will never be null
-                // so I add ! to token to tell TypeScript that this variable will never be null.
-                token: token!,  
+                    // Since this page is only accessible if a user is logged in, I know that token will never be null
+                    // so I add ! to token to tell TypeScript that this variable will never be null.
+                    token: token!,
 
-                data: {
-                    name: newListName,
-                    description: newListDescription || undefined,
-                    visibilityStatus: VisibilityStatus.Private
-                }
-            })).unwrap();
+                    data: {
+                        name: newListName,
+                        description: newListDescription || undefined,
+                        visibilityStatus: VisibilityStatus.Private
+                    }
+                })).unwrap(),
+                { loading: 'Creating...', success: 'List created', error: 'Failed to create list' }
+            );
 
             // Below only occurs if createMediaList succeeds.
 
@@ -142,10 +145,9 @@ export default function MyMediaListsPage() {
             // Manually reset the UI Modal
             //   The other UI-related parts for that modal are now in the frontend/src/components/modals/CreateListModal.tsx file
             setShowCreateModal(false);  // Hide the modal
-            safeToast.success('List created');
         } catch (err) {
             console.error(err);
-            safeToast.error('Failed to create list');
+            // Error toast already shown by safeToast.promise above
         }
     }
 

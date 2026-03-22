@@ -8,6 +8,7 @@ import RowItemStyling from "../components/RowItemStyling";
 import MediaTypeLabel from "../components/MediaTypeLabel";
 import { EXPLORE_PAGE_ITEM_COUNT } from "../constants";
 import AnimatedPage from "../components/AnimatedPage";
+import { safeToast } from "../utils/safeToast";
 
 
 export default function ExploreMediaItemsPage() {
@@ -26,11 +27,15 @@ export default function ExploreMediaItemsPage() {
     const amount = EXPLORE_PAGE_ITEM_COUNT;
 
     useEffect( () => {
-        try {
-            dispatch(fetchRandomMediaItems({token: token!, amount: amount}));
-        } catch(err) {
-            console.error(err);
-        }
+        const run = async () => {
+            try {
+                await dispatch(fetchRandomMediaItems({token: token!, amount: amount})).unwrap();
+            } catch (err) {
+                console.error(err);
+                safeToast.error('Failed to load items');
+            }
+        };
+        run();
     }, [dispatch, token, amount]);
 
     // The scroll-up too much automatically refreshes the list of MediaItems.
@@ -39,11 +44,14 @@ export default function ExploreMediaItemsPage() {
         function handleScroll() {
             const currentScrollY = window.scrollY;
             if (currentScrollY === 0 && lastScrollY > 0){
-                try {
-                    dispatch(fetchRandomMediaItems({token: token!, amount: amount}));
-                } catch(err) {
-                    console.error(err);
-                }
+                // I am intentially giving it silent failing, because this triggers every time
+                // that the user scrolls to the top, which would be disruptive to the user.
+                // Errors are still stored in the Redux state.
+                // I need to use .unwrap() to expose dispatch's error outwards, which I need here
+                // to catch the error and type it to the console.log.
+                dispatch(fetchRandomMediaItems({token: token!, amount: amount}))
+                    .unwrap()
+                    .catch(err => console.log('[Scroll Refresh] Silent fail — Error stored in Redux state:', err));
             }
             lastScrollY = currentScrollY;
         }
@@ -65,10 +73,6 @@ export default function ExploreMediaItemsPage() {
                 <RowItemStyling>
                     <div className="h-14 bg-surface-raised rounded-lg" />
                 </RowItemStyling>
-                {/* <div className="h-14 bg-surface-raised rounded-lg" />
-                <div className="h-14 bg-surface-raised rounded-lg" />
-                <div className="h-14 bg-surface-raised rounded-lg" />
-                <div className="h-14 bg-surface-raised rounded-lg" /> */}
             </div>
         </div>
     );
@@ -83,7 +87,11 @@ export default function ExploreMediaItemsPage() {
                 onClick = {() => dispatch(fetchRandomMediaItems({token: token!, amount: amount}))}
             >Refresh</button>
             <br />
-            {error}
+            {error && (
+                <div className="rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 text-sm mx-auto">
+                    {error}
+                </div>
+            )}
             <div>
                 {mediaItems.map(mediaItem => (
                     <RowItemStyling key={mediaItem.id} onClick={() => navigate(`/mediaitem/${mediaItem.id}`)}>

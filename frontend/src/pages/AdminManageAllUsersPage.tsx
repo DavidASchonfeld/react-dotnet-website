@@ -28,13 +28,11 @@ export default function AdminManageAllUsersPage() {
     // that change to the backend
     const [selectedRoles, setSelectedRoles] = useState<Record<string, string>>({});
 
-    async function handleSaveRole(userId: string, role: UserRole) {
-        try {
-            await updateUserRole(token!, userId, role);
-            safeToast.success('Role updated');
-        } catch {
-            safeToast.error('Failed to update role');
-        }
+    function handleSaveRole(userId: string, role: UserRole) {
+        safeToast.promise(
+            updateUserRole(token!, userId, role),
+            { loading: 'Saving...', success: 'Role updated', error: 'Failed to update role' }
+        );
     }
 
 
@@ -71,21 +69,6 @@ export default function AdminManageAllUsersPage() {
         fetchUsers();
 
     }, [token]);
-
-
-    // TODO LIST:
-    // useEffect: call getAllUsers(token) and store result in useState<UserSummary[]
-
-    // Render the table
-
-    // I need to fetch all possible UserRoleLevel and the row user's roleLevel
-
-    // Save calls the updateUserRole please
-
-    // curent user's Row (matches the username...Does .NET/C#'s built-in user management recquire usernames to be unique?
-
-    // Show a loading state when fetching and an error message if fetch fails.
-
 
     return (
         <AnimatedPage>

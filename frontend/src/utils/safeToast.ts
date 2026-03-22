@@ -2,13 +2,12 @@
 // All call-sites import from here — never from 'sonner' directly.
 import { toast } from 'sonner';
 import { store } from '../store/store';
-import { addToast, type ToastType } from '../store/toastSlice';
+import { addToast, removeToast, type ToastType } from '../store/toastSlice';
 
 function show(type: ToastType, message: string) {
     try {
-
-        // Try the 3rd-Party Toast Library
-        // Explanation for this method
+        // What does this method do?
+        // First, it tries the 3rd-Party Toast Library (called Sonner)
         // use "key" called "type"
         // to search 3rd-party object (called "toast")
         // (which is acting like a dictionary)
@@ -27,7 +26,7 @@ function show(type: ToastType, message: string) {
         // and the function must be called immediately.
         // Example: (onFunction(inString){  print("inString");  })("Here we go!")
         //
-        // I will rewrite the below line to make it simpler to understand:
+        // I will rewrite the below code line here in English to make it simpler to understand:
         // -- toast[type] <- getting the object value from the "toast" dictionary/hashmap
         // -- assert that "toast[type]" is a function that has 1 string input and returns void (aka returns nothing)
         // -- then, call that "toast[type]" and pass in "message" as the parameter.
@@ -49,6 +48,7 @@ function show(type: ToastType, message: string) {
         // (Adding this object to toastSlice
         // will trigger FallbackToaster to render
         // the home-made version of the toast object)
+        console.warn('[safeToast] Sonner unavailable, falling back to Redux toastSlice');
         store.dispatch(addToast({ type, message }));
 
         // Since <FallbackToaster /> is connected to toastSlice
@@ -62,6 +62,110 @@ export const safeToast = {
     error:   (message: string) => show('error',   message),
     info:    (message: string) => show('info',     message),
     warning: (message: string) => show('warning',  message),
+    promise: <T>(promise: Promise<T>, msgs: { loading: string; success: string; error: string }) => {
+        //
+        // Explanation of the "Promise" option:
+        //
+        // Example of Using 1 of the Other (Non-Promise) Options:
+        //    (Example from AdminAllMediaItemsPage.tsx):
+        //
+        //   async function handleEditClick(mediaItemId: number){
+        //         try {
+        //             const mediaItemDetailObject = await dispatch(fetchMediaItemDetail({token: token!, mediaItemId: mediaItemId})).unwrap();
+        //             setMediaItemToEdit(mediaItemDetailObject);
+        //         } catch (err) {
+        //             console.error(err);
+        //             safeToast.error('Failed to load item details');
+        //         }
+        //     }
+        //
+        // Example of Using the Promise Options:
+        //    (Example from AdminAllMediaItemsPage.tsx):
+        //
+        // async function handleCreate(name: string, description: string, mediaTypeId: number, publishedDateTime: string){
+        //     try {
+        //         await safeToast.promise(
+        //             dispatch(createMediaItemTHUNK({
+        //                 token: token!,
+        //                 data: {name,
+        //                     description,
+        //                     mediaTypeId,
+        //                     publishedDateTime: publishedDateTime || null
+        //                 }
+        //             })).unwrap(),  // Unwrap lets me catch the error here into this try block
+        //             { loading: 'Creating...', success: 'Media item created', error: 'Failed to create media item' }
+        //         );
+        //         setShowCreateModal(false);
+        //     } catch (err) {
+        //         console.error(err);
+        //         // Error toast already shown by safeToast.promise above
+        //     }
+        // }
+        //
+        // As you saw in the non-promise option, the async functions
+        // (for example, the dispatch function) gives back a
+        // result (wrapped in a Promise, because that's how TypeScript handles asynchronous functions)
+        // Remember: Being Wrapped in a Promise means that that line of code needs to stall
+        // and wait until it receives the value from the async function.
+        // So, passing in a Promise into safeToast is just passing in an async function call,
+        // and then safeToast looks at the returned value (aka wrapped in a Promise),
+        // decides on which toast type to show (success, failure etc.)
+        // before returning the entire returned value (still wrapped in the Promise object)
+        // to the caller.
+        // Yes, what I just described applies to Sonner's toast system AND my home-made toast system (toastSlice/FallbackToast)
+        //
+        // I want to note: safeToast only checks if the Promise is a success/failure/etc. to show to correct toast notification
+        // and then returns. I want to note that it still returns the Promise, including the error attached.
+        
+
+
+
+
+
+
+
+
+        try {
+            
+
+            // Delegate to Sonner's built-in promise handler.
+            // toast.promise() watches the promise internally via .then()/.catch()
+            // and auto-transitions the toast: loading → success (on resolve) or error (on reject).
+            // The caller does NOT need try/catch just for toast display — Sonner handles it.
+            toast.promise(promise, msgs);
+
+        } catch {
+
+            // If Sonner is unavailable, fall back to the Redux toastSlice manually.
+            // Show a loading toast immediately, then replace it with success/error when the promise settles.
+            console.warn('[safeToast] Sonner toast.promise unavailable, falling back to Redux toastSlice');
+
+            // Use a fixed id so we can remove this exact loading toast when the promise settles.
+            // (addToast normally auto-generates an id; the optional id param was added to toastSlice for this case.)
+            const loadingId = `loading-${Date.now()}`;
+            store.dispatch(addToast({ type: 'loading', message: msgs.loading, id: loadingId }));
+
+            promise.then(
+                () => {
+                    // Promise succeeded: remove the loading toast and show success
+                    store.dispatch(removeToast(loadingId));
+                    store.dispatch(addToast({ type: 'success', message: msgs.success }));
+                },
+                () => {
+                    // Promise failed: remove the loading toast and show error
+                    store.dispatch(removeToast(loadingId));
+                    store.dispatch(addToast({ type: 'error', message: msgs.error }));
+                }
+            );
+
+        }
+
+        // Return the original promise unchanged.
+        // This lets callers optionally await it for post-success/post-failure state cleanup.
+        // Note: if the original promise rejects, awaiting this return value WILL throw —
+        // so callers still need try/catch if they have state cleanup to do on failure.
+        return promise;
+    },
 };
 
 
@@ -83,4 +187,8 @@ export const safeToast = {
 // 
 // The advantage of the current safeToast way is to simulate calling each potential Toast type 
 // as its own unique method. It's as if we are using an extenral library method call.
+
+///////////////
+
+// 
 

@@ -40,67 +40,75 @@ export default function AdminAllMediaItemsPage() {
             setMediaItemToEdit(mediaItemDetailObject);
         } catch (err) {
             console.error(err);
+            safeToast.error('Failed to load item details');
         }
     }
 
     async function handleCreate(name: string, description: string, mediaTypeId: number, publishedDateTime: string){
         try {
-            await dispatch(createMediaItemTHUNK({
-                token: token!,
-                data: {name,
-                    description,
-                    mediaTypeId,
-                    publishedDateTime: publishedDateTime || null
-                }
-            })).unwrap();  // Unwrap lets me catch the error here into this try block
+            await safeToast.promise(
+                dispatch(createMediaItemTHUNK({
+                    token: token!,
+                    data: {name,
+                        description,
+                        mediaTypeId,
+                        publishedDateTime: publishedDateTime || null
+                    }
+                })).unwrap(),  // Unwrap lets me catch the error here into this try block
+                { loading: 'Creating...', success: 'Media item created', error: 'Failed to create media item' }
+            );
             setShowCreateModal(false);
-            safeToast.success('Media item created');
         } catch (err) {
             console.error(err);
-            safeToast.error('Failed to create media item');
+            // Error toast already shown by safeToast.promise above
         }
     }
 
     async function handleEdit(name: string, description: string, mediaTypeId: number, publishedDateTime: string){
         try {
-            await dispatch(patchMediaItemBasicInfoTHUNK({
-                token: token!,
-                mediaItemId: mediaItemToEdit!.id,
-                data: {name,
-                    description,
-                    mediaTypeId,
-                    publishedDateTime: publishedDateTime || undefined
-                }
-            })).unwrap();  // Unwrap lets me catch the error here into this try block
+            await safeToast.promise(
+                dispatch(patchMediaItemBasicInfoTHUNK({
+                    token: token!,
+                    mediaItemId: mediaItemToEdit!.id,
+                    data: {name,
+                        description,
+                        mediaTypeId,
+                        publishedDateTime: publishedDateTime || undefined
+                    }
+                })).unwrap(),  // Unwrap lets me catch the error here into this try block
+                { loading: 'Saving...', success: 'Media item updated', error: 'Failed to update media item' }
+            );
             setMediaItemToEdit(null);
-            safeToast.success('Media item updated');
         } catch (err) {
             console.error(err);
-            safeToast.error('Failed to update media item');
+            // Error toast already shown by safeToast.promise above
         }
     }
 
     async function confirmDelete() {
         if (mediaItemToDeleteId === null) return;
         try {
-            await dispatch(deleteMediaItemTHUNK({token: token!, mediaItemId: mediaItemToDeleteId})).unwrap();
-            setMediaItemToDeleteId(null);
-            safeToast.success('Media item deleted');
+            await safeToast.promise(
+                dispatch(deleteMediaItemTHUNK({token: token!, mediaItemId: mediaItemToDeleteId})).unwrap(),
+                { loading: 'Deleting...', success: 'Media item deleted', error: 'Failed to delete media item' }
+            );
         } catch (err) {
             console.error(err);
+            // Error toast already shown by safeToast.promise above
+        } finally {
             setMediaItemToDeleteId(null);
-            safeToast.error('Failed to delete media item');
         }
     }
 
     
 
     useEffect( () => {
-        const run = async () =>{
+        const run = async () => {
             try {
-                dispatch(fetchAllApprovedMediaItemsForAdmin(token!));
-            } catch(err) {
+                await dispatch(fetchAllApprovedMediaItemsForAdmin(token!)).unwrap();
+            } catch (err) {
                 console.error(err);
+                safeToast.error('Failed to load media items');
             }
         };
         run();
@@ -113,12 +121,14 @@ export default function AdminAllMediaItemsPage() {
         function handleScroll() {
             const currentScrollY = window.scrollY;
             if (currentScrollY === 0 && lastScrollY > 0){
-                try{
-                    dispatch(fetchAllApprovedMediaItemsForAdmin(token!));
-                } catch(err) {
-                    console.error(err);
-                }
-                
+                // I am intentially giving it silent failing, because this triggers every time
+                // that the user scrolls to the top, which would be disruptive to the user.
+                // Errors are still stored in the Redux state.
+                // I need to use .unwrap() to expose dispatch's error outwards, which I need here
+                // to catch the error and type it to the console.log.
+                dispatch(fetchAllApprovedMediaItemsForAdmin(token!))
+                    .unwrap()
+                    .catch(err => console.log('[scroll refresh] Silent fail — error stored in Redux state:', err));
             }
             lastScrollY = currentScrollY;
         }

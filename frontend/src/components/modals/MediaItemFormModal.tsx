@@ -99,13 +99,15 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
                 />
             </div>
 
-            <button className = "btn btn-secondary w-fit"
-                onClick={onCancel}
-            >Cancel</button>
+            <div className="flex gap-2 justify-center mt-2">
+                <button className = "btn btn-secondary w-fit"
+                    onClick={onCancel}
+                >Cancel</button>
 
-            <button className = "btn btn-secondary w-fit"
-                onClick={handleSubmit} 
-            >{isEditMode ? 'Save Changes' : 'Create'}</button>
+                <button className = "btn btn-secondary w-fit"
+                    onClick={handleSubmit}
+                >{isEditMode ? 'Save Changes' : 'Create'}</button>
+            </div>
             </div>
             </AnimatedPage>
         </div>

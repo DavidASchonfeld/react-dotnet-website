@@ -71,7 +71,7 @@ export default function MediaListFormModal({
                             {/* <option value = {VisibilityStatus.Public}>Public</option> TODO: Implement Submission/Approval System*/}
                         </select>
                     )}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-center">
                         <button onClick={onCancel} className = "btn btn-secondary w-fit">Cancel</button>
                         <button onClick={handleSubmit} className = "btn btn-secondary w-fit">
                             {mode === 'create' ? 'Create' : 'Save'}

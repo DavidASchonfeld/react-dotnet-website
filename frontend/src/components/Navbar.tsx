@@ -194,7 +194,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                 // justify-center centers items in top mode (horizontal bar).
                 // justify-start + pt-3 sm:pt-4 pins items to the top in left mode (vertical sidebar).
                 `fixed top-0 left-0 flex items-center
-                gap-y-1 sm:gap-y-2 gap-x-2 sm:gap-x-4 bg-black/60 backdrop-blur-md border border-white/10 shadow-lg
+                gap-y-1 sm:gap-y-2 gap-x-2 sm:gap-x-4 bg-bg/80 backdrop-blur-md border border-border shadow-lg
                 transition-all duration-300
                 ${isTop ? 'rounded-b-xl' : 'rounded-r-xl'}
                 ${isTop
@@ -337,7 +337,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                         -- in "Left" mode: the menu will be to the right of the sidebar
                                     */}
                                 <div
-                                    className={`absolute min-w-[200px] bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50
+                                    className={`absolute min-w-[200px] bg-surface-raised rounded-xl shadow-2xl border border-border overflow-hidden z-50
                                         ${isTop ? 'top-full right-0 mt-2' : 'top-0 left-full ml-2'}`}
 
                                     // This onClick here, on the entire dropdown menu, means that no matter what you click in the dropdown menu itself,
@@ -347,16 +347,16 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
                                     {/* User info header — shows the logged-in username and role at the top of the menu.
                                         bg-gray-50 + border-b gives it a distinct "header" look separate from the action buttons. */}
-                                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 text-center">
-                                        <p className="text-sm font-semibold text-gray-800 truncate">{userName}</p>
-                                        {roleLevel && <p className="text-xs text-gray-500 mt-0.5">{roleLevel}</p>}
+                                    <div className="px-4 py-3 bg-surface border-b border-border text-center">
+                                        <p className="text-sm font-semibold text-text truncate">{userName}</p>
+                                        {roleLevel && <p className="text-xs text-text-muted mt-0.5">{roleLevel}</p>}
                                     </div>
 
                                     {/* Primary navigation items */}
                                     <div className="py-1">
 
                                         <button
-                                            className="relative flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                                            className="relative flex items-center w-full px-4 py-2.5 text-sm text-text hover:bg-surface-raised transition-colors duration-150"
                                             onClick={() => navigate("/my-medialists")}
                                         >
                                             <span className="absolute left-4">☰</span>
@@ -367,17 +367,17 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                         {roleLevel === 'Administrator' && (
                                             <>
                                                 {/* Thin divider + "Admin" label to visually group admin-only actions */}
-                                                <div className="h-px bg-gray-100 mx-3 my-1" />
-                                                <p className="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider text-center">Admin</p>
+                                                <div className="h-px bg-border mx-3 my-1" />
+                                                <p className="px-4 py-1 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">Admin</p>
                                                 <button
-                                                    className="relative flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                                                    className="relative flex items-center w-full px-4 py-2.5 text-sm text-text hover:bg-surface-raised transition-colors duration-150"
                                                     onClick={() => navigate("/admin/users")}
                                                 >
                                                     <span className="absolute left-4">⚙</span>
                                                     <span className="flex-1 text-center">Manage Users</span>
                                                 </button>
                                                 <button
-                                                    className="relative flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                                                    className="relative flex items-center w-full px-4 py-2.5 text-sm text-text hover:bg-surface-raised transition-colors duration-150"
                                                     onClick={() => navigate("/admin/mediaitems")}
                                                 >
                                                     <span className="absolute left-4">▶</span>
@@ -390,7 +390,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
                                     {/* Log Out — separated from other actions by a border and colored red.
                                         Red signals a destructive/exit action (standard UX convention). */}
-                                    <div className="border-t border-gray-100 py-1">
+                                    <div className="border-t border-border py-1">
                                         <button
                                             className="relative flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150"
                                             onClick={handleLogout}

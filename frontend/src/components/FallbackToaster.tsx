@@ -10,6 +10,7 @@ const TYPE_STYLES: Record<string, string> = {
     error:   'border-red-500',
     info:    'border-blue-500',
     warning: 'border-yellow-500',
+    loading: 'border-gray-400',
 };
 
 function ToastItem({ id, message, type }: { id: string; message: string; type: string }) {
@@ -18,12 +19,19 @@ function ToastItem({ id, message, type }: { id: string; message: string; type: s
 
     // After a ToastItem starts being shown, it will stay/exist until, after 4 seconds, it fades away forever automatically
     useEffect(() => {
+        // Loading toasts stay until manually removed by safeToast.promise's fallback
+        // (when the promise resolves or rejects, it dispatches removeToast + a success/error toast).
+        // Auto-dismissing a loading toast would leave the user with no feedback at all.
+        if (type === 'loading') return;
+
         const timer = setTimeout(() => dispatch(removeToast(id)), 4000);
         return () => clearTimeout(timer);
-    }, [id, dispatch]);
+    }, [id, dispatch, type]);
 
     return (
         <div className={`toast-base px-4 py-3 text-sm border-l-4 ${TYPE_STYLES[type] ?? ''}`}>
+            {/* Show a spinner prefix on loading toasts so the user knows something is in progress */}
+            {type === 'loading' && <span>⏳ </span>}
             {message}
         </div>
     );

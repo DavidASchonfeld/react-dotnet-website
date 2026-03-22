@@ -93,3 +93,9 @@ export function useSearch<T>(
 
     return { results, isSearching, query, handleSearchChange, clearResults };
 }
+
+
+// Note: useSearch calls the frontend's service object directly to send HTTPRequest to the backend
+//          and does not use Redux.
+//       This is because search results are transient - only useful when you do the search , then thrown away
+//       Redux is about persistent data that gets repeatedly shown around the website
