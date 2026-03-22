@@ -47,10 +47,7 @@ Right now, duplicate MediaItems in the same MediaList is not allowed. In the fut
 
 Implement batching for requesting data from the backend (Means to split the data into chunks for the front-end to process). Very helpful when you have huge amounts of data to request from the backend.
 
-Implement bouncy refreshing, swiping left/right and swiping up/down to reorder:
-Use External Libraries for this:
-@dnd-kit/core + @dnd-kit/sortable : Sorting Items in a List
-react-swipeable: swipe left/right
+Implement bouncy refreshing,
 @tanstack/react-query: pull to refresh
 
 Administrators can see all private lists
@@ -66,10 +63,6 @@ TODO: Implement into the MediaItem creation process:
 Permission Giving: Complication:
 Maybe give Moderators the ability to upgrade regular users to Moderator (but not the ability to demote them - otherwise, it might cause potential drama/craziness, so only Admins could do that.)
 
-Toast Notification
--- Definition: a small temporary popup (usually at the bottom-right corner) that shows a message then disappears on its own (Without hiding any page content)
--- Use external library: Choose from "react-toastify", "sonner" or "react-hot-toast"
-
 Give each MediaItem page and Creator page places to give URLS (each with their own title) to external websites
 -- For example:
 ----Disclaimer for Users: You are about to navigate to an external website not controlled by this website's control. Are you sure you wish to proceed?
@@ -81,6 +74,7 @@ Inspirations for this Website
 -- GoodReads.com
 -- IMDB.com
 -- Spotify.com (except this website does not play songs)
+-- TVTropes.org
 
 add a search bar to search ALL mediaItems
 --and have a dropdown list of the 5 most popular items when eahc keystroke is typed in the search bar.
@@ -97,10 +91,6 @@ Add to MediaItemDetailPage
 -- a copy of GoodRead's DropDown
 -- [an icon ]
 
-NavBar:
--- Minimize/Un-Minize: Make it ACTUALLY Collapse (except an error/tab sticking out)
--- Make a smoother animation when transitioning to/from the top/left-side modes.
-
 If an album/series/franchise etc. is marked as explict, 
 my system should somehow handle that still
 For example, if someone has "Hide Explicit" Or "Hide PG-13 and Over", anything in that album/series/franchise should also be hidden.
@@ -108,7 +98,3 @@ For example, if someone has "Hide Explicit" Or "Hide PG-13 and Over", anything i
 Implement this (And this page is referenced (and commented out) on
 frontend/src/components/Modals/MediaItemsSettingsModal.tsx)
 navigate(`/mediaitem/${currentMediaItem.id}/creators`);
-
-Are emoji-styles platform-specific, or could I somehow change the font of the emoji
-on the webpage to make them more professional/less colorful (since they weirdly contrast with
-the rest of the website's style)
