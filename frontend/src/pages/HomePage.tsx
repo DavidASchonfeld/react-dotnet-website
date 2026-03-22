@@ -12,8 +12,6 @@ export default function HomePage() {
         <AnimatedPage>
         <div className="page flex-col">
             <h1 className = "h1-styling">Media Favorites Website</h1>
-            <h2>WARNING: Backend Host (Render) spins out.</h2>
-            <h2>Copy-Pasted from </h2>
 
             <p>This website is a place where you can browse submitted descriptions on Movies, Books and more, and create lists and favorites.</p>
 
