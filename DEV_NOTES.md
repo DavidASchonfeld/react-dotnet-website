@@ -82,13 +82,11 @@ Click "New Static Site"
 Add one environment variable:
 VITE_API_URL: https://react-dotnet-website.onrender.com
 
+Now, both my backend and frontend are both deployed succesfully.
+Note: I added a warning in my README and on my webpage's Homepage about the Spin out.
 
 
-
-
-
-
-
+Render (Warning about Free Instances, which I am using right now)::
 Warning copy-pasted from Render website for Free Tier (I am using Free Tier for now): "Upgrade to enable more features
 Free instances spin down after periods of inactivity. They do not support SSH access, scaling, one-off jobs, or persistent disks. Select any paid instance type to enable these features."
 
