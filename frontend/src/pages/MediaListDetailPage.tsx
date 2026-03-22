@@ -27,6 +27,7 @@ import RowItemContent from '../components/RowItemContent';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 import { searchMediaItems } from '../services/mediaItemService';
+import { SEARCH_DEFAULT_LIMIT } from '../constants';
 import { useSearch } from '../hooks/useSearch';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
@@ -60,7 +61,7 @@ export default function MediaListDetailPage() {
         isSearching,
         handleSearchChange,
         clearResults: clearSearchResults,
-    } = useSearch<MediaItemSummary>((query) => searchMediaItems(token!, query, 10));
+    } = useSearch<MediaItemSummary>((query) => searchMediaItems(token!, query, SEARCH_DEFAULT_LIMIT));
 
     // This is about showing/not showing the modal
     // for confirming if a user wants to remove the selected MediaItem in the <ConfirmModal> section
@@ -108,7 +109,7 @@ export default function MediaListDetailPage() {
     }, [selectedMediaListDetail?.listContent]);
 
 
-    if (status === 'loading') return <div>Loading...</div>;
+    if (status === 'loading' && !selectedMediaListDetail) return <div>Loading...</div>;
     if (error) return <div>{error}</div>;
     if (!selectedMediaListDetail) return null;
 
@@ -304,20 +305,31 @@ export default function MediaListDetailPage() {
                     modalTitle="Add Items to List"
                     searchPlaceholder="Search by name (min. 2 characters)..."
                     onSearchChange={handleSearchChange}
+
+                    // searchResults is a tool from my hook for searching
+                    //  this is the search results,which calls/retrieves info from the backend
                     candidates={searchResults
-                        .filter(item => !existingIds.has(item.id))
                         .map(item => ({
                             id: String(item.id),
                             primaryLabel: item.name,
                             labelComponent: <MediaTypeLabel mediaTypeId={item.mediaTypeId} />,
                         }))}
                     candidatesLoading={isSearching}
-                    initialLinkedIds={new Set()}
+                    initialLinkedIds={new Set([...existingIds].map(String))}
                     onAdd={async (id) => {
+                    // My mediaListsSlice handles what is/is not in a mediaList (and sends those commands backend)
+                    //  Note: Here in onAdd (and in onRemove), dispatch is only used to add/remove mediaItem from a mediaList
+                    // Here, dispatch is NOT used/involved in search results
                         const item = searchResults.find(i => String(i.id) === id)!;
                         await dispatch(addItemToList({ token: token!, mediaListId, mediaItemId: item.id, mediaItem: item })).unwrap();
                         safeToast.success('Item added');
                     }}
+                    onRemove={async (id) => {
+                        await dispatch(removeItemFromList({ token: token!, mediaListId, mediaItemId: parseInt(id) })).unwrap();
+                        safeToast.success('Item removed');
+                    }}
+                    removeConfirmTitle="Remove item from list?"
+                    getRemoveConfirmMessage={(item) => `Remove "${item.primaryLabel}" from this list?`}
                     onClose={() => setShowAddBrowsePanel(false)}
                 />
             )}

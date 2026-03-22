@@ -304,8 +304,8 @@ export default function MyMediaListsPage() {
             {mediaListToDelete !== null && (
 
                <ConfirmModal
-                    title = {`Remove "${mediaLists.find(l=>l.id==mediaListToDelete)?.name ?? ''}"`}
-                    message = "This item will be removed from the list."
+                    title = {`Delete the list "${mediaLists.find(l=>l.id==mediaListToDelete)?.name ?? ''}"`}
+                    message = "Delete the list?"
                     confirmLabel = "Delete"
                     onConfirm = {confirmDelete}
                     onCancel = { () => setMediaListToDelete(null)}

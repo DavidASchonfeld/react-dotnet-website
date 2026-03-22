@@ -9,6 +9,8 @@ public interface IMediaListService
     Task<ServiceResult<MediaListSummaryDto>> RemoveMediaItemFromListAsync(int mediaListId, int mediaItemId, string requesterUserId);
     Task<ServiceResult<MediaListSummaryDto>> MoveMediaItemWithinMediaListAsync(int mediaListId, int mediaItemId, MoveMediaItemWithinMediaListDto dto, string requesterUserId);
     Task<ServiceResult<bool>> ReorderItemsAsync(int mediaListId, List<int> orderedItemIds, string requesterUserId);
-    Task<ServiceResult<List<MediaListSummaryDto>>> SearchMyListsAsync(string query, int limit, string requesterUserId);
-    Task<ServiceResult<List<MediaListSummaryDto>>> SearchAllListsAsync(string query, int limit, string requesterUserId);
+    // ownedByUserId = null              → all visible (owner || admin || public)
+    // ownedByUserId = requesterUserId   → own lists only
+    // ownedByUserId = someOtherUserId   → that user's public lists (or all if admin)
+    Task<ServiceResult<List<MediaListSummaryDto>>> SearchListsAsync(string query, int limit, string? ownedByUserId, string requesterUserId);
 }

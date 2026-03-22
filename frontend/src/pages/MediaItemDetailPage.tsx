@@ -12,9 +12,10 @@ import MediaItemFormModal from '../components/modals/MediaItemFormModal';
 import RowItemContent from '../components/RowItemContent';
 import RowItemStyling from '../components/RowItemStyling';
 import AnimatedPage from '../components/AnimatedPage';
-import { addMediaItemToList, removeMediaItemFromList, searchMediaLists } from '../services/mediaListService';
+import { addMediaItemToList, removeMediaItemFromList, searchMediaLists, getMyMediaLists } from '../services/mediaListService';
 import { useSearch } from '../hooks/useSearch';
 import { getMediaItemLists } from '../services/mediaItemService';
+import { SEARCH_DEFAULT_LIMIT } from '../constants';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
 import { safeToast } from '../utils/safeToast';
@@ -68,12 +69,17 @@ export default function MediaItemDetailPage() {
     const [modifiableListIds, setModifiableListIds] = useState<Set<number> | null>(null);
     const [listsLoading, setListsLoading] = useState(false);
 
-    // Server-side list search state for ManageLinkModal
+    // Pre-loaded owned lists for Tab 1 of ManageLinkModal (loaded lazily when modal opens)
+    const [ownedLists, setOwnedLists] = useState<MediaListSummary[]>([]);
+    const [ownedListsLoading, setOwnedListsLoading] = useState(false);
+
+    // Server-side search across all visible lists for ManageLinkModal Tab 2
+    // (no ownedByUserId filter = all visible lists; Tab 1's owned list IDs are excluded client-side to avoid duplicates)
     const {
         results: listSearchResults,
         isSearching: isListSearching,
         handleSearchChange: handleListSearchChange,
-    } = useSearch<MediaListSummary>((query) => searchMediaLists(token!, query, 10));
+    } = useSearch<MediaListSummary>((query) => searchMediaLists(token!, query, SEARCH_DEFAULT_LIMIT));
 
     // Function to call List Membership directly from API,
     // bypassing Redux
@@ -96,6 +102,21 @@ export default function MediaItemDetailPage() {
             safeToast.error('Failed to load list membership');
         } finally {
             setListsLoading(false);
+        }
+    }
+
+    // Loads all lists owned by the current user — pre-fills Tab 1 "My Lists" in ManageLinkModal.
+    // Called lazily when the modal opens (not on page load) to avoid an extra request on every page visit.
+    async function loadOwnedLists(){
+        if (!token) return;
+        setOwnedListsLoading(true);
+        try {
+            const lists = await getMyMediaLists(token);
+            setOwnedLists(lists);
+        } catch {
+            safeToast.error('Failed to load your lists');
+        } finally {
+            setOwnedListsLoading(false);
         }
     }
 
@@ -216,18 +237,39 @@ export default function MediaItemDetailPage() {
             {showLinkModal && (
                 <ManageLinkModal
                     modalTitle='Add/Remove from List'
-                    searchPlaceholder='Search your lists (min. 2 characters)...'
+                    searchPlaceholder='Search (min. 2 characters)...'
                     onSearchChange={handleListSearchChange}
-                    candidates={listSearchResults.map(l => ({
-                        id: l.id.toString(),
-                        primaryLabel: l.name,
-                        secondaryLabel: l.description ?? undefined,
-                        countLabel: `${l.itemCount} items`,
-                        hasModifyLinkAccess: l.canEdit
-                    }))}
-                    candidatesLoading={isListSearching}
-                    // Convert Set<number> → Set<string> at the modal boundary
+                    tabs={[
+                        {
+                            // Tab 1 "My Lists": pre-loaded owned lists — shown immediately, filtered client-side by the modal's search bar
+                            label: 'My Lists',
+                            candidates: ownedLists.map(l => ({
+                                id: l.id.toString(),
+                                primaryLabel: l.name,
+                                secondaryLabel: l.description ?? undefined,
+                                countLabel: `${l.itemCount} items`,
+                                hasModifyLinkAccess: true,  // user owns these, always editable
+                            })),
+                        },
+                        {
+                            // Tab 2 "Non-Owned Lists": server-side search results
+                            label: 'Non-Owned Lists',
+                            candidates: listSearchResults
+                                .filter(l => !ownedLists.some(o => o.id === l.id))
+                                .map(l => ({
+                                    id: l.id.toString(),
+                                    primaryLabel: l.name,
+                                    secondaryLabel: l.description ?? undefined,
+                                    countLabel: `${l.itemCount} items`,
+                                    hasModifyLinkAccess: l.canEdit,
+                                })),
+                        },
+                    ]}
+                    candidatesLoading={ownedListsLoading || isListSearching}
+
+                    // Convert Set<number> -> Set<string> at the modal boundary
                     initialLinkedIds={new Set([...(memberListIds ?? new Set())].map(String))}
+
                     onAdd={async (itemId) => {
                         // itemId is the list's id (as string); selectedMediaItemDetail.id is the item being linked
                         await addMediaItemToList(token!, parseInt(itemId), selectedMediaItemDetail!.id, {})
@@ -276,7 +318,7 @@ export default function MediaItemDetailPage() {
                     <SettingsRow
                         icon="📋"
                         label={getButtonLabel()}
-                        onClick={() => { setShowLinkModal(true); close(); }}
+                        onClick={() => { setShowLinkModal(true); loadOwnedLists(); close(); }}
                     />
                     {selectedMediaItemDetail.canEdit && (
                         <SettingsRow

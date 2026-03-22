@@ -175,10 +175,10 @@ public class MediaItemService : IMediaItemService
 
     public async Task<ServiceResult<List<MediaItemSummaryDto>>> SearchAsync(string query, int limit, int? mediaTypeId, string requesterUserId)
     {
-        if (query.Length < 2)
+        if (query.Length < AppConstants.SearchMinQueryLength)
             return ServiceResult<List<MediaItemSummaryDto>>.BadRequest("Search query must be at least 2 characters.");
 
-        limit = Math.Min(limit, 20);  // Server-side cap — ignore whatever limit the client sent
+        limit = Math.Min(limit, AppConstants.SearchResultMaxLimit);  // Server-side cap — ignore whatever limit the client sent
 
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<List<MediaItemSummaryDto>>.Unauthorized();

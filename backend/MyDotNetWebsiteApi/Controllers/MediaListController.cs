@@ -82,20 +82,15 @@ public class MediaListController : ControllerBase
         return result.ToActionResult(this);
     }
 
+    // Search MediaLists with an optional owner filter.
+    // ownedByUserId = absent/null      → all visible (owner || admin || public)
+    // ownedByUserId = current user ID  → own lists only
+    // ownedByUserId = another user ID  → that user's public lists (or all if admin)
     [HttpGet("search")]
-    public async Task<IActionResult> SearchMyLists([FromQuery] string q, [FromQuery] int limit = 10)
+    public async Task<IActionResult> SearchLists([FromQuery] string q, [FromQuery] int limit = 10, [FromQuery] string? ownedByUserId = null)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaListService.SearchMyListsAsync(q, limit, requesterUserId);
-        return result.ToActionResult(this);
-    }
-
-    // Search ALL MediaLists the requester has permission to see (owner || admin || public)
-    [HttpGet("searchAll")]
-    public async Task<IActionResult> SearchAllLists([FromQuery] string q, [FromQuery] int limit = 10)
-    {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaListService.SearchAllListsAsync(q, limit, requesterUserId);
+        var result = await _mediaListService.SearchListsAsync(q, limit, ownedByUserId, requesterUserId);
         return result.ToActionResult(this);
     }
 

@@ -20,9 +20,9 @@ interface Props {
 export default function ConfirmModal({ title, message, confirmLabel = "Confirm", onConfirm, onCancel, itemContext }: Props)
 {
     return (
-        <AnimatedPage>
+        <div className="modal-overlay">
             {/* Dark backdrop — see .modal-overlay in index.css for Tailwind breakdown */}
-        <div key="overlay" className="modal-overlay">
+            <AnimatedPage>
             {/* The Modal aka Popup — see .modal-panel in index.css for Tailwind breakdown */}
             <div className="modal-panel">
 
@@ -52,7 +52,7 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
                         onClick={onConfirm}>{confirmLabel}</button>
                 </div>
             </div>
+            </AnimatedPage>
         </div>
-        </AnimatedPage>
     )
 }

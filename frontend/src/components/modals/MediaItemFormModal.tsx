@@ -41,10 +41,11 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
     }
 
     return (
-        <AnimatedPage>
-
-        {/* Modal panel — see .modal-panel in index.css for Tailwind breakdown */}
-        <div key="panel" className="modal-panel">
+        <div className="modal-overlay">
+            {/* Dark backdrop — see .modal-overlay in index.css for Tailwind breakdown */}
+            <AnimatedPage>
+            {/* Modal panel — see .modal-panel in index.css for Tailwind breakdown */}
+            <div className="modal-panel">
 
             <h2>{isEditMode ? 'Edit Media Item' : 'Create New Media Item'}</h2>
 
@@ -101,7 +102,8 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
             <button onClick={onCancel}>Cancel</button>
 
             <button onClick={handleSubmit}>{isEditMode ? 'Save Changes' : 'Create'}</button>
+            </div>
+            </AnimatedPage>
         </div>
-        </AnimatedPage>
     );
 }

@@ -37,11 +37,9 @@ export default function MediaListFormModal({
     }
 
     return (
-        <AnimatedPage>
-
+        <div className="modal-overlay">
             {/* Dark backdrop — see .modal-overlay in index.css for Tailwind breakdown */}
-            <div key="overlay" className="modal-overlay">
-
+            <AnimatedPage>
                 {/* The Modal aka Popup — see .modal-panel in index.css for Tailwind breakdown */}
                 <div className="modal-panel">
                     <h2>{mode === 'create' ? 'Create New List' : 'Edit List'}</h2>
@@ -80,7 +78,7 @@ export default function MediaListFormModal({
                         </button>
                     </div>
                 </div>
-            </div>
-        </AnimatedPage>
+            </AnimatedPage>
+        </div>
     );
 }

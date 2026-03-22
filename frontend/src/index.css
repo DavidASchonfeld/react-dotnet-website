@@ -310,7 +310,7 @@ a:hover {
        Note: This is homemade
   */
   .row-item {
-    @apply flex items-center gap-2 px-3
+    @apply flex items-center gap-2 px-3 py-1
            bg-surface border-b border-border
            hover:bg-surface-raised active:bg-border
            transition-colors;
@@ -355,7 +355,7 @@ a:hover {
            bg-red-600 text-white text-lg font-medium;
   }
   .row-item-swipe-content {
-    @apply relative z-10 bg-surface flex items-center gap-2 px-3
+    @apply relative z-10 bg-surface flex items-center gap-2 px-3 py-1
            select-none hover:bg-surface-raised active:bg-border transition-colors;
   }
   .row-item-drag-handle {

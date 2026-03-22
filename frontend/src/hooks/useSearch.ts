@@ -17,20 +17,23 @@
 // via ref, not function identity), but wrap searchFn in useCallback if you want to
 // avoid the regeneration entirely.
 
+// useRef: Standard pattenr for storing any mutable value that needs to survive re-renders but should not cause re-renders
+// ----- For example: timers.
 import { useState, useRef, useCallback } from 'react';
 import { safeToast } from '../utils/safeToast';
+import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_CHARS } from '../constants';
 
 interface UseSearchOptions {
-    debounceMs?: number;  // Default: 300
-    minChars?: number;    // Default: 2
+    debounceMs?: number;  // Default: SEARCH_DEBOUNCE_MS (300ms)
+    minChars?: number;    // Default: SEARCH_MIN_CHARS (2) — must match backend's AppConstants.SearchMinQueryLength
 }
 
 export function useSearch<T>(
     searchFn: (query: string) => Promise<T[]>,
     options?: UseSearchOptions
 ) {
-    const debounceMs = options?.debounceMs ?? 300;
-    const minChars = options?.minChars ?? 2;
+    const debounceMs = options?.debounceMs ?? SEARCH_DEBOUNCE_MS;
+    const minChars = options?.minChars ?? SEARCH_MIN_CHARS;
 
     const [results, setResults] = useState<T[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -44,6 +47,16 @@ export function useSearch<T>(
     // which, besides security, might cause problems.)
     const handleSearchChange = useCallback((newQuery: string) => {
         
+        // Every time a user types a character, handleSearchChange is called. 
+        // This line cancels any previously scheduled search timer,
+        // so later in this method, we can restart the timer.
+        // As said below, debounce says we only can send the search after X milliseconds of no-aPI-calling.
+        // Example:
+        // User types "r"   → cancel nothing, schedule timer T1
+        // User types "re"  → cancel T1,       schedule timer T2
+        // User types "rea" → cancel T2,       schedule timer T3
+        // [user stops typing for 300ms]
+        // T3 fires → API call made with "rea"
         if (debounceRef.current) clearTimeout(debounceRef.current);
         setQuery(newQuery);
         if (newQuery.length < minChars) {
@@ -51,7 +64,13 @@ export function useSearch<T>(
             setIsSearching(false);
             return;
         }
+
         setIsSearching(true);
+        // After canceling the old timer, this schedules a new one.
+        // The actual API call (searchFn) only runs after debounceMs milliseconds of silence.
+        // The timer id is saved to debounceRef.current so that the next keystoke
+        // (like in line "if (debounceRef.current) clearTimeout(debounceRef.current);")
+        // can cancel it again if it arrives before the timer firests.
         debounceRef.current = setTimeout(async () => {
             try {
                 const data = await searchFn(newQuery);
