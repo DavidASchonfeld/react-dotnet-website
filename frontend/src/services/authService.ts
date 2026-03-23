@@ -1,4 +1,5 @@
 import { BACKEND_BASE_URL } from '../config';
+import { apiFetch } from './apiClient';
 
 
 // export: So other files in our frontend can use this function
@@ -7,7 +8,7 @@ export async function registerUser(userName: string, email: string, password: st
 
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/auth/register`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -42,7 +43,7 @@ export async function loginUser(userName: string, password: string) {
 
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/auth/login`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

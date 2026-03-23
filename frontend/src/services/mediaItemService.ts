@@ -1,4 +1,5 @@
 import { BACKEND_BASE_URL } from "../config";
+import { apiFetch } from "./apiClient";
 import type { CreateMediaItemRequest, PatchMediaItemBasicInfoRequest, MediaItemDetail, MediaItemSummary } from "../types/mediaItem";
 import type { MediaListSummary } from "../types/mediaList";
 
@@ -7,7 +8,7 @@ import type { MediaListSummary } from "../types/mediaList";
 
 export async function getMediaItemDetail(token: string, mediaItemId: number): Promise<MediaItemDetail>
 {
-     const response = await fetch(`${BACKEND_BASE_URL}/api/mediaitem/${mediaItemId}`, {
+     const response = await apiFetch(`${BACKEND_BASE_URL}/api/mediaitem/${mediaItemId}`, {
         method: "GET",  // Technically not needed to add, since GET is the default
         headers: {
             "Content-Type": "application/json",
@@ -28,7 +29,7 @@ export async function getMediaItemDetail(token: string, mediaItemId: number): Pr
 
 export async function getRandomMediaItems(token: string, amount: number): Promise<MediaItemSummary[]>
 {
-     const response = await fetch(`${BACKEND_BASE_URL}/api/mediaitem/getRandom/${amount}`, {
+     const response = await apiFetch(`${BACKEND_BASE_URL}/api/mediaitem/getRandom/${amount}`, {
         method: "GET",  // Technically not needed to add, since GET is the default
         headers: {
             "Content-Type": "application/json",
@@ -49,7 +50,7 @@ export async function getRandomMediaItems(token: string, amount: number): Promis
 
 export async function getAllApprovedMediaItemsForAdmin(token: string): Promise<MediaItemSummary[]>
 {
-    const response = await fetch(`${BACKEND_BASE_URL}/api/mediaitem/getAllApprovedMediaItemsForAdmin`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/mediaitem/getAllApprovedMediaItemsForAdmin`, {
         method: "GET",  // Technically not needed to add, since GET is the default
         headers: {
             "Content-Type": "application/json",
@@ -69,7 +70,7 @@ export async function getAllApprovedMediaItemsForAdmin(token: string): Promise<M
 
 export async function createMediaItem(token: string, dataToSend: CreateMediaItemRequest): Promise<MediaItemDetail>
 {
-    const response = await fetch(`${BACKEND_BASE_URL}/api/mediaitem/create`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/mediaitem/create`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -92,7 +93,7 @@ export async function deleteMediaItem(token: string, mediaItemId: number): Promi
 
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/mediaitem/${mediaItemId}`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/mediaitem/${mediaItemId}`, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",
@@ -115,7 +116,7 @@ export async function patchMediaItemBasicInfo(token: string, mediaItemId: number
 
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/mediaitem/${mediaItemId}`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/mediaitem/${mediaItemId}`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
@@ -138,7 +139,7 @@ export async function searchMediaItems(token: string, query: string, limit: numb
     const params = new URLSearchParams({ q: query, limit: String(limit) });
     if (mediaTypeId !== undefined) params.set('mediaTypeId', String(mediaTypeId));
 
-    const response = await fetch(`${BACKEND_BASE_URL}/api/mediaitem/search?${params}`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/mediaitem/search?${params}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -158,7 +159,7 @@ export async function searchMediaItems(token: string, query: string, limit: numb
 // Returns all MediaLists (that the requester can see) which contain this MediaItem,
 // each with canEdit indicating whether the requester can modify that list's membership.
 export async function getMediaItemLists(token: string, mediaItemId: number): Promise<MediaListSummary[]> {
-    const response = await fetch(`${BACKEND_BASE_URL}/api/mediaitem/${mediaItemId}/lists`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/mediaitem/${mediaItemId}/lists`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

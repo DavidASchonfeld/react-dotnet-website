@@ -1,10 +1,11 @@
 import { BACKEND_BASE_URL } from "../config";
+import { apiFetch } from "./apiClient";
 import type { MediaTypeSummary, MediaTypeDetail } from "../types/mediaType";
 
 
 export async function getMediaTypeById(token: string, mediaTypeId: number): Promise<MediaTypeDetail>
 {
-    const response = await fetch(`${BACKEND_BASE_URL}/api/mediatype/${mediaTypeId}`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/mediatype/${mediaTypeId}`, {
         headers: {
             "Content-Type": "application/json",
             "Authorization" : `Bearer ${token}`
@@ -23,7 +24,7 @@ export async function getMediaTypeById(token: string, mediaTypeId: number): Prom
 
 export async function getAllApprovedMediaTypes(token: string): Promise<MediaTypeSummary[]>
 {
-    const response = await fetch(`${BACKEND_BASE_URL}/api/mediatype/GetAllApproved`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/mediatype/GetAllApproved`, {
         method: "GET",  // Technically not needed to add, since GET is the default
         headers: { Authorization: `Bearer ${token}` }
         // No body needed for this API call.

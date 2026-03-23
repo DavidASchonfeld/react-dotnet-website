@@ -1,4 +1,5 @@
 import { BACKEND_BASE_URL } from '../config';
+import { apiFetch } from './apiClient';
 import type { MediaListSummary,
     CreateMediaListRequest,
     UpdateMediaListNotListContentRequest,
@@ -45,7 +46,7 @@ export async function getMyMediaLists(token: string): Promise<MediaListSummary[]
 
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/GetMyLists`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/medialist/GetMyLists`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -65,7 +66,7 @@ export async function getMyMediaLists(token: string): Promise<MediaListSummary[]
 export async function getMediaListDetail(token: string, mediaListId: number): Promise<MediaListDetail> {
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -87,7 +88,7 @@ export async function createMediaList(token: string, dataToSend: CreateMediaList
 
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/CreateList`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/medialist/CreateList`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -108,7 +109,7 @@ export async function deleteMediaList(token: string, mediaListId: number): Promi
 
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}`, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",
@@ -131,7 +132,7 @@ export async function patchListBasicInfo(token: string, mediaListId: number, dat
 
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
@@ -157,7 +158,7 @@ export async function addMediaItemToList(token: string, mediaListId: number, med
 
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}/items/${mediaItemId}`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}/items/${mediaItemId}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -180,7 +181,7 @@ export async function removeMediaItemFromList(token: string, mediaListId: number
 
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}/items/${mediaItemId}`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}/items/${mediaItemId}`, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",
@@ -204,7 +205,7 @@ export async function reorderMediaListItems(token: string, mediaListId: number, 
     
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}/reorder`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}/reorder`, {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
@@ -223,7 +224,7 @@ export async function moveMediaItemWithinMediaList(token: string, mediaListId: n
 
     // fetch makes HTTP requests
     // await: Async call. Waits for response before continuing
-    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}/items/${mediaItemId}`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/medialist/${mediaListId}/items/${mediaItemId}`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
@@ -250,7 +251,7 @@ export async function searchMediaLists(token: string, query: string, limit: numb
     const params = new URLSearchParams({ q: query, limit: String(limit) });
     if (ownedByUserId !== undefined) params.set('ownedByUserId', ownedByUserId);
 
-    const response = await fetch(`${BACKEND_BASE_URL}/api/medialist/search?${params}`, {
+    const response = await apiFetch(`${BACKEND_BASE_URL}/api/medialist/search?${params}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
