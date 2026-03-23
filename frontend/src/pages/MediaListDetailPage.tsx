@@ -1,7 +1,7 @@
 // React Libraries
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 // dnd-kit
 import { DndContext, closestCenter } from '@dnd-kit/core';
@@ -10,15 +10,15 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
 // My Code
-import type { RootState, AppDispatch } from '../store/store';
+import type { RootState } from '../store/store';
 import {
-    fetchListDetail,
-    clearSelectedListDetail,
-    addItemToList,
-    patchBasicInfoList,
-    removeItemFromList,
-    reorderItemsInList,
-} from '../store/mediaListsSlice';
+    useGetMediaListDetailQuery,
+    useAddMediaItemToListMutation,
+    useRemoveMediaItemFromListMutation,
+    usePatchListBasicInfoMutation,
+    useReorderMediaListItemsMutation,
+    useLazySearchMediaItemsQuery,
+} from '../services/apiSlice';
 import type { MediaItemSummary } from '../types/mediaItem';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import SwipeReorderRowItem from '../components/SwipeReorderRowItem';
@@ -26,14 +26,12 @@ import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
-import { searchMediaItems } from '../services/mediaItemService';
 import { SEARCH_DEFAULT_LIMIT } from '../constants';
 import { useSearch } from '../hooks/useSearch';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
 import AnimatedPage from '../components/AnimatedPage';
-import { safeToast } from '../utils/safeToast';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 
 
@@ -43,11 +41,21 @@ export default function MediaListDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-
-    const { selectedMediaListDetail, status, error } = useSelector((state: RootState) => state.mediaLists);
     const { token } = useSelector((state: RootState) => state.auth);
 
-    const dispatch = useDispatch<AppDispatch>();
+    const mediaListId = parseInt(id ?? '');
+    // RTK Query auto-fetches on mount and auto-cleans cache on unmount.
+    // skip=true when the id is invalid to avoid a bad request.
+    const { data: selectedMediaListDetail, isLoading, error, refetch } = useGetMediaListDetailQuery(
+        mediaListId,
+        { skip: isNaN(mediaListId) }
+    );
+
+    const [addItemMutation] = useAddMediaItemToListMutation();
+    const [removeItemMutation] = useRemoveMediaItemFromListMutation();
+    const [patchListMutation] = usePatchListBasicInfoMutation();
+    const [reorderMutation] = useReorderMediaListItemsMutation();
+    const [triggerSearchMediaItems] = useLazySearchMediaItemsQuery();
 
 
     // Local state
@@ -61,12 +69,14 @@ export default function MediaListDetailPage() {
         isSearching,
         handleSearchChange,
         clearResults: clearSearchResults,
-    } = useSearch<MediaItemSummary>((query) => searchMediaItems(token!, query, SEARCH_DEFAULT_LIMIT));
+    } = useSearch<MediaItemSummary>(
+        async (query) => await triggerSearchMediaItems({ query, limit: SEARCH_DEFAULT_LIMIT }).unwrap()
+    );
 
     // This is about showing/not showing the modal
     // for confirming if a user wants to remove the selected MediaItem in the <ConfirmModal> section
     // from the current MediaList
-    // The actual dispatch to remove is located later in this file, 
+    // The actual dispatch to remove is located later in this file,
     const [confirmRemoveItem, setConfirmRemoveItem] = useState<{ id: number; name: string } | null>(null);
 
     const [settingsItem, setSettingsItem] = useState<MediaItemSummary | null>(null);
@@ -78,8 +88,6 @@ export default function MediaListDetailPage() {
 
 
 
-
-
     // navigator.share = the native iOS/Android/desktop share sheet (like Spotify).
     // This is the default Share popup that you see whenever you click Share on your iPhone.
     // Supported on Chrome/Safari/Edge on macOS & Windows, but NOT Firefox desktop.
@@ -88,19 +96,7 @@ export default function MediaListDetailPage() {
 
 
 
-
-
-
-
-    useEffect(() => {
-        dispatch(fetchListDetail({ token: token!, mediaListId: parseInt(id!) }));
-
-        return () => {
-            dispatch(clearSelectedListDetail());
-        };
-    }, [dispatch, token, id]);
-
-    // Sync local orderedItems whenever the Redux store updates listContent
+    // Sync local orderedItems whenever the RTK Query cache updates listContent
     useEffect(() => {
         if (selectedMediaListDetail?.listContent) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -109,12 +105,11 @@ export default function MediaListDetailPage() {
     }, [selectedMediaListDetail?.listContent]);
 
 
-    if (status === 'loading' && !selectedMediaListDetail) return <div>Loading...</div>;
-    if (error) return <div>{error}</div>;
+    if (isLoading && !selectedMediaListDetail) return <div>Loading...</div>;
+    if (error) return <div>Error loading list</div>;
     if (!selectedMediaListDetail) return null;
 
 
-    const mediaListId = selectedMediaListDetail.id;
     const existingIds = new Set(selectedMediaListDetail?.listContent.map(i => i.id));
 
     function handleToggleEditMode() {
@@ -136,22 +131,22 @@ export default function MediaListDetailPage() {
         setOrderedItems(reordered);
 
         // Persist to the backend. On failure: re-fetch the real server order and show a banner.
-        dispatch(reorderItemsInList({
-            token: token!,
+        reorderMutation({
             mediaListId,
             orderedItemIds: reordered.map(i => i.id),
-        }))
+        })
             .unwrap()
             .catch(() => {
                 setReorderError('Failed to save new order. The list has been restored.');
-                dispatch(fetchListDetail({ token: token!, mediaListId: parseInt(id!) }));
+                // Manually refetch since a failed mutation does not invalidate tags
+                refetch();
             });
     }
 
 
     // Shared fallback item list used by both error boundaries
-    // swipeDisabled=true → buttons always visible (no swipe needed)
-    // dragDisabled=true  → no drag handles
+    // swipeDisabled=true -> buttons always visible (no swipe needed)
+    // dragDisabled=true  -> no drag handles
     function renderFallbackItems(swipeDisabled: boolean, dragDisabled: boolean) {
         return orderedItems.map(item => (
             <SwipeReorderRowItem
@@ -190,18 +185,16 @@ export default function MediaListDetailPage() {
     ) : undefined;
 
 
-
-
-
-
-
+    // token is kept for the guard below: if the user somehow loses auth mid-session,
+    // this prevents accidentally sending requests without a token.
+    void token;
 
     return (
         <AnimatedPage>
         <div className = "page">
             {/* -- Reorder error banner -- */}
             {reorderError && (
-                <div className="bg-red-100 text-red-800 px-4 py-2 flex justify-between items-center">
+                <div className="error-banner">
                     <span>{reorderError}</span>
                     <button onClick={() => setReorderError(null)} className="btn btn-secondary w-fit ml-4 font-bold">✕</button>
                 </div>
@@ -234,7 +227,7 @@ export default function MediaListDetailPage() {
             <br />
             <p>{selectedMediaListDetail.description}</p>
             <br/>
-            
+
 
             {/* -- List Content -- */}
             {/*
@@ -316,18 +309,16 @@ export default function MediaListDetailPage() {
                             labelComponent: <MediaTypeLabel mediaTypeId={item.mediaTypeId} />,
                         }))}
                     candidatesLoading={isSearching}
-                    initialLinkedIds={new Set([...existingIds].map(String))}
-                    onAdd={async (id) => {
-                    // My mediaListsSlice handles what is/is not in a mediaList (and sends those commands backend)
-                    //  Note: Here in onAdd (and in onRemove), dispatch is only used to add/remove mediaItem from a mediaList
-                    // Here, dispatch is NOT used/involved in search results
-                        const item = searchResults.find(i => String(i.id) === id)!;
-                        await dispatch(addItemToList({ token: token!, mediaListId, mediaItemId: item.id, mediaItem: item })).unwrap();
-                        safeToast.success('Item added');
+                    initialLinkedIds={[...existingIds].map(String)}
+                    onAdd={async (itemId) => {
+                    // RTK Query mutations handle what is/is not in a mediaList (and sends those commands to backend)
+                    //  Note: Here in onAdd (and in onRemove), mutations are only used to add/remove mediaItem from a mediaList
+                    // Here, mutations are NOT used/involved in search results
+                        const item = searchResults.find(i => String(i.id) === itemId)!;
+                        await addItemMutation({ listId: mediaListId, mediaItemId: item.id }).unwrap();
                     }}
-                    onRemove={async (id) => {
-                        await dispatch(removeItemFromList({ token: token!, mediaListId, mediaItemId: parseInt(id) })).unwrap();
-                        safeToast.success('Item removed');
+                    onRemove={async (itemId) => {
+                        await removeItemMutation({ listId: mediaListId, mediaItemId: parseInt(itemId) }).unwrap();
                     }}
                     removeConfirmTitle="Remove item from list?"
                     getRemoveConfirmMessage={(item) => `Remove "${item.primaryLabel}" from this list?`}
@@ -344,13 +335,9 @@ export default function MediaListDetailPage() {
                     initialVisibility={selectedMediaListDetail.visibilityStatus}
                     onConfirm={async (name, description, visibility) => {
                         try {
-                            await safeToast.promise(
-                                dispatch(patchBasicInfoList({ token: token!, mediaListId, data: { name, description, visibilityStatus: visibility } })).unwrap(),
-                                { loading: 'Saving...', success: 'List updated', error: 'Failed to update list' }
-                            );
+                            await patchListMutation({ mediaListId, data: { name, description, visibilityStatus: visibility } }).unwrap();
                         } catch (err) {
                             console.error(err);
-                            // Error toast already shown by safeToast.promise above
                         }
                         setIsEditModalOpen(false);
                     }}
@@ -386,11 +373,11 @@ export default function MediaListDetailPage() {
                 The modal calls children(close), handing us its close so our rows can trigger
                 the animated close sequence instead of abruptly destroying the modal. */}
 
-                {/* 
+                {/*
                     JSX (JavaScript XML) is what we always "return" in React components.
                     (Technically, we could also return, null, a number and a few other small variable types)
                 */}
-                
+
                 {(close) => (<>
                     <SettingsRow
                         icon="🔗"
@@ -434,13 +421,9 @@ export default function MediaListDetailPage() {
                     confirmLabel="Remove"
                     onConfirm={async () => {
                         try {
-                            await safeToast.promise(
-                                dispatch(removeItemFromList({ token: token!, mediaListId, mediaItemId: confirmRemoveItem.id })).unwrap(),
-                                { loading: 'Removing...', success: 'Item removed', error: 'Failed to remove item' }
-                            );
+                            await removeItemMutation({ listId: mediaListId, mediaItemId: confirmRemoveItem.id }).unwrap();
                         } catch (err) {
                             console.error(err);
-                            // Error toast already shown by safeToast.promise above
                         }
                         setConfirmRemoveItem(null);
                     }}

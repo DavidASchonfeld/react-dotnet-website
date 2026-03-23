@@ -6,11 +6,8 @@ import storage from 'redux-persist/lib/storage';
 // -- it is a thin wrapper that redux-persist uses to read/write
 
 import authReducer from './authSlice'
-import mediaListsReducer from './mediaListsSlice';
-import mediaItemsReducer from './mediaItemsSlice';
-import mediaTypesReducer from './mediaTypesSlice';
 import themeReducer from './themeSlice';
-import toastReducer from './toastSlice';
+import { apiSlice } from '../services/apiSlice';
 
 
 
@@ -18,11 +15,10 @@ import toastReducer from './toastSlice';
 
 const rootReducer = combineReducers({
     auth: authReducer,
-    mediaLists: mediaListsReducer,
-    mediaItems: mediaItemsReducer,
-    mediaTypes: mediaTypesReducer,
     theme: themeReducer,
-    toast: toastReducer
+    // For the "key" (aka lefthand value) name,
+    // import the name inside apiSlice.ts 's object apiSlice's attribute reducerPath's value.
+    [apiSlice.reducerPath]: apiSlice.reducer,
 })
 
 // ---- Persist config -----
@@ -36,7 +32,8 @@ const rootReducer = combineReducers({
 //        to keep/store without needing to re-call those values every time a page refreshes)
 //        Here, refresh means when the user manually refresh the page,
 //        which is unrelated to when React re-renders a component
-//        Here, I am only persisting the auth (login), not the mediaItems, mediaLists etc.
+//        Here, I am only persisting the auth (login) and theme,
+//        not the RTK Query cache (api slice) which should always be fresh.
 
 const persistConfig = {
     key: 'root',
@@ -49,6 +46,7 @@ const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 // ---- Store ----
 
+// configureStore = Get Store from "Redux" (General Redux)
 export const store = configureStore({
     reducer: persistedReducer,
 
@@ -56,8 +54,8 @@ export const store = configureStore({
     // but the conventional name is "getDefaultMiddleWare").
     // Then, in the next line, we use that variable "getDefaultMiddleware"
     // and specify about "serializableCheck".
-    middleware: (getDefaultMiddleware) =>  
-        getDefaultMiddleware({  
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
 
             serializableCheck: {
 
@@ -69,7 +67,10 @@ export const store = configureStore({
                 // If I did not do this, Redux DevTools would show a warning
                 ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE']
             }
-        })
+
+            // This line appends "RTK Query"(Redux Toolkit Query) 's middleware
+            // so Redux on my computer can use RTK Query's api library
+        }).concat(apiSlice.middleware)
 });
 
 // persist is the object to pass into <PersistGate> in maint.tsx

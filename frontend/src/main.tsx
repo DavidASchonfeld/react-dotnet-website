@@ -12,9 +12,6 @@ import { PersistGate } from 'redux-persist/integration/react'
 // Import from My Files
 import { store, persistor } from './store/store.ts'
 
-
-
-
 // import { AuthProvider } from './context/AuthContext.tsx'
 
 createRoot(document.getElementById('root')!).render(

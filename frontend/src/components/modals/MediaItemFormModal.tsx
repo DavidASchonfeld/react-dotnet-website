@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 import type { MediaItemDetail } from "../../types/mediaItem";
 import type { RootState } from "../../store/store";
+import { useGetAllApprovedMediaTypesQuery } from "../../services/apiSlice";
 
 import Select, { type SingleValue } from 'react-select';
 import MediaTypeLabel from "../MediaTypeLabel";
@@ -23,7 +24,9 @@ export default function MediaItemFormModal({ existingItem, onConfirm, onCancel}:
         // The .split('T')[0] strips away the time, so we only get the Date half of the datetime object.
         existingItem?.publishedDateTime ? existingItem.publishedDateTime.split('T')[0]: ''
     );
-    const mediaTypes = useSelector((state: RootState) => state.mediaTypes.mediaTypes);
+    const { token } = useSelector((state: RootState) => state.auth);
+    // Re-use the same cached query that App.tsx already fired on login — no extra network request.
+    const { data: mediaTypes = [] } = useGetAllApprovedMediaTypesQuery(undefined, { skip: !token });
     const isEditMode = (existingItem !== undefined);
 
 

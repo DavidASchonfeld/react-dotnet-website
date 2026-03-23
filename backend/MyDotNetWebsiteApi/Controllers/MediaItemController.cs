@@ -29,7 +29,7 @@ public class MediaItemController : ControllerBase
         return result.ToActionResult(this);  // This method is defined in backend/MyDotNetWebsiteApi/Services/ServiceResult.cs
     }
 
-    [HttpGet("getAllApprovedMediaItemsForAdmin")]
+    [HttpGet("all-approved-admin")]
     public async Task<IActionResult> GetAllApprovedMediaItemsForAdmin()
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -38,7 +38,7 @@ public class MediaItemController : ControllerBase
     }
 
     // Get X random approved MediaItems
-    [HttpGet("getRandom/{amount}")]
+    [HttpGet("random/{amount}")]
     public async Task<IActionResult> GetRandomAmount(int amount)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;

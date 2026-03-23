@@ -23,7 +23,7 @@ public class MediaListService : IMediaListService
             // Return early — callers check whether user and/or mediaListObject is null before reaching the forbidden boolean to check.
             return (user, mediaListObject, false);
         
-        return (user, mediaListObject, PermissionHelper.CanModifyOrDeleteList(user, mediaListObject));
+        return (user, mediaListObject, !PermissionHelper.CanModifyOrDeleteList(user, mediaListObject));
     }
 
     private async Task<int> ClampPositionAsync(int mediaListId, int? submittedPosition, bool isAdding)

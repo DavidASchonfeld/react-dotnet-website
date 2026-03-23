@@ -18,7 +18,7 @@ public class MediaListController : ControllerBase
 
     // Routing and Endpoints
 
-    [HttpGet("GetMyLists")]
+    [HttpGet("my-lists")]
     public async Task<IActionResult> GetMyLists()
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;  // I am adding a "!" here to tell C# that this will never return a null. I know this because this controller has a [Authorize] at the top, meaning that the user will always be logged in before he ever encounters this part of the code.
@@ -34,7 +34,7 @@ public class MediaListController : ControllerBase
         return result.ToActionResult(this);  // This method is defined in backend/MyDotNetWebsiteApi/Services/ServiceResult.cs
     }
 
-    [HttpPost("CreateList")]
+    [HttpPost("create-list")]
     public async Task<IActionResult> CreateList([FromBody] CreateMediaListDto dto)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;

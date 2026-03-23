@@ -23,8 +23,8 @@ import MediaListDetailPage from './pages/MediaListDetailPage'
 import AdminManageAllUsersPage from './pages/AdminManageAllUsersPage'
 
 // Other of My Code
-import { fetchAllApprovedMediaTypes } from './store/mediaTypesSlice'
 import type { AppDispatch, RootState } from './store/store'
+import { useGetAllApprovedMediaTypesQuery } from './services/apiSlice'
 import AdminRoute from './components/AdminRoute'
 import ExploreMediaItemsPage from './pages/ExploreMediaItemsPage'
 import MediaItemDetailPage from './pages/MediaItemDetailPage'
@@ -45,11 +45,11 @@ function App() {
 
 // When Website loads, pull in all MediaType details
   // into a frontend store in Redux
-  const { token } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
-  useEffect(() => {
-    if (token) dispatch(fetchAllApprovedMediaTypes(token));
-  }, [token, dispatch]);
+  const { token } = useSelector((state: RootState) => state.auth);
+  // Pre-load all media types when the user is logged in.
+  // RTK Query fires the request automatically; skip=true suppresses it when there is no token.
+  useGetAllApprovedMediaTypesQuery(undefined, { skip: !token });
 
 
   // Handling Color Themes:

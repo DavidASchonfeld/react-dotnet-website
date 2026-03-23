@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { safeToast } from "../../utils/safeToast";
 import RowItemContent from "../RowItemContent";
 import RowItemStyling from "../RowItemStyling";
 import ConfirmModal from "./ConfirmModal";
@@ -38,12 +37,12 @@ interface ManageLinkModalProps {
     candidates?: LinkRowItem[];
     candidatesLoading: boolean;  // Show loading symbol when loading
 
-    initialLinkedIds: Set<string>; //Items already linked - pre-checked on opening this modal
+    initialLinkedIds: string[]; //Items already linked - pre-checked on opening this modal
 
     // Both are optional.
     // If both onAdd AND onRemove are omitted, modal runs in DEFERRED mode:
     // aka means that the toggles are tracked locally but no API calls are made
-    // onClose then returns the final select Set for the parent to use (ex: at form submit)
+    // onClose then returns the final select array for the parent to use (ex: at form submit)
     // If only one is provided, that direction is SYNC and the other falls back to DEFERRED (local-only, no API call).
     onAdd?: (id: string) => Promise<void>;
     onRemove?: (id: string) => Promise<void>;
@@ -53,7 +52,7 @@ interface ManageLinkModalProps {
     removeConfirmTitle?: string;
     getRemoveConfirmMessage?: (item: LinkRowItem) => string;
 
-    onClose: (updatedLinkedIds: Set<string>) => void;
+    onClose: (updatedLinkedIds: string[]) => void;
 }
 
 // 2 Modes:
@@ -81,7 +80,7 @@ export default function ManageLinkModal({
 }: ManageLinkModalProps){
 
     // this is the local list that keeps track of which are selected in the modal list
-    const [linkedIds, setLinkedIds] = useState<Set<string>>(initialLinkedIds);
+    const [linkedIds, setLinkedIds] = useState<string[]>(initialLinkedIds);
 
     const [pendingAddIds, setPendingAddIds] = useState<Set<string>>(new Set());  // in-flight adds (the request was already sent, now I am waiting to get confirmation from the backend that it worked)
     const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);  // waiting for confirm for removing a link
@@ -105,14 +104,14 @@ export default function ManageLinkModal({
     const allCandidates = tabs ? tabs.flatMap(t => t.candidates) : (candidates ?? []);
 
     async function handleToggle(id: string) {
-        const isLinked = linkedIds.has(id);
+        const isLinked = linkedIds.includes(id);
         if (isLinked) {
             if (onRemove) {
                 // SYNC mode: show confirm before removing
                 setPendingRemoveId(id);
             } else {
                 // DEFERRED mode: just deselect locally
-                setLinkedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+                setLinkedIds(prev => prev.filter(x => x !== id));
             }
         } else {
             if (onAdd) {
@@ -120,15 +119,15 @@ export default function ManageLinkModal({
                 setPendingAddIds(prev => new Set(prev).add(id));
                 try {
                     await onAdd(id);
-                    setLinkedIds(prev => new Set(prev).add(id));
+                    setLinkedIds(prev => [...prev, id]);
                 } catch {
-                    safeToast.error('Failed to add');
+                    // error toast handled by baseQueryWithErrorHandling in apiSlice
                 } finally {
                     setPendingAddIds(prev => { const n = new Set(prev); n.delete(id); return n; });
                 }
             } else {
                 // DEFERRED mode: just select locally
-                setLinkedIds(prev => new Set(prev).add(id));
+                setLinkedIds(prev => [...prev, id]);
             }
         }
     }
@@ -177,7 +176,7 @@ export default function ManageLinkModal({
                         <div className="p-4 opacity-50">Loading...</div>
                     ) : (
                         displayed.map(item => {
-                            const linked = linkedIds.has(item.id);
+                            const linked = linkedIds.includes(item.id);
                             const pendingToAdd = pendingAddIds.has(item.id);
                             return (
                                 <div
@@ -224,8 +223,11 @@ export default function ManageLinkModal({
                         confirmLabel="Remove"
                         onConfirm={async () => {
 
+                            // Capture position BEFORE optimistic remove so rollback can restore it
+                            const idx = linkedIds.indexOf(pendingRemoveId!);
+
                             // Optimistically remove
-                            setLinkedIds(prev => {const n = new Set(prev); n.delete(pendingRemoveId!); return n;})
+                            setLinkedIds(prev => prev.filter(x => x !== pendingRemoveId!));
                             setPendingRemoveId(null);
                             try {
                                 // Call the input into this modal's function
@@ -233,10 +235,14 @@ export default function ManageLinkModal({
                                 await onRemove?.(item.id);
                             } catch {
 
-                                // If the remove failed, read the item back into the list.
-                                //TODO: This does NOT work IF certain lists require positions
-                                setLinkedIds(prev => new Set(prev).add(item.id));
-                                safeToast.error('Failed to remove');
+                                // If the remove failed, restore the item at its original position.
+                                // idx=-1 guard: append to end as a safe fallback.
+                                setLinkedIds(prev => {
+                                    const copy = [...prev];
+                                    copy.splice(idx >= 0 ? idx : prev.length, 0, item.id);
+                                    return copy;
+                                });
+                                // error toast handled by baseQueryWithErrorHandling in apiSlice
                             }
                         }}
                         onCancel={() => setPendingRemoveId(null)}

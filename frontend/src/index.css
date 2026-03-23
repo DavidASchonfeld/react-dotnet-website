@@ -398,6 +398,12 @@ a:hover {
   .btn-secondary { @apply text-text; }
   .btn-danger    { @apply bg-danger text-white hover:opacity-90; }
 
+  /* ── Error banner ─────────────────────────────────────────────────────────
+     Full-width dismissible error strip (e.g. reorder failure in MediaListDetailPage) */
+  .error-banner {
+    @apply bg-red-100 text-red-800 px-4 py-2 flex justify-between items-center;
+  }
+
   /* --- Plain button hover ---
        Targets unstyled <button> elements (not .btn variants).
        Gives them a rounded hover background that adapts to the theme:

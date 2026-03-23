@@ -1,5 +1,6 @@
 import { BACKEND_BASE_URL } from "../config";
-import { apiFetch } from "./apiClient";
+// Note: user management calls use fetch() directly (not apiSlice) because
+// AdminManageAllUsersPage is a small standalone admin tool that does not need RTK Query caching.
 import type { UserRole } from "../types/userRole";
 
 export type UserSummary = {
@@ -10,7 +11,7 @@ export type UserSummary = {
 };
 
 export async function getAllUsers(token: string): Promise<UserSummary[]> {
-    const response = await apiFetch(`${BACKEND_BASE_URL}/api/user/all`, {
+    const response = await fetch(`${BACKEND_BASE_URL}/api/user/all`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -26,7 +27,7 @@ export async function getAllUsers(token: string): Promise<UserSummary[]> {
 }
 
 export async function updateUserRole(token: string, targetUserId: string, newRoleLevel: UserRole): Promise<UserSummary> {
-    const response = await apiFetch(`${BACKEND_BASE_URL}/api/user/${targetUserId}/role`, {
+    const response = await fetch(`${BACKEND_BASE_URL}/api/user/${targetUserId}/role`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",

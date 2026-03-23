@@ -1,8 +1,7 @@
-// safeToast: wraps Sonner so any runtime failure falls back silently to Redux.
+// safeToast: wraps Sonner so any runtime failure falls back silently to toastEvents.
 // All call-sites import from here — never from 'sonner' directly.
 import { toast } from 'sonner';
-import { store } from '../store/store';
-import { addToast, removeToast, type ToastType } from '../store/toastSlice';
+import { toastEvents, type ToastType } from './toastEvents';
 
 function show(type: ToastType, message: string) {
     try {
@@ -10,7 +9,7 @@ function show(type: ToastType, message: string) {
 
 
         // Before starting a toast notification,
-        // just console.log the error, but only when running the website in developer mode        
+        // just console.log the error, but only when running the website in developer mode
         if (import.meta.env.DEV) {
             console.debug(`[safeToast] ${type}:`, message);
         }
@@ -22,7 +21,7 @@ function show(type: ToastType, message: string) {
         // use "key" called "type"
         // to search 3rd-party object (called "toast")
         // (which is acting like a dictionary)
-        
+
         // This is NOT a cast
         //    as (message: string) => void
         // It is a compile-time-only assertion —
@@ -41,7 +40,7 @@ function show(type: ToastType, message: string) {
         // -- toast[type] <- getting the object value from the "toast" dictionary/hashmap
         // -- assert that "toast[type]" is a function that has 1 string input and returns void (aka returns nothing)
         // -- then, call that "toast[type]" and pass in "message" as the parameter.
-        // 
+        //
         // Since this is in a try/catch box, then it will throw an error
         // if it cannot reach the functions stored in the toast hashmap
         // Catching the error will cause the same alert info to be passed into the home-made Toaster.
@@ -55,14 +54,14 @@ function show(type: ToastType, message: string) {
     } catch {
 
         // Use basic home-made version instead
-        // (Adding this object to toastSlice
+        // (Emitting this event to toastEvents
         // will trigger FallbackToaster to render
         // the home-made version of the toast object)
-        console.warn('[safeToast] Sonner unavailable, falling back to Redux toastSlice');
-        store.dispatch(addToast({ type, message }));
+        console.warn('[safeToast] Sonner unavailable, falling back to toastEvents');
+        toastEvents.emit({ kind: 'add', id: Date.now().toString(), type, message });
 
-        // Since <FallbackToaster /> is connected to toastSlice
-        // and you are adding a value to toastSlice
+        // Since <FallbackToaster /> is subscribed to toastEvents
+        // and you are emitting an 'add' event
         // <FallbackToaster /> will display that error/success notification.
     }
 }
@@ -122,18 +121,10 @@ export const safeToast = {
         // decides on which toast type to show (success, failure etc.)
         // before returning the entire returned value (still wrapped in the Promise object)
         // to the caller.
-        // Yes, what I just described applies to Sonner's toast system AND my home-made toast system (toastSlice/FallbackToast)
+        // Yes, what I just described applies to Sonner's toast system AND my home-made toast system (toastEvents/FallbackToast)
         //
         // I want to note: safeToast only checks if the Promise is a success/failure/etc. to show to correct toast notification
         // and then returns. I want to note that it still returns the Promise, including the error attached.
-        
-
-
-
-
-
-
-
 
         try {
 
@@ -142,7 +133,7 @@ export const safeToast = {
             if (import.meta.env.DEV) {
                 console.debug('[safeToast] promise:', msgs);
             }
-            
+
 
             // Delegate to Sonner's built-in promise handler.
             // toast.promise() watches the promise internally via .then()/.catch()
@@ -153,25 +144,24 @@ export const safeToast = {
 
         } catch {
 
-            // If Sonner is unavailable, fall back to the Redux toastSlice manually.
+            // If Sonner is unavailable, fall back to toastEvents manually.
             // Show a loading toast immediately, then replace it with success/error when the promise settles.
-            console.warn('[safeToast] Sonner toast.promise unavailable, falling back to Redux toastSlice');
+            console.warn('[safeToast] Sonner toast.promise unavailable, falling back to toastEvents');
 
             // Use a fixed id so we can remove this exact loading toast when the promise settles.
-            // (addToast normally auto-generates an id; the optional id param was added to toastSlice for this case.)
             const loadingId = `loading-${Date.now()}`;
-            store.dispatch(addToast({ type: 'loading', message: msgs.loading, id: loadingId }));
+            toastEvents.emit({ kind: 'add', id: loadingId, type: 'loading', message: msgs.loading });
 
             promise.then(
                 () => {
                     // Promise succeeded: remove the loading toast and show success
-                    store.dispatch(removeToast(loadingId));
-                    store.dispatch(addToast({ type: 'success', message: msgs.success }));
+                    toastEvents.emit({ kind: 'remove', id: loadingId });
+                    toastEvents.emit({ kind: 'add', id: Date.now().toString(), type: 'success', message: msgs.success });
                 },
                 () => {
                     // Promise failed: remove the loading toast and show error
-                    store.dispatch(removeToast(loadingId));
-                    store.dispatch(addToast({ type: 'error', message: msgs.error }));
+                    toastEvents.emit({ kind: 'remove', id: loadingId });
+                    toastEvents.emit({ kind: 'add', id: Date.now().toString(), type: 'error', message: msgs.error });
                 }
             );
 
@@ -191,7 +181,7 @@ export const safeToast = {
 // "export const safeToast" is a TypeScript Object (similar to a HashMap or Dictionary),
 // that gives you (the programmer) the ability to call safeToast.ts 's logic like this:
 // -- safeToast.success("MessageForToastToShow")
-// 
+//
 // Technically, I can also create a function like this in safeToast.ts and get a similar result:
 //    export function safeToast(inToastType:ToastType, message: string){
 //        show(inToastType,message)
@@ -201,11 +191,11 @@ export const safeToast = {
 // or, even better,
 //    import type ToastType from '../store/toastSlice' (technically, ToastType is not a Type, so importing ToastType is more complicated).
 //    safeToast(success, 'Item added');  <- Here, I am using the actual ToastType object's possible value success, so better
-// 
-// The advantage of the current safeToast way is to simulate calling each potential Toast type 
+//
+// The advantage of the current safeToast way is to simulate calling each potential Toast type
 // as its own unique method. It's as if we are using an extenral library method call.
 
 ///////////////
 
-// 
+//
 

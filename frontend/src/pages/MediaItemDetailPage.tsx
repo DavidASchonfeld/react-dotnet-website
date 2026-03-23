@@ -1,20 +1,25 @@
 // React Libraries
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 // My Code
-import type { RootState, AppDispatch } from '../store/store';
-import { clearSelectedMediaItemDetail} from '../store/mediaItemsSlice';
+import type { RootState } from '../store/store';
 import MediaTypeLabel from '../components/MediaTypeLabel';
-import { fetchMediaItemDetail, patchMediaItemBasicInfoTHUNK } from '../store/mediaItemsSlice';
+import {
+    useGetMediaItemDetailQuery,
+    usePatchMediaItemBasicInfoMutation,
+    useAddMediaItemToListMutation,
+    useRemoveMediaItemFromListMutation,
+    useLazyGetMediaItemListsQuery,
+    useLazyGetMyMediaListsQuery,
+    useLazySearchMediaListsQuery,
+} from '../services/apiSlice';
 import MediaItemFormModal from '../components/modals/MediaItemFormModal';
 import RowItemContent from '../components/RowItemContent';
 import RowItemStyling from '../components/RowItemStyling';
 import AnimatedPage from '../components/AnimatedPage';
-import { addMediaItemToList, removeMediaItemFromList, searchMediaLists, getMyMediaLists } from '../services/mediaListService';
 import { useSearch } from '../hooks/useSearch';
-import { getMediaItemLists } from '../services/mediaItemService';
 import { SEARCH_DEFAULT_LIMIT } from '../constants';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
@@ -42,12 +47,7 @@ export default function MediaItemDetailPage() {
     //      called "id" with type "string".
     const { id } = useParams<{ id: string }>();
 
-    // Get Details of selected MediaItem from store (aka Redux)(and if store doesn't have it, it will send commands to Service which will send HTTP requests to backend)
-    const { selectedMediaItemDetail, status, error } = useSelector((state: RootState) => state.mediaItems);
-
     const { token } = useSelector((state: RootState) => state.auth);
-
-    const dispatch = useDispatch<AppDispatch>();
 
     const navigate = useNavigate();
 
@@ -56,6 +56,21 @@ export default function MediaItemDetailPage() {
     // Supported on Chrome/Safari/Edge on macOS & Windows, but NOT Firefox desktop.
     // When unavailable, the button becomes a "Copy Link" button instead.
     const canNativeShare = typeof navigator.share === 'function';
+
+    const mediaItemId = parseInt(id ?? '');
+    // RTK Query auto-fetches on mount and auto-cleans cache on unmount.
+    // skip=true when the id is invalid to avoid a bad request.
+    const { data: selectedMediaItemDetail, isLoading, error } = useGetMediaItemDetailQuery(
+        mediaItemId,
+        { skip: isNaN(mediaItemId) }
+    );
+
+    const [patchMediaItem] = usePatchMediaItemBasicInfoMutation();
+    const [addItemToList] = useAddMediaItemToListMutation();
+    const [removeItemFromList] = useRemoveMediaItemFromListMutation();
+    const [triggerGetMediaItemLists] = useLazyGetMediaItemListsQuery();
+    const [triggerGetMyLists] = useLazyGetMyMediaListsQuery();
+    const [triggerSearchMediaLists] = useLazySearchMediaListsQuery();
 
     const [isEditMode, setIsEditMode] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
@@ -79,7 +94,9 @@ export default function MediaItemDetailPage() {
         results: listSearchResults,
         isSearching: isListSearching,
         handleSearchChange: handleListSearchChange,
-    } = useSearch<MediaListSummary>((query) => searchMediaLists(token!, query, SEARCH_DEFAULT_LIMIT));
+    } = useSearch<MediaListSummary>(
+        async (query) => await triggerSearchMediaLists({ query, limit: SEARCH_DEFAULT_LIMIT }).unwrap()
+    );
 
     // Function to call List Membership directly from API,
     // bypassing Redux
@@ -89,7 +106,7 @@ export default function MediaItemDetailPage() {
         try {
             // Single request: returns only the lists that contain this item,
             // each with canEdit already set by the backend.
-            const memberLists = await getMediaItemLists(token, parseInt(id!));
+            const memberLists = await triggerGetMediaItemLists(parseInt(id!)).unwrap();
             const ids = new Set<number>();
             const modIds = new Set<number>();
             memberLists.forEach(l => {
@@ -111,7 +128,7 @@ export default function MediaItemDetailPage() {
         if (!token) return;
         setOwnedListsLoading(true);
         try {
-            const lists = await getMyMediaLists(token);
+            const lists = await triggerGetMyLists().unwrap();
             setOwnedLists(lists);
         } catch {
             safeToast.error('Failed to load your lists');
@@ -138,34 +155,19 @@ export default function MediaItemDetailPage() {
         return `Saved to ${modifiableCount} lists`;
     }
 
-    // Runs only once (unless any of its dependencies (dispatch, token, id) changes)
+    // Runs only once (unless any of its dependencies (token, id) change).
+    // RTK Query handles fetching selectedMediaItemDetail automatically — no dispatch needed.
+    // RTK Query also handles cleanup on unmount — no clearSelectedMediaItemDetail needed.
     useEffect(()=> {
-        // Since this function is here in the useEffect() body,
-        // it runs as soon as this component is rendered (aka shown on the screen.)
-        dispatch(fetchMediaItemDetail({token: token!, mediaItemId: parseInt(id!)}));
-
-        // Cleanup: When the user navigates from this page,
-        // let's clear the stored detailed list.
-        // This prevents seeing the previous list's data
-        // when loading/navigating to a different list.
-
         if (token){
             loadMembership();
         }
-
-        // () => {} means that this function runs when this component unmounts (aka leaves the screen)
-        return () => {
-            dispatch(clearSelectedMediaItemDetail());
-        };
-
-
-    }, [dispatch, token, id]);
+    }, [token, id]);
 
 
 
-
-    if (status === 'loading') return <div>Loading...</div>
-    if (error) return <div>{error}</div>
+    if (isLoading) return <div>Loading...</div>
+    if (error) return <div>Error loading item</div>
     if (!selectedMediaItemDetail) return null
 
     return (
@@ -206,12 +208,11 @@ export default function MediaItemDetailPage() {
                     {/* Edit Mode */}
                     <MediaItemFormModal
                         existingItem={selectedMediaItemDetail}
-                        onConfirm = {(name, description, mediaTypeId, publishedDateTime) => {
-                            dispatch(patchMediaItemBasicInfoTHUNK({
-                                token: token!,
+                        onConfirm = {async (name, description, mediaTypeId, publishedDateTime) => {
+                            await patchMediaItem({
                                 mediaItemId: selectedMediaItemDetail.id,
-                                data: {name, description, mediaTypeId, publishedDateTime}
-                            }));
+                                data: { name, description, mediaTypeId, publishedDateTime }
+                            }).unwrap();
                             setIsEditMode(false);
                         }}
                         onCancel = { () => setIsEditMode(false)}
@@ -268,22 +269,22 @@ export default function MediaItemDetailPage() {
                     candidatesLoading={ownedListsLoading || isListSearching}
 
                     // Convert Set<number> -> Set<string> at the modal boundary
-                    initialLinkedIds={new Set([...(memberListIds ?? new Set())].map(String))}
+                    initialLinkedIds={[...(memberListIds ?? new Set())].map(String)}
 
                     onAdd={async (itemId) => {
                         // itemId is the list's id (as string); selectedMediaItemDetail.id is the item being linked
-                        await addMediaItemToList(token!, parseInt(itemId), selectedMediaItemDetail!.id, {})
+                        await addItemToList({ listId: parseInt(itemId), mediaItemId: selectedMediaItemDetail!.id }).unwrap();
                     }}
                     onRemove={async (itemId) => {
-                        await removeMediaItemFromList(token!, parseInt(itemId), selectedMediaItemDetail!.id);
+                        await removeItemFromList({ listId: parseInt(itemId), mediaItemId: selectedMediaItemDetail!.id }).unwrap();
                     }}
                     removeConfirmTitle="Remove item from list?"
                     getRemoveConfirmMessage={(item) =>
                         `Remove "${selectedMediaItemDetail?.name}" from "${item.primaryLabel}"?`
                     }
                     onClose={(updatedIds) => {
-                        // Convert Set<string> → Set<number> back from the modal boundary
-                        setMemberListIds(new Set([...updatedIds].map(Number)));
+                        // Convert string[] → Set<number> back from the modal boundary
+                        setMemberListIds(new Set(updatedIds.map(Number)));
                         setShowLinkModal(false)
                     }}
                 />

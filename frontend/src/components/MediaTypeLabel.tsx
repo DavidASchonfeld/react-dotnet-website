@@ -1,27 +1,16 @@
-import { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import type { RootState, AppDispatch } from '../store/store';
-import { fetchSingleMediaType } from "../store/mediaTypesSlice";
+import { useSelector } from "react-redux";
+import type { RootState } from '../store/store';
+import { useGetAllApprovedMediaTypesQuery } from "../services/apiSlice";
 
 export default function MediaTypeLabel({mediaTypeId, faded}: {mediaTypeId: number, faded?: boolean}){
 
-        const dispatch = useDispatch<AppDispatch>();
         const { token } = useSelector((state: RootState) => state.auth);
-        const mediaType = useSelector((state: RootState) =>
-            state.mediaTypes.mediaTypes.find(t => t.id === mediaTypeId)
-        );
 
-        // If this MediaType is not in Redux's store yet
-        // (for example, if someone recently
-        // approved/published a new MediaType),
-        // fetch it.
-        // App.tsx already loaded all approved types when login
-        // so this only fires for edge-case missing types
-        useEffect(() => {
-            if(!mediaType && token) {
-                dispatch(fetchSingleMediaType({token, mediaTypeId}));
-            }
-        }, [mediaType, token, mediaTypeId, dispatch]);
+        // Re-use the same cached query that App.tsx already fired on login.
+        // RTK Query deduplicates — no extra network request if the data is already in cache.
+        // skip=true when there is no token so this component does not try to fetch unauthenticated.
+        const { data: allTypes } = useGetAllApprovedMediaTypesQuery(undefined, { skip: !token });
+        const mediaType = allTypes?.find(t => t.id === mediaTypeId);
 
 
 
