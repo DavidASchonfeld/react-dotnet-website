@@ -94,6 +94,12 @@ export const apiSlice = createApi({
     reducerPath: 'api',  
 
     baseQuery: baseQueryWithErrorHandling,
+
+    // You have to mark each API call here with the type of object you are talking about
+    // This is how, even though API calls
+    // might use MediaItemSummaryDTO or MediaItemDetailDTO,
+    // it knows that they are both MediaItem because they,
+    // in "invalidatesTags" or "providesTags" use ['MediaItem']
     tagTypes: ['MediaItem', 'MediaList', 'MediaType'],
     endpoints: (builder) => ({
 
@@ -121,6 +127,12 @@ export const apiSlice = createApi({
                 body,
             }),
             invalidatesTags: ['MediaItem'],
+
+            // onQueryStarted(arg, { queryFulfilled, dispatch, getState })
+            // arg: the argument I passed to this mutaiton (CreateMediaITemRequest)
+            // queryFulfilled: A Promise that resolves with {data} when the request receives, or rejects when failed
+            // dispatch: Redux dispatch function, for dispatching other actions mid-flight
+            // getState: Read current Redux state mid-flight
             onQueryStarted: async (_, { queryFulfilled }) => {
                 await safeToast.promise(queryFulfilled, {
                     loading: 'Creating...',
@@ -146,7 +158,7 @@ export const apiSlice = createApi({
         }),
 
         patchMediaItemBasicInfo: builder.mutation<
-            MediaItemDetail,
+            MediaItemDetail,  // Here, we have the DTO this API call is using. and in invalidatesTags below, we know it is using the MediaItem.
             { mediaItemId: number; data: PatchMediaItemBasicInfoRequest }
         >({
             query: ({ mediaItemId, data }) => ({
