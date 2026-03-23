@@ -6,6 +6,17 @@ import { addToast, removeToast, type ToastType } from '../store/toastSlice';
 
 function show(type: ToastType, message: string) {
     try {
+
+
+
+        // Before starting a toast notification,
+        // just console.log the error, but only when running the website in developer mode        
+        if (import.meta.env.DEV) {
+            console.debug(`[safeToast] ${type}:`, message);
+        }
+
+
+
         // What does this method do?
         // First, it tries the 3rd-Party Toast Library (called Sonner)
         // use "key" called "type"
@@ -34,7 +45,6 @@ function show(type: ToastType, message: string) {
         // Since this is in a try/catch box, then it will throw an error
         // if it cannot reach the functions stored in the toast hashmap
         // Catching the error will cause the same alert info to be passed into the home-made Toaster.
-
         (toast[type] as (message: string) => void)(message);
 
         // The actual component showing the toast
@@ -126,12 +136,19 @@ export const safeToast = {
 
 
         try {
+
+            // Before starting a toast notification,
+             // just console.log the error, but only when running the website in developer mode
+            if (import.meta.env.DEV) {
+                console.debug('[safeToast] promise:', msgs);
+            }
             
 
             // Delegate to Sonner's built-in promise handler.
             // toast.promise() watches the promise internally via .then()/.catch()
             // and auto-transitions the toast: loading → success (on resolve) or error (on reject).
             // The caller does NOT need try/catch just for toast display — Sonner handles it.
+
             toast.promise(promise, msgs);
 
         } catch {

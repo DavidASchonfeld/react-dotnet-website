@@ -35,5 +35,15 @@ export async function apiFetch(
         throw new Error('Forbidden');
     }
 
+    if (response.status === 429) {
+        safeToast.error('Too many requests. Please slow down.');
+        throw new Error('Too Many Requests');
+    }
+
+    if (response.status >= 500) {
+        safeToast.error('A server error occurred. Please try again later.');
+        throw new Error(`Server error: ${response.status}`);
+    }
+
     return response;
 }
