@@ -160,10 +160,18 @@ const mediaItemsSlice = createSlice({
         
         builder.addCase(createMediaItemTHUNK.fulfilled, (state, action) => {
 
-            // action.payload = the MediaItemSummary returned by createMediaItem()
+            // action.payload = the MediaItemDetail returned by createMediaItem()
             state.status = 'succeeded';
             state.error = null;
-            state.mediaItems.push(action.payload);
+            // Since mediaItems is MediaItemSummary[],
+            // here I am converting the input MediaItemDetail
+            // that this received from the HTTP CreateMediaItem request
+            // and then adding the MediaItems array.
+            state.mediaItems.push({
+                id: action.payload.id,
+                name: action.payload.name,
+                mediaTypeId: action.payload.mediaTypeId
+            } as MediaItemSummary);
         });
         
         builder.addCase(deleteMediaItemTHUNK.fulfilled, (state, action) => {

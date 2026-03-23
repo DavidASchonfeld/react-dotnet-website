@@ -93,10 +93,10 @@ public class MediaItemService : IMediaItemService
 
     }
 
-    public async Task<ServiceResult<MediaItem>> CreateMediaItemAsync(CreateMediaItemDto dto, string requesterUserId)
+    public async Task<ServiceResult<MediaItemDetailDto>> CreateMediaItemAsync(CreateMediaItemDto dto, string requesterUserId)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<MediaItem>.Unauthorized();
+        if (requesterUser == null) return ServiceResult<MediaItemDetailDto>.Unauthorized();
 
         var newItem = new MediaItem
         {
@@ -114,7 +114,22 @@ public class MediaItemService : IMediaItemService
         // Flush the changes
         await _context.SaveChangesAsync();
 
-        return ServiceResult<MediaItem>.Ok(newItem);
+        // Convert the pure MediaItem into the MediaItemDetailDto to return
+
+        var newItem_detailDto = new MediaItemDetailDto
+        {
+            Id = newItem.Id,
+            Name = newItem.Name,
+            MediaTypeId = newItem.MediaTypeId,
+            Description = newItem.Description,
+            IsApproved = newItem.IsApproved,
+            PublishedDateTime = newItem.PublishedDateTime,
+            SubmittedById = requesterUserId,
+            DateSubmitted = newItem.DateSubmitted,
+            CanEdit = PermissionHelper.CanModifyOrDeleteItem(requesterUser, newItem)
+        };
+
+        return ServiceResult<MediaItemDetailDto>.Ok(newItem_detailDto);
     }
 
     public async Task<ServiceResult<bool>> DeleteMediaItemAsync(int mediaItemId, string requesterUserId)

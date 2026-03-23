@@ -33,7 +33,6 @@ export interface MediaListDetail
     submittedById: string | null;
     name: string;
     description: string | null;
-    submittedByUserName: string | null;
     visibilityStatus: VisibilityStatus;
     canEdit: boolean;
 

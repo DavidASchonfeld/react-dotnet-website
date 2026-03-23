@@ -23,9 +23,7 @@ public class MediaListService : IMediaListService
             // Return early — callers check whether user and/or mediaListObject is null before reaching the forbidden boolean to check.
             return (user, mediaListObject, false);
         
-        bool forbidden = !PermissionHelper.CanModifyOrDeleteList(user, mediaListObject);
-
-        return (user, mediaListObject, forbidden);
+        return (user, mediaListObject, PermissionHelper.CanModifyOrDeleteList(user, mediaListObject));
     }
 
     private async Task<int> ClampPositionAsync(int mediaListId, int? submittedPosition, bool isAdding)
@@ -81,10 +79,13 @@ public class MediaListService : IMediaListService
 
     // ---- Public Service Methods ----
 
-    public async Task<ServiceResult<List<MediaListSummaryDto>>> GetMyListsAsync(string userId)
+    public async Task<ServiceResult<List<MediaListSummaryDto>>> GetMyListsAsync(string requesterUserId)
     {
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return ServiceResult<List<MediaListSummaryDto>>.Unauthorized();
+
         var lists = await _context.MediaLists
-            .Where(l => l.SubmittedById == userId)
+            .Where(l => l.SubmittedById == requesterUserId)
             .Select(l => new MediaListSummaryDto
             {
                 Id = l.Id,
@@ -100,9 +101,9 @@ public class MediaListService : IMediaListService
     }
 
 
-    public async Task<ServiceResult<MediaListDetailDto>> GetMediaListDetailAsync(int mediaListId, string requesterId)
+    public async Task<ServiceResult<MediaListDetailDto>> GetMediaListDetailAsync(int mediaListId, string requesterUserId)
     {
-        var requesterUser = await _context.Users.FindAsync(requesterId);
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<MediaListDetailDto>.Unauthorized();
 
 
@@ -143,10 +144,10 @@ public class MediaListService : IMediaListService
 
 
     // CreateList, when we create, we create an empty list. In UpdateList, we'll add MediaItems to the list
-    public async Task<ServiceResult<MediaListSummaryDto>> CreateListAsync(CreateMediaListDto dto, string requesterId)
+    public async Task<ServiceResult<MediaListSummaryDto>> CreateListAsync(CreateMediaListDto dto, string requesterUserId)
     {
         // If the current user does not exist, you cannot create the list
-        var requesterUser = await _context.Users.FindAsync(requesterId);
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
 
         var newMediaList = new MediaList
@@ -165,7 +166,7 @@ public class MediaListService : IMediaListService
             //     VisibilityStatusToSet = dto.VisibilityStatus
             // }
             VisibilityStatus = dto.VisibilityStatus ?? VisibilityStatus.Private,
-            SubmittedById = requesterId,
+            SubmittedById = requesterUserId,
             DateSubmitted = DateTime.UtcNow
         };
 
@@ -177,11 +178,11 @@ public class MediaListService : IMediaListService
     }
 
 
-    public async Task<ServiceResult<bool>> DeleteListAsync(int mediaListId, string requesterId)
+    public async Task<ServiceResult<bool>> DeleteListAsync(int mediaListId, string requesterUserId)
     {
 
         // Fetch the User and MediaList Object and then Check Permissions:
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterId);
+        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null) return ServiceResult<bool>.NotFound();
         if (requesterUser == null) return ServiceResult<bool>.Unauthorized();
@@ -195,11 +196,11 @@ public class MediaListService : IMediaListService
     }
 
 
-    public async Task<ServiceResult<MediaListSummaryDto>> PatchListBasicInfoAsync(int mediaListId, UpdateMediaListNotListContentDto dto, string requesterId)
+    public async Task<ServiceResult<MediaListSummaryDto>> PatchListBasicInfoAsync(int mediaListId, UpdateMediaListNotListContentDto dto, string requesterUserId)
     {
 
         // Fetch the User and MediaList Object and then Check Permissions:
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterId);
+        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null) return ServiceResult<MediaListSummaryDto>.NotFound();
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
@@ -223,11 +224,11 @@ public class MediaListService : IMediaListService
     }
 
 
-    public async Task<ServiceResult<MediaListSummaryDto>> AddMediaItemToListAsync(int mediaListId, int mediaItemId, AddMediaItemToMediaListDto dto, string requesterId)
+    public async Task<ServiceResult<MediaListSummaryDto>> AddMediaItemToListAsync(int mediaListId, int mediaItemId, AddMediaItemToMediaListDto dto, string requesterUserId)
     {
         
         //// Fetch the User and MediaList Object and then Check Permissions:
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterId);
+        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null) return ServiceResult<MediaListSummaryDto>.NotFound();
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
@@ -271,10 +272,10 @@ public class MediaListService : IMediaListService
     }
 
 
-    public async Task<ServiceResult<MediaListSummaryDto>> RemoveMediaItemFromListAsync(int mediaListId, int mediaItemId, string requesterId)
+    public async Task<ServiceResult<MediaListSummaryDto>> RemoveMediaItemFromListAsync(int mediaListId, int mediaItemId, string requesterUserId)
     {
         // Fetch the User and MediaList Object and then Check Permissions:
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterId);
+        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null) return ServiceResult<MediaListSummaryDto>.NotFound();
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
@@ -303,11 +304,11 @@ public class MediaListService : IMediaListService
     }
 
 
-    public async Task<ServiceResult<MediaListSummaryDto>> MoveMediaItemWithinMediaListAsync(int mediaListId, int mediaItemId, MoveMediaItemWithinMediaListDto dto, string requesterId)
+    public async Task<ServiceResult<MediaListSummaryDto>> MoveMediaItemWithinMediaListAsync(int mediaListId, int mediaItemId, MoveMediaItemWithinMediaListDto dto, string requesterUserId)
     {
         
         // Fetch the User and MediaList Object and then Check Permissions:
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterId);
+        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null) return ServiceResult<MediaListSummaryDto>.NotFound();
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();

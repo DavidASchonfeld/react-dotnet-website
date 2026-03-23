@@ -67,7 +67,7 @@ export async function getAllApprovedMediaItemsForAdmin(token: string): Promise<M
 }
 
 
-export async function createMediaItem(token: string, dataToSend: CreateMediaItemRequest): Promise<MediaItemSummary>
+export async function createMediaItem(token: string, dataToSend: CreateMediaItemRequest): Promise<MediaItemDetail>
 {
     const response = await fetch(`${BACKEND_BASE_URL}/api/mediaitem/create`, {
         method: "POST",
@@ -81,8 +81,8 @@ export async function createMediaItem(token: string, dataToSend: CreateMediaItem
     if (!response.ok)
         throw new Error("Failed to create MediaItem");
 
-    const dataToReceive: MediaItemSummary = await response.json();
-        
+    const dataToReceive: MediaItemDetail = await response.json();
+
     return dataToReceive;
 }
 

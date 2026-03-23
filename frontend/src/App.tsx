@@ -58,6 +58,7 @@ function App() {
       const hour = new Date().getHours();
       const { dayTheme, nightTheme } = DAY_NIGHT_MAP[theme as DayNightTheme];
 
+      // If the selected theme is a day/night theme (for example ocean-dayNight)
       // Between 7am and 20 (aka 8pm), it is day, so return ocean-light
       // otherwise, return ocean-dark.
       return ((hour >= 7) && (hour < 20)) ? dayTheme : nightTheme;
@@ -92,7 +93,7 @@ function App() {
         // causing another time check to potentially
         // change the theme from day to night or vice versa,
         // or keep it since it is still day or night
-        dispatch(setCurrentTheme('ocean-dayNight'));
+        dispatch(setCurrentTheme(currentTheme));
 
       }, msUntilNextHour)
 
