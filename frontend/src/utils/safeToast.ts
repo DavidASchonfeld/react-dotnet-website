@@ -4,6 +4,27 @@ import { toast } from 'sonner';
 import { toastEvents, type ToastType } from './toastEvents';
 
 function show(type: ToastType, message: string) {
+    
+    //// Regarding Falsy Strings (Matching Sonner's Built-in Behavior)
+    // Match Sonner's behavior: silently skip empty/falsy messages.
+    //
+    // "Falsy": JavaScript for any value that evaluates to false inside an if-check
+    // Falsy Values:
+    // -- false
+    // -- 0
+    // -- '' (empty string)
+    // -- null
+    // --undefined
+    // --NaN (Not a Number)
+    //
+    // To clarify, a non-empty string (Ex: 'hello') is truthy (because it evaluates to true inside in if-check)
+
+    // So since if(message) asks; Is this message truthy (including asking, is this message a non-empty string)?
+    // then if(!message) asks: Is this message falsy (including asking, is this message an empty string)
+    // then, (I am hardcoding this to match sonner's built-in behavior on handling falsy strings)
+    //  return early and do NOT show a toast notifcation for this empty string
+    if (!message) return;
+
     try {
 
 
@@ -57,6 +78,9 @@ function show(type: ToastType, message: string) {
         // (Emitting this event to toastEvents
         // will trigger FallbackToaster to render
         // the home-made version of the toast object)
+        // The actual compnent showing the fallback toast
+        // is called <FallbackToast/>
+        // and is inside App.tsx.
         console.warn('[safeToast] Sonner unavailable, falling back to toastEvents');
         toastEvents.emit({ kind: 'add', id: Date.now().toString(), type, message });
 
@@ -154,14 +178,34 @@ export const safeToast = {
 
             promise.then(
                 () => {
-                    // Promise succeeded: remove the loading toast and show success
+                    // Promise succeeded: always remove the loading toast (even if success is suppressed),
+                    // then only show a success toast if msgs.success is non-empty.
+
                     toastEvents.emit({ kind: 'remove', id: loadingId });
-                    toastEvents.emit({ kind: 'add', id: Date.now().toString(), type: 'success', message: msgs.success });
+
+                    // Mirroring Sonner's built-in way of handling falsy messages,
+                    // so only show the toast notifcation is the message is truthy.
+                    if (msgs.success) {
+
+
+                        toastEvents.emit({ kind: 'add', id: Date.now().toString(), type: 'success', message: msgs.success });
+                    }
                 },
                 () => {
-                    // Promise failed: remove the loading toast and show error
+                    // Promise failed: same pattern — always remove the loading toast,
+                    // then only show an error toast if msgs.error is non-empty.
+                    //
+                    // apiSlice.ts passes error: '' intentionally on all mutations,
+                    // because baseQueryWithErrorHandling already shows the right error toast.
+                    // Without this guard, the fallback would emit a blank error toast on top of that.
                     toastEvents.emit({ kind: 'remove', id: loadingId });
-                    toastEvents.emit({ kind: 'add', id: Date.now().toString(), type: 'error', message: msgs.error });
+
+                    // Just like above, where msg.success is the message for a successful Promise,
+                    // this is the message for a returned error
+                    // And just like above, I am mirroring Sonner's built-in ignoring of falsy messages, which is the if-statement in the line below
+                    if (msgs.error) {
+                        toastEvents.emit({ kind: 'add', id: Date.now().toString(), type: 'error', message: msgs.error });
+                    }
                 }
             );
 
