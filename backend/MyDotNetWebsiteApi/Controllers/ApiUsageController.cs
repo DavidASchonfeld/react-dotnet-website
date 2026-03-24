@@ -51,9 +51,9 @@ public class ApiUsageController : ControllerBase
                 ApiInfoUrl = api.ApiInfoUrl,
                 RequiresApiKey = api.ApiKeyConfigPath != null,
                 DataRules = api.DataRules,
-                SubscriptionPlan = api.SubscriptionPlan,
-                PeriodType = api.PeriodType,
-                RequestLimit = api.RequestLimit,
+                SubscriptionPlan = api.CurrentPlan?.Name ?? "Unknown",
+                PeriodType = api.CurrentPlan?.PeriodType ?? "Unknown",
+                RequestLimit = api.CurrentPlan?.RequestLimit,
             })
             .ToList();
 

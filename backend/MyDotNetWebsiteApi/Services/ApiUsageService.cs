@@ -5,10 +5,15 @@ public class ApiUsageService : IApiUsageService
     private readonly AppDbContext _context;
 
     // Derived from ExternalApiRegistry so there is exactly one place to add/update API config.
+    // Note: Accesses plan data through CurrentPlan to support multi-tier plans.
     private static readonly Dictionary<string, (string PeriodType, int? Limit, int? WarningThreshold)> _apiConfig =
         ExternalApiRegistry.Apis.ToDictionary(
             kvp => kvp.Key,
-            kvp => (kvp.Value.PeriodType, kvp.Value.RequestLimit, kvp.Value.WarningThreshold)
+            kvp => (
+                kvp.Value.CurrentPlan?.PeriodType ?? "Daily",
+                kvp.Value.CurrentPlan?.RequestLimit,
+                kvp.Value.CurrentPlan?.WarningThreshold
+            )
         );
 
     public ApiUsageService(AppDbContext context)

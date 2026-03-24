@@ -146,6 +146,15 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+// Initialize ExternalApiRegistry with plans from configuration (appsettings.json)
+var apiPlanConfig = builder.Configuration.GetSection("ApiPlanSettings").Get<ApiPlanConfiguration>();
+if (apiPlanConfig == null)
+{
+    throw new InvalidOperationException("ApiPlanSettings not found in configuration. Check appsettings.json.");
+}
+ExternalApiRegistry.InitializeFromConfiguration(apiPlanConfig);
+ExternalApiRegistry.ValidateAllPlans();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
