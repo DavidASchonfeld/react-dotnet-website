@@ -10,6 +10,7 @@ import type {
     FindOrCreateMediaApiRefRequest,
 } from '../types/mediaApiRef'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
+import type { CachedResponse } from '../types/cacheMetadata'
 import type { ExternalApiSourceSummary } from '../types/externalApiSource'
 import type {
     CustomTagSummary,
@@ -126,8 +127,9 @@ export const apiSlice = createApi({
         // Searches the active external API for the given media type.
         // Returns raw ExternalApiSearchResult items (not DB records yet).
         // `page` is 1-based for paginated results (used by SearchResultsPage).
+        // Response includes cache metadata indicating if results are from cache.
         searchExternalApi: builder.query<
-            ExternalApiSearchResult[],
+            CachedResponse<ExternalApiSearchResult[]>,
             { query: string; mediaTypeId: number; limit?: number; page?: number; subtype?: string }
         >({
             query: ({ query, mediaTypeId, limit = 10, page = 1, subtype }) => {

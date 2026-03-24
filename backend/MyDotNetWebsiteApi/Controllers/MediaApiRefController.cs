@@ -35,7 +35,7 @@ public class MediaApiRefController : ControllerBase
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var result = await _mediaApiRefService.SearchExternalApiAsync(q, limit, mediaTypeId, requesterUserId, page, subtype);
-        return result.ToActionResult(this);
+        return WrapCachedResponse(result);
     }
 
     // Fetches a single item by its external API ID, using non-search caching when enabled.
@@ -46,7 +46,7 @@ public class MediaApiRefController : ControllerBase
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var result = await _mediaApiRefService.GetExternalApiItemAsync(externalItemId, sourceId, requesterUserId);
-        return result.ToActionResult(this);
+        return WrapCachedResponse(result);
     }
 
     // Idempotent: if the item already exists in our DB, returns the existing record.
@@ -73,5 +73,16 @@ public class MediaApiRefController : ControllerBase
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var result = await _mediaApiRefService.GetTagsForRefAsync(mediaApiRefId, requesterUserId);
         return result.ToActionResult(this);
+    }
+
+    private IActionResult WrapCachedResponse<T>(ServiceResult<T> result)
+    {
+        if (result.IsSuccess)
+        {
+            var response = new { data = result.Data, cacheMetadata = result.CacheMetadata };
+            return Ok(response);
+        }
+
+        return Problem(detail: result.ErrorMessage, statusCode: result.StatusCode);
     }
 }

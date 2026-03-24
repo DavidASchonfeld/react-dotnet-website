@@ -19,6 +19,7 @@ export interface MediaApiRefDetail {
     apiSourceName: string;
     externalId: string;
     dateAdded: string;
+    apiHomepageUrl?: string;
 }
 
 export interface FindOrCreateMediaApiRefRequest {

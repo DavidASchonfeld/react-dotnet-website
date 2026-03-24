@@ -10,6 +10,7 @@ import AnimatedPage from '../components/AnimatedPage'
 import SearchBar from '../components/SearchBar'
 import RowItemStyling from '../components/RowItemStyling'
 import RowItemContent from '../components/RowItemContent'
+import { useCacheNotification } from '../hooks/useCacheNotification'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES } from '../constants'
 
@@ -63,6 +64,9 @@ export default function SearchResultsPage() {
             { query, mediaTypeId: mediaTypeId!, limit: PAGE_SIZE, page, subtype: activeSubtype },
             { skip: !shouldFetch || searchType !== 'media' || mediaTypeId === null }
         )
+
+    // Show cache notification for admins
+    useCacheNotification(mediaResults?.cacheMetadata)
 
     // ---- Tags search ----
     const { data: tagResults, isLoading: tagsLoading, isFetching: tagsFetching } =
@@ -145,10 +149,10 @@ export default function SearchResultsPage() {
 
     // Derive display state per type
     const isLoading_ = mediaLoading || mediaFetching || tagsLoading || tagsFetching || listsLoading || listsFetching
-    const mediaHasResults = mediaResults && mediaResults.length > 0
+    const mediaHasResults = mediaResults && mediaResults.data.length > 0
     const tagsHasResults  = tagResults  && tagResults.length  > 0
     const listsHasResults = listResults && listResults.length > 0
-    const hasNextPage = mediaResults && mediaResults.length === PAGE_SIZE
+    const hasNextPage = mediaResults && mediaResults.data.length === PAGE_SIZE
     const hasPrevPage = page > 1
 
     return (
@@ -243,7 +247,7 @@ export default function SearchResultsPage() {
                 {/* ---- Media results ---- */}
                 {searchType === 'media' && shouldFetch && !isLoading_ && (
                     <>
-                        {mediaResults && mediaResults.length === 0 && (
+                        {mediaResults && mediaResults.data.length === 0 && (
                             <p className="text-text/50 text-sm">No results for "{query}".</p>
                         )}
                         {mediaHasResults && (
@@ -252,7 +256,7 @@ export default function SearchResultsPage() {
                                     Page {page}{hasNextPage ? '' : ' (end)'}
                                 </p>
                                 <div className="rounded-lg border border-border overflow-hidden">
-                                    {mediaResults.map(result => (
+                                    {mediaResults.data.map(result => (
                                         <RowItemStyling
                                             key={result.externalId}
                                             onClick={() => handleMediaResultClick(result)}

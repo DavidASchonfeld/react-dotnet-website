@@ -11,11 +11,23 @@ public class ServiceResult<T>
     public T? Data {get; init; }
     public string? ErrorMessage {get; init; }
     public int StatusCode { get; init; }
+    public CacheMetadataDto? CacheMetadata { get; init; }
 
     public static ServiceResult<T> Ok(T data) =>
         new() { IsSuccess = true, Data = data, StatusCode = 200};
-    
-    
+
+    public static ServiceResult<T> OkFromCache(T data, DateTime cachedAt) =>
+        new()
+        {
+            IsSuccess = true,
+            Data = data,
+            StatusCode = 200,
+            CacheMetadata = new CacheMetadataDto
+            {
+                IsFromCache = true,
+                CachedAt = cachedAt
+            }
+        };
 
     // Each error method is written out separately for better readability at call sites
     

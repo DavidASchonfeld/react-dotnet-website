@@ -11,7 +11,6 @@ import MediaTypeLabel from '../components/MediaTypeLabel';
 import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
-import { getAPIlink } from '../utils/apiLinks';
 
 
 export default function MediaApiRefDetailPage() {
@@ -29,8 +28,6 @@ export default function MediaApiRefDetailPage() {
         { skip: isNaN(mediaApiRefId) }
     );
 
-    const goToExternalWebsite = (inURL: string): (Window | null) => {return  window.open(inURL, "_blank", "noopener,noreferrer");}
-
     // const { data: appliedTags } = useGetMediaApiRefTagsQuery(
     //     mediaApiRefId,
     //     { skip: isNaN(mediaApiRefId) }
@@ -45,6 +42,8 @@ export default function MediaApiRefDetailPage() {
 
     // const appliedTagIds = new Set(appliedTags?.map(t => t.id) ?? []);
 
+    const goToExternalWebsite = (inURL: string): (Window | null) => {return  window.open(inURL, "_blank", "noopener,noreferrer");}
+
     return (
         <AnimatedPage>
         <div className="page">
@@ -52,12 +51,37 @@ export default function MediaApiRefDetailPage() {
 
             <h1 className="h1-styling">{detail.name}</h1>
             <MediaTypeLabel mediaTypeId={detail.mediaTypeId} />
-            
+            {/* [Image/Poster]
+            [Plot]
+            [Runtime] <- Only for TV Shows, Movies]
+            [Country]
+            [Genres]
+            [Rated]
+             */}
 
             <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 flex flex-col gap-1">
                 {detail.creatorName && <span>Creator: {detail.creatorName}</span>}
                 {detail.publishedDate && <span>Published: {new Date(detail.publishedDate).getFullYear()}</span>}
-                <span onClick={() => goToExternalWebsite(getAPIlink("   "))}>Source: {detail.apiSourceName} · ID: {detail.externalId}</span>
+                {detail.apiHomepageUrl && (
+                    // <span>
+                    //     API: <a
+                    //         href=
+                    //         target="_blank"
+                    //         rel="noopener noreferrer"
+                    //         className="text-blue-600 dark:text-blue-400 hover:underline"
+                    //     >
+                    //         
+                    //     </a>
+                    // </span>
+                    <button
+                    className="btn btn-secondary w-fit"
+                    onClick={() =>
+                        // detail.apiHomepageUrl! has a "!" here because it is wrapped in {detail.apiHomepageUrl &&,
+                        // meaning that this onyl shows if detail.apiHomepageUrl is not null, so we can use !
+                        // to tell TypeScript that this variable will never have with a null value in this line"
+                        goToExternalWebsite(detail.apiHomepageUrl!)}
+                >{detail.apiSourceName} · ID: {detail.externalId}</button>
+                )}
             </div>
 
             <hr className="my-4" />

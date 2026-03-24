@@ -9,4 +9,5 @@ public class MediaApiRefDetailDto
     public string ApiSourceName {get; set;} = string.Empty;
     public string ExternalId {get; set;} = string.Empty;
     public DateTime DateAdded {get; set;}
+    public string? ApiHomepageUrl {get; set;}
 }

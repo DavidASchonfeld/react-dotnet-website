@@ -70,7 +70,7 @@ public class MediaApiRefService : IMediaApiRefService
         if (cachedEntry != null)
         {
             var cachedResults = JsonSerializer.Deserialize<List<ExternalApiSearchResult>>(cachedEntry.ResultsJson)!;
-            return ServiceResult<List<ExternalApiSearchResult>>.Ok(cachedResults);
+            return ServiceResult<List<ExternalApiSearchResult>>.OkFromCache(cachedResults, cachedEntry.CachedAt);
         }
 
         // Cache miss — call the external API and store the result
@@ -140,7 +140,7 @@ public class MediaApiRefService : IMediaApiRefService
             if (cachedEntry != null)
             {
                 var cachedResult = JsonSerializer.Deserialize<ExternalApiSearchResult>(cachedEntry.ResultsJson)!;
-                return ServiceResult<ExternalApiSearchResult>.Ok(cachedResult);
+                return ServiceResult<ExternalApiSearchResult>.OkFromCache(cachedResult, cachedEntry.CachedAt);
             }
         }
 
@@ -291,6 +291,7 @@ public class MediaApiRefService : IMediaApiRefService
         ExternalApiSourceId = r.ExternalApiSourceId,
         ApiSourceName = r.ApiSource.ApiName,
         ExternalId = r.ExternalId,
-        DateAdded = r.DateAdded
+        DateAdded = r.DateAdded,
+        ApiHomepageUrl = ExternalApiRegistry.Apis.TryGetValue(r.ApiSource.ApiName, out var metadata) ? metadata.HomepageUrl : null
     };
 }
