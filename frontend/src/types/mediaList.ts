@@ -1,4 +1,4 @@
-// NOTE: Each of these "export interface" objects are their own 
+// NOTE: Each of these "export interface" objects are their own
 // copy-paste TypeScript versions of each backend's
 // DTO requests of the backend C# DTO .cs class
 // for the object MediaList
@@ -7,7 +7,7 @@
 // is implemented here in the "CreateMediaListRequest" object listed below.
 
 import type { VisibilityStatus } from "./enums";
-import type { MediaItemSummary } from "./mediaItem";
+import type { MediaApiRefSummary } from "./mediaApiRef";
 
 
 
@@ -36,7 +36,7 @@ export interface MediaListDetail
     visibilityStatus: VisibilityStatus;
     canEdit: boolean;
 
-    listContent: MediaItemSummary[];
+    listContent: MediaApiRefSummary[];
 }
 
 
@@ -46,9 +46,9 @@ export interface MediaListDetail
 export interface CreateMediaListRequest
 {
     name: string;
-    description?: string;  // Optional: Adding a descriptiohn
+    description?: string;
 
-    visibilityStatus?: VisibilityStatus;  // Optional: Adding a descriptiohn
+    visibilityStatus?: VisibilityStatus;
 }
 
 export interface UpdateMediaListNotListContentRequest
@@ -73,25 +73,21 @@ export interface UpdateMediaListNotListContentRequest
 
 //// /backend/DTOs/MediaListDTOs/ManageListItems/
 
-export interface AddMediaItemToMediaListRequest
+export interface AddMediaApiRefToMediaListRequest
 {
     // These are NOT included here (aka it is commented out) because it will be passed via the URL when I send over this DTO
     // mediaListId: number; // For MediaList
-    // mediaItemId: number;  // For MediaItem
+    // mediaApiRefId: number;  // For MediaApiRef
 
-
-    // Position is optional -> If they do NOT pass it, I will default to adding the MediaItem to the end of the list.
+    // Position is optional -> If they do NOT pass it, I will default to adding the item to the end of the list.
     position?: number;
 }
 
-export interface MoveMediaItemWithinMediaListRequest
+export interface MoveMediaApiRefWithinMediaListRequest
 {
     // These are NOT included here (aka it is commented out) because it will be passed via the URL when I send over this DTO
     // mediaListId: number; // For MediaList
-    // mediaItemId: number;  // For MediaItem
+    // mediaApiRefId: number;  // For MediaApiRef
 
     newPosition: number;
 }
-
-
-

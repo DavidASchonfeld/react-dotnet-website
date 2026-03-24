@@ -58,27 +58,27 @@ public class MediaListController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    [HttpPost("{mediaListId}/items/{mediaItemId}")]
-    public async Task<IActionResult> AddMediaItemToMediaList(int mediaListId, int mediaItemId, [FromBody] AddMediaItemToMediaListDto dto)
+    [HttpPost("{mediaListId}/items/{mediaApiRefId}")]
+    public async Task<IActionResult> AddMediaApiRefToMediaList(int mediaListId, int mediaApiRefId, [FromBody] AddMediaApiRefToMediaListDto dto)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaListService.AddMediaItemToListAsync(mediaListId, mediaItemId, dto, requesterUserId);
+        var result = await _mediaListService.AddMediaApiRefToListAsync(mediaListId, mediaApiRefId, dto, requesterUserId);
         return result.ToActionResult(this);
     }
 
-    [HttpDelete("{mediaListId}/items/{mediaItemId}")]
-    public async Task<IActionResult> RemoveMediaItemFromList(int mediaListId, int mediaItemId)
+    [HttpDelete("{mediaListId}/items/{mediaApiRefId}")]
+    public async Task<IActionResult> RemoveMediaApiRefFromList(int mediaListId, int mediaApiRefId)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaListService.RemoveMediaItemFromListAsync(mediaListId, mediaItemId, requesterUserId);
+        var result = await _mediaListService.RemoveMediaApiRefFromListAsync(mediaListId, mediaApiRefId, requesterUserId);
         return result.ToActionResult(this);
     }
 
-    [HttpPatch("{mediaListId}/items/{mediaItemId}")]
-    public async Task<IActionResult> MoveMediaItemWithinMediaList(int mediaListId, int mediaItemId, [FromBody] MoveMediaItemWithinMediaListDto dto)
+    [HttpPatch("{mediaListId}/items/{mediaApiRefId}")]
+    public async Task<IActionResult> MoveMediaApiRefWithinMediaList(int mediaListId, int mediaApiRefId, [FromBody] MoveMediaApiRefWithinMediaListDto dto)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaListService.MoveMediaItemWithinMediaListAsync(mediaListId, mediaItemId, dto, requesterUserId);
+        var result = await _mediaListService.MoveMediaApiRefWithinMediaListAsync(mediaListId, mediaApiRefId, dto, requesterUserId);
         return result.ToActionResult(this);
     }
 
@@ -101,9 +101,4 @@ public class MediaListController : ControllerBase
         var result = await _mediaListService.ReorderItemsAsync(mediaListId, dto.OrderedItemIds, requesterUserId);
         return result.ToActionResult(this);
     }
-
-
-
-
-
 }

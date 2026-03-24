@@ -26,9 +26,9 @@ import AdminManageAllUsersPage from './pages/AdminManageAllUsersPage'
 import type { AppDispatch, RootState } from './store/store'
 import { useGetAllApprovedMediaTypesQuery } from './services/apiSlice'
 import AdminRoute from './components/AdminRoute'
-import ExploreMediaItemsPage from './pages/ExploreMediaItemsPage'
-import MediaItemDetailPage from './pages/MediaItemDetailPage'
-import AdminAllMediaItemsPage from './pages/AdminAllMediaItemsPage'
+import MediaApiRefDetailPage from './pages/MediaApiRefDetailPage'
+import MyCustomTagsPage from './pages/MyCustomTagsPage'
+import ExploreByTagPage from './pages/ExploreByTagPage'
 import HomePage from './pages/HomePage'
 import { DAY_NIGHT_MAP, setCurrentTheme, type DayNightTheme, type Theme } from './store/themeSlice'
 import { useState } from 'react'
@@ -146,32 +146,28 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path = "/mediaitems/explore" element = {
+
+
+        <Route path = "/mediaapiref/:id" element = {
           <ProtectedRoute>
-            <ExploreMediaItemsPage />
+            <MediaApiRefDetailPage />
           </ProtectedRoute>
         } />
 
-        {/* The ":id means that you can pass any variable there,
-        and React will catch the value into the variable "id". */}
-        <Route path = "/mediaitem/:id" element = {
+        <Route path = "/my-tags" element = {
           <ProtectedRoute>
-            <MediaItemDetailPage />
+            <MyCustomTagsPage />
           </ProtectedRoute>
         } />
 
-
-
+        <Route path = "/tags/:tagId/items" element = {
+          <ProtectedRoute>
+            <ExploreByTagPage />
+          </ProtectedRoute>
+        } />
 
 
         {/* Admin-Only Pages */}
-        <Route path = "/admin/mediaitems" element = {
-          <AdminRoute>
-            <AdminAllMediaItemsPage />
-          </AdminRoute>
-        } />
-
-
         <Route path = "/admin/users" element = {
           <AdminRoute>
             <AdminManageAllUsersPage />

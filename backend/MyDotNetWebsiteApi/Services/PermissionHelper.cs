@@ -31,12 +31,6 @@ public static class PermissionHelper
         || IsModeratorOrAdmin(requester);
     
 
-    // MediaItem Permissions
-    public static bool CanModifyOrDeleteItem(AppUser requester, MediaItem item) =>
-        item.SubmittedById == requester.Id || IsModeratorOrAdmin(requester);
-
-    public static bool CanSeeUnApprovedMediaItem(AppUser requester, MediaItem item) =>
-        item.SubmittedById == requester.Id || IsModeratorOrAdmin(requester);
     
     // MediaType Permissions
     //// Owner, mod/admin or anyone if the type is approved

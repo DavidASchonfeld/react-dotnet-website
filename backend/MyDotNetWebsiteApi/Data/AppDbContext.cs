@@ -31,26 +31,18 @@ public class AppDbContext : IdentityDbContext<AppUser>
 
 
     // AppUser:  we are not listing it, since IdentityDbContext<AppUser> above takes care of AppUser
-    public DbSet<Creator> Creators {get; set;}
-    // Enums: We do not create a DbSet for enums.
 
-    public DbSet<Franchise> Franchises {get; set;}
-    public DbSet<Genre> Genres {get; set;}
+    public DbSet<ExternalApiSource> ExternalApiSources {get; set;}
+    public DbSet<MediaApiRef> MediaApiRefs {get; set;}
+    public DbSet<CustomTag> CustomTags {get; set;}
 
     // Link Tables
-    public DbSet<LinkCreatorToMediaItem> LinkCreatorToMediaItemTable {get; set;}
-    public DbSet<LinkMediaItemToFranchise> LinkMediaItemToFranchiseTable {get; set;}
-    public DbSet<LinkMediaItemToGenre> LinkMediaItemToGenreTable {get; set;}
-    public DbSet<LinkMediaItemToMediaList> LinkMediaItemToMediaListTable {get; set;}
-    public DbSet<LinkMediaItemToSeriesItem> LinkMediaItemToSeriesItemTable {get; set;}
+    public DbSet<LinkCustomTagToMediaApiRef> LinkCustomTagToMediaApiRefTable {get; set;}
+    public DbSet<LinkMediaApiRefToMediaList> LinkMediaApiRefToMediaListTable {get; set;}
     public DbSet<LinkPermissionsForMediaListToAppUser> LinkPermissionsForMediaListToAppUserTable {get; set;}
-    public DbSet<LinkSeriesItemToFranchise> LinkSeriesItemToFranchiseTable {get; set;}
 
-    
-    public DbSet<MediaItem> MediaItems {get; set;}
     public DbSet<MediaList> MediaLists {get; set;}
     public DbSet<MediaType> MediaTypes {get; set;}
-    public DbSet<SeriesItem> SeriesItems {get; set;}
 
 
 
@@ -73,93 +65,78 @@ public class AppDbContext : IdentityDbContext<AppUser>
         // In each of these files, you should have these line of code:
         // public string? SubmittedById {get; set;} <-Yes, we need the "?" to ensure that this variable can be set to null.
 
-        // Block 1: Media Item -> AppUser (via SubmittedBy)
-        modelBuilder.Entity<MediaItem>()
-            .HasOne(m => m.SubmittedBy)
-            // A MediaItem has 1 AppUser, and that AppUser is accessed through the SubmittedBy property.
-            // Note: We arbitrarily chose "m" as the variable name to refer to for MediaItem, but could be any variable name
-            // The arbitrary variable name applies to the HasForeignKey below too
-
-            .WithMany()  // Describes the AppUser perspective: that it has relationship with many MediaItems.
-            // Example: An AppUser can create many MediaItems
-            .HasForeignKey(m => m.SubmittedById)  // the actual SQL column storing the AppUser's id
-            .OnDelete(DeleteBehavior.SetNull); 
-            // when the linked AppUser is deleted, set SubmittedById to null
-            // The MediaItem survives without the user who created that item
-
-        
-        // Block 2: Creator -> AppUser (via SubmittedBy)
-        modelBuilder.Entity<Creator>()
-            .HasOne(m => m.SubmittedBy)
-            // A Creator has 1 AppUser, and that AppUser is accessed through the SubmittedBy property.
-
-            .WithMany()  // Describes the AppUser perspective: that it has relationship with many Creators.
-            // Example: An AppUser can create many Creators
-            .HasForeignKey(m => m.SubmittedById)  // the actual SQL column storing the AppUser's id
-            .OnDelete(DeleteBehavior.SetNull); 
-            // when the linked AppUser is deleted, set SubmittedById to null
-            // The Creator survives without the user who created that item
-
-        modelBuilder.Entity<Genre>()
-            .HasOne(m => m.SubmittedBy)
-            .WithMany()
-            .HasForeignKey(m => m.SubmittedById)
-            .OnDelete(DeleteBehavior.SetNull);
-
+        // Block: MediaType -> AppUser (via SubmittedBy)
         modelBuilder.Entity<MediaType>()
             .HasOne(m => m.SubmittedBy)
             .WithMany()
             .HasForeignKey(m => m.SubmittedById)
             .OnDelete(DeleteBehavior.SetNull);
-        
-        modelBuilder.Entity<SeriesItem>()
-            .HasOne(m => m.SubmittedBy)
-            .WithMany()
-            .HasForeignKey(m => m.SubmittedById)
-            .OnDelete(DeleteBehavior.SetNull);
-        
-        modelBuilder.Entity<Franchise>()
-            .HasOne(m => m.SubmittedBy)
-            .WithMany()
-            .HasForeignKey(m => m.SubmittedById)
-            .OnDelete(DeleteBehavior.SetNull);
-        
+
+        // Block: MediaList -> AppUser (via SubmittedBy)
         modelBuilder.Entity<MediaList>()
             .HasOne(m => m.SubmittedBy)
             .WithMany()
             .HasForeignKey(m => m.SubmittedById)
             .OnDelete(DeleteBehavior.SetNull);
 
-
-        // Next, added this to clarify the relationship between AppUser and MediaList
-        // Block: AppUSer (One) -> MediaList (Many) (through SubmittedBy Id variable)
+        // Block: AppUser (One) -> MediaList (Many) (through SubmittedById variable)
         modelBuilder.Entity<AppUser>()
-            .HasMany(u => u.Lists)  // An AppUser can have many lists.
-            .WithOne(l => l.SubmittedBy) // The MediaList can only have 1 AppUser. as represented by SubmittedBy variable
-            .HasForeignKey(l => l.SubmittedById); //The actual variable for this in SQL is SubmittedById
+            .HasMany(u => u.Lists)
+            .WithOne(l => l.SubmittedBy)
+            .HasForeignKey(l => l.SubmittedById);
+
+        // Block: CustomTag -> AppUser (via CreatedBy)
+        modelBuilder.Entity<CustomTag>()
+            .HasOne(t => t.CreatedBy)
+            .WithMany()
+            .HasForeignKey(t => t.CreatedById)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Block: LinkCustomTagToMediaApiRef -> AppUser (via AddedBy)
+        modelBuilder.Entity<LinkCustomTagToMediaApiRef>()
+            .HasOne(l => l.AddedBy)
+            .WithMany()
+            .HasForeignKey(l => l.AddedById)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Block: ExternalApiSource -> MediaType (many sources can map to same media type,
+        //        but only one should have IsActive = true per type)
+        modelBuilder.Entity<ExternalApiSource>()
+            .HasOne(s => s.MediaType)
+            .WithMany()
+            .HasForeignKey(s => s.MediaTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Block: MediaApiRef -> MediaType
+        modelBuilder.Entity<MediaApiRef>()
+            .HasOne(r => r.MediaType)
+            .WithMany()
+            .HasForeignKey(r => r.MediaTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Block: MediaApiRef -> ExternalApiSource
+        modelBuilder.Entity<MediaApiRef>()
+            .HasOne(r => r.ApiSource)
+            .WithMany(s => s.MediaApiRefs)
+            .HasForeignKey(r => r.ExternalApiSourceId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Unique index: same external item should never be stored twice
+        modelBuilder.Entity<MediaApiRef>()
+            .HasIndex(r => new { r.ExternalApiSourceId, r.ExternalId })
+            .IsUnique();
 
 
         // Cascade Deletions
-        //// Means: If that item is deleted, if it has a foreign key in another table rows, those rows are atuomatically deleted
+        //// Means: If that item is deleted, if it has a foreign key in another table rows, those rows are automatically deleted
         //// For Many-To-Many Relationships,
         /////// foreign keys for objects are not stored in the corresponding other object
         /////// the foreign keys are only directly stored in the link/join tables
-        /////// So for cascade deletion only deletes the row in the link/join table, not the related item(s0 in through the link/join table
-        /////// Deleting a link/join row never affects the items referred to inside the link/join row 
-        /// Note: Since Cascade Deletion is the default mode, we do not need to add code blocks to specify this, since it is the default mode.
-
-        /// 
-        // Right now, I'll auto-approve all submitted things.
-        // In my Future_Ideas.md, I added to implement a more complcated approval system.
+        /////// So cascade deletion only deletes the row in the link/join table, not the related item(s) through the link/join table
+        /////// Deleting a link/join row never affects the items referred to inside the link/join row
+        /// Note: Since Cascade Deletion is the default mode, we do not need to add code blocks to specify this.
 
 
-
-
-
-
-
-        // Optional (I'm not doing it) Use 2 ids as a unique id
-        // in link tables, instead of giving each row its own id.
 
 
         // Seeding Data (aka manually putting in initial data):
@@ -174,30 +151,14 @@ public class AppDbContext : IdentityDbContext<AppUser>
             new MediaType { Id = 4, Name = "Video Game", Icon = "🎮", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)}
         );
 
-        // Genres
-        modelBuilder.Entity<Genre>().HasData(
-            new Genre { Id = 1, Name = "Comedy", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new Genre { Id = 2, Name = "Sitcom", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new Genre { Id = 3, Name = "Action", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new Genre { Id = 4, Name = "Sci-Fi", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new Genre { Id = 5, Name = "Fantasy", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)}
-        );
-
-        // Media Items
-        modelBuilder.Entity<MediaItem>().HasData(
-            new MediaItem { Id = 1, Name = "Finding Nemo", MediaTypeId = 1, Description = "Disney Pixar movie about a father clownfish and his son getting separated and attempting to bring the son home.", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new MediaItem { Id = 2, Name = "The Lion King", MediaTypeId = 1, Description = "Disney Animated 1990s Musical about a lion growing up in the wild.", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new MediaItem { Id = 3, Name = "The Avengers", MediaTypeId = 1, Description = "2012 Superhero Ensemble Movie Based on Marvel Comics Superheroes", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new MediaItem { Id = 4, Name = "Super Mario 64", MediaTypeId = 4, Description = "1st 3d Platformer for Nintendo's Super Mario Franchise.", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new MediaItem { Id = 5, Name = "Star Trek", MediaTypeId = 2, Description = "1966 Sci-Fi TV Show about a crew from the US Federation exploring space.", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new MediaItem { Id = 6, Name = "A Study in Scarlet", MediaTypeId = 3, Description = "1st Sherlock Holmes book (unless my research is incorrect). Published 1887" , IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)}
+        // External API Sources — one per MediaType, all active by default
+        // These are stubs; real HTTP calls are implemented in the adapter classes
+        modelBuilder.Entity<ExternalApiSource>().HasData(
+            new ExternalApiSource { Id = 1, ApiName = "OMDB", MediaTypeId = 1, IsActive = true },
+            new ExternalApiSource { Id = 2, ApiName = "TVMaze", MediaTypeId = 2, IsActive = true },
+            new ExternalApiSource { Id = 3, ApiName = "OpenLibrary", MediaTypeId = 3, IsActive = true },
+            new ExternalApiSource { Id = 4, ApiName = "RAWG", MediaTypeId = 4, IsActive = true }
         );
     }
 
 }
-
-// Classic Movies:
-// Fantasy: Lord of the Rings
-// Sci-Fi: Star-Wars: #1
-// Classic: 1950s Musicals from Parents
-// Gilligan's Island 

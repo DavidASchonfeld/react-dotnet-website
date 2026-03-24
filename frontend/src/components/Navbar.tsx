@@ -239,9 +239,9 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                 </button>
 
                 {/* Only appears if logged in */}
-                {userName && <button title="Explore: Media Items" className={buttonClass} onClick={() => navigate("/mediaitems/explore")}>
+                {userName && <button title="My Tags" className={buttonClass} onClick={() => navigate("/my-tags")}>
                     <span className={iconClass}>◎</span>
-                    <span className={labelClass}>Explore: Media Items</span>
+                    <span className={labelClass}>My Tags</span>
                 </button>}
 
 
@@ -375,13 +375,6 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                                 >
                                                     <span className="absolute left-4">⚙</span>
                                                     <span className="flex-1 text-center">Manage Users</span>
-                                                </button>
-                                                <button
-                                                    className="relative flex items-center w-full px-4 py-2.5 text-sm text-text hover:bg-surface-raised transition-colors duration-150"
-                                                    onClick={() => navigate("/admin/mediaitems")}
-                                                >
-                                                    <span className="absolute left-4">▶</span>
-                                                    <span className="flex-1 text-center">Manage Media Items</span>
                                                 </button>
                                             </>
                                         )}

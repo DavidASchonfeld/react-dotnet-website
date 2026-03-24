@@ -22,20 +22,20 @@ public class MediaListService : IMediaListService
         if (user == null || mediaListObject == null)
             // Return early — callers check whether user and/or mediaListObject is null before reaching the forbidden boolean to check.
             return (user, mediaListObject, false);
-        
+
         return (user, mediaListObject, !PermissionHelper.CanModifyOrDeleteList(user, mediaListObject));
     }
 
     private async Task<int> ClampPositionAsync(int mediaListId, int? submittedPosition, bool isAdding)
     {
-        int count = await _context.LinkMediaItemToMediaListTable
+        int count = await _context.LinkMediaApiRefToMediaListTable
             .Where(l => l.HostListId == mediaListId)
             .CountAsync();
 
-        
+
         // isAdding:
         //    == true: Therefore, the future list's length = currentLength + 1.
-        //    == false (Meaning, we are just shifting a MediaItem within the list. Therefore, the future list's length = it's current length.
+        //    == false (Meaning, we are just shifting a MediaApiRef within the list. Therefore, the future list's length = it's current length.
         int maxPosition = isAdding ? count : count - 1;
 
         // If submittedPosition is null, use maxPosition
@@ -51,19 +51,19 @@ public class MediaListService : IMediaListService
     private async Task ShiftPositionsAsync(int targetPosition, int mediaListId, bool isAdding)
     {
         int delta = isAdding ? 1: -1;
-        var rows = await _context.LinkMediaItemToMediaListTable
+        var rows = await _context.LinkMediaApiRefToMediaListTable
             .Where(l => l.HostListId == mediaListId && l.Position >= targetPosition)
             .ToListAsync();
-        
+
         foreach (var row in rows) row.Position += delta;
     }
 
     private async Task<int> GetItemCountAsync(int mediaListId) =>
-        await _context.LinkMediaItemToMediaListTable
+        await _context.LinkMediaApiRefToMediaListTable
         .Where(l => l.HostListId == mediaListId)
         .CountAsync();
 
-    
+
     private static MediaListSummaryDto ToSummaryDto(MediaList mediaListObject, int itemCount, bool canEdit = true) => new()
     {
         Id = mediaListObject.Id,
@@ -112,11 +112,10 @@ public class MediaListService : IMediaListService
 
         if(!PermissionHelper.CanSeeList(requesterUser, targetMediaList))
             return ServiceResult<MediaListDetailDto>.Forbidden();
-        
+
         var mediaList_withIncludes = await _context.MediaLists
             .Include(l => l.ItemLinks)  // Load the link rows
-                .ThenInclude(link => link.MediaItem)  // and the MediaItem attached via the link row
-                    .ThenInclude(item => item.Type)  // add the MediaType objects connected to the MediaItems
+                .ThenInclude(link => link.MediaApiRef)  // and the MediaApiRef attached via the link row
             .FirstOrDefaultAsync(l => l.Id == mediaListId);
 
         if(mediaList_withIncludes == null) return ServiceResult<MediaListDetailDto>.NotFound();
@@ -131,11 +130,14 @@ public class MediaListService : IMediaListService
             CanEdit = PermissionHelper.CanModifyOrDeleteList(requesterUser, targetMediaList),
             ListContent = mediaList_withIncludes.ItemLinks
                 .OrderBy(link => link.Position)  // Sorts Ascending by Default, which is what I want
-                .Select(link => new MediaItemSummaryDto
+                .Select(link => new MediaApiRefSummaryDto
                 {
-                    Id = link.MediaItem.Id,
-                    Name = link.MediaItem.Name,
-                    MediaTypeId = link.MediaItem.MediaTypeId
+                    Id = link.MediaApiRef.Id,
+                    Name = link.MediaApiRef.Name,
+                    MediaTypeId = link.MediaApiRef.MediaTypeId,
+                    CreatorName = link.MediaApiRef.CreatorName,
+                    PublishedDate = link.MediaApiRef.PublishedDate,
+                    ExternalId = link.MediaApiRef.ExternalId
                 })
                 .ToList()
         });
@@ -143,7 +145,7 @@ public class MediaListService : IMediaListService
     }
 
 
-    // CreateList, when we create, we create an empty list. In UpdateList, we'll add MediaItems to the list
+    // CreateList, when we create, we create an empty list. Items are added in AddMediaApiRefToList.
     public async Task<ServiceResult<MediaListSummaryDto>> CreateListAsync(CreateMediaListDto dto, string requesterUserId)
     {
         // If the current user does not exist, you cannot create the list
@@ -173,7 +175,7 @@ public class MediaListService : IMediaListService
         _context.MediaLists.Add(newMediaList);
         await _context.SaveChangesAsync();  // Flush changes
 
-        // Passing in itemCount = 0 since a newly created MediaList always starts with 0 MediaItems inside.
+        // Passing in itemCount = 0 since a newly created MediaList always starts with 0 items inside.
         return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(newMediaList, 0));
     }
 
@@ -224,9 +226,9 @@ public class MediaListService : IMediaListService
     }
 
 
-    public async Task<ServiceResult<MediaListSummaryDto>> AddMediaItemToListAsync(int mediaListId, int mediaItemId, AddMediaItemToMediaListDto dto, string requesterUserId)
+    public async Task<ServiceResult<MediaListSummaryDto>> AddMediaApiRefToListAsync(int mediaListId, int mediaApiRefId, AddMediaApiRefToMediaListDto dto, string requesterUserId)
     {
-        
+
         //// Fetch the User and MediaList Object and then Check Permissions:
         var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
 
@@ -235,36 +237,33 @@ public class MediaListService : IMediaListService
         if (forbidden) return ServiceResult<MediaListSummaryDto>.Forbidden();
 
 
-        //// Get MediaItem
-        var targetMediaItem = await _context.MediaItems.FindAsync(mediaItemId);
-        if (targetMediaItem == null) return ServiceResult<MediaListSummaryDto>.NotFound("Media item not found.");
+        //// Get MediaApiRef
+        var targetMediaApiRef = await _context.MediaApiRefs.FindAsync(mediaApiRefId);
+        if (targetMediaApiRef == null) return ServiceResult<MediaListSummaryDto>.NotFound("Media API ref not found.");
 
-        bool alreadyInList = await _context.LinkMediaItemToMediaListTable
-            .AnyAsync(l => l.HostListId == mediaListId && l.MediaItemId == mediaItemId);
+        bool alreadyInList = await _context.LinkMediaApiRefToMediaListTable
+            .AnyAsync(l => l.HostListId == mediaListId && l.MediaApiRefId == mediaApiRefId);
 
         if (alreadyInList)
-            return ServiceResult<MediaListSummaryDto>.Conflict("This media item is already is inside this list");
+            return ServiceResult<MediaListSummaryDto>.Conflict("This item is already inside this list.");
 
 
-        //// Move existing items in the list to make room for the to-be-added MediaItem
+        //// Move existing items in the list to make room for the to-be-added MediaApiRef
 
         // Note: I am explicitly labeling isAdding here to make it more obvious what that boolean value is for.
-        // I could also call this line like this and it would mean exactly the same thing:
-        // int position = await ClampPositionAsync(mediaListId, dto.Position, true);
-        
         int position = await ClampPositionAsync(mediaListId, dto.Position, isAdding: true);
-        
+
         await ShiftPositionsAsync(position, mediaListId, isAdding: true);
 
 
-        //// Add the MediaItem to the MediaList
-        _context.LinkMediaItemToMediaListTable.Add (new LinkMediaItemToMediaList
+        //// Add the MediaApiRef to the MediaList
+        _context.LinkMediaApiRefToMediaListTable.Add(new LinkMediaApiRefToMediaList
         {
             HostListId = mediaListId,
-            MediaItemId = mediaItemId,
+            MediaApiRefId = mediaApiRefId,
             Position = position
         });
-        
+
         await _context.SaveChangesAsync();  // Flush the changes
 
         int count = await GetItemCountAsync(mediaListId);
@@ -272,7 +271,7 @@ public class MediaListService : IMediaListService
     }
 
 
-    public async Task<ServiceResult<MediaListSummaryDto>> RemoveMediaItemFromListAsync(int mediaListId, int mediaItemId, string requesterUserId)
+    public async Task<ServiceResult<MediaListSummaryDto>> RemoveMediaApiRefFromListAsync(int mediaListId, int mediaApiRefId, string requesterUserId)
     {
         // Fetch the User and MediaList Object and then Check Permissions:
         var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
@@ -282,21 +281,21 @@ public class MediaListService : IMediaListService
         if (forbidden) return ServiceResult<MediaListSummaryDto>.Forbidden();
 
 
-        // Get MediaItem
-        var targetMediaItem = await _context.MediaItems.FindAsync(mediaItemId);
-        if (targetMediaItem == null) return ServiceResult<MediaListSummaryDto>.NotFound("Media item not found.");
+        // Get MediaApiRef
+        var targetMediaApiRef = await _context.MediaApiRefs.FindAsync(mediaApiRefId);
+        if (targetMediaApiRef == null) return ServiceResult<MediaListSummaryDto>.NotFound("Media API ref not found.");
 
 
-        // Get Link between MediaItem and MediaList
-        var linkRow = await _context.LinkMediaItemToMediaListTable
-            .Where(l => l.HostListId == mediaListId && l.MediaItemId == mediaItemId)
+        // Get Link between MediaApiRef and MediaList
+        var linkRow = await _context.LinkMediaApiRefToMediaListTable
+            .Where(l => l.HostListId == mediaListId && l.MediaApiRefId == mediaApiRefId)
             .FirstOrDefaultAsync();
         if (linkRow == null)
-            return ServiceResult<MediaListSummaryDto>.NotFound("This media item is not in this list.");
+            return ServiceResult<MediaListSummaryDto>.NotFound("This item is not in this list.");
 
-        
+
         await ShiftPositionsAsync(linkRow.Position + 1, mediaListId, isAdding: false);
-        _context.LinkMediaItemToMediaListTable.Remove(linkRow);
+        _context.LinkMediaApiRefToMediaListTable.Remove(linkRow);
         await _context.SaveChangesAsync();  // Flush changes
 
         int count = await GetItemCountAsync(mediaListId);
@@ -304,9 +303,9 @@ public class MediaListService : IMediaListService
     }
 
 
-    public async Task<ServiceResult<MediaListSummaryDto>> MoveMediaItemWithinMediaListAsync(int mediaListId, int mediaItemId, MoveMediaItemWithinMediaListDto dto, string requesterUserId)
+    public async Task<ServiceResult<MediaListSummaryDto>> MoveMediaApiRefWithinMediaListAsync(int mediaListId, int mediaApiRefId, MoveMediaApiRefWithinMediaListDto dto, string requesterUserId)
     {
-        
+
         // Fetch the User and MediaList Object and then Check Permissions:
         var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
 
@@ -315,25 +314,24 @@ public class MediaListService : IMediaListService
         if (forbidden) return ServiceResult<MediaListSummaryDto>.Forbidden();
 
 
-        // Get MediaItem
-        var targetMediaItem = await _context.MediaItems.FindAsync(mediaItemId);
-        if (targetMediaItem == null) return ServiceResult<MediaListSummaryDto>.NotFound("Media item not found.");
+        // Get MediaApiRef
+        var targetMediaApiRef = await _context.MediaApiRefs.FindAsync(mediaApiRefId);
+        if (targetMediaApiRef == null) return ServiceResult<MediaListSummaryDto>.NotFound("Media API ref not found.");
 
 
-        // Get Link between MediaItem and MediaList
-        var linkRow = await _context.LinkMediaItemToMediaListTable
-            .Where(l => l.HostListId == mediaListId && l.MediaItemId == mediaItemId)
+        // Get Link between MediaApiRef and MediaList
+        var linkRow = await _context.LinkMediaApiRefToMediaListTable
+            .Where(l => l.HostListId == mediaListId && l.MediaApiRefId == mediaApiRefId)
             .FirstOrDefaultAsync();
         if (linkRow == null)
-            return ServiceResult<MediaListSummaryDto>.NotFound("This media item is not in this list.");
-        
+            return ServiceResult<MediaListSummaryDto>.NotFound("This item is not in this list.");
 
-        
+
 
         int oldPosition = linkRow.Position;
         int destinationPosition = await ClampPositionAsync(mediaListId, dto.NewPosition, isAdding: false);
 
-        // Do not do the operation if the mediaItem
+        // Do not do the operation if the mediaApiRef
         // is already in the correct spot
         if (destinationPosition == oldPosition)
         {
@@ -345,26 +343,26 @@ public class MediaListService : IMediaListService
         // Do the Move:
         linkRow.Position = destinationPosition;
 
-        List<LinkMediaItemToMediaList> rowsToShift;
+        List<LinkMediaApiRefToMediaList> rowsToShift;
         if (destinationPosition > oldPosition)
         {
             // Moving towards the back: shift items between old and new positions forward
-            rowsToShift = await _context.LinkMediaItemToMediaListTable
+            rowsToShift = await _context.LinkMediaApiRefToMediaListTable
                 .Where(l => l.HostListId == mediaListId
                          && l.Position > oldPosition
                          && l.Position <= destinationPosition)
                 .ToListAsync();
-            
+
             foreach (var row in rowsToShift) row.Position -= 1;
         } else
         {
             // Moving towards the front: shift items between new and old positions back
-            rowsToShift = await _context.LinkMediaItemToMediaListTable
+            rowsToShift = await _context.LinkMediaApiRefToMediaListTable
                 .Where(l => l.HostListId == mediaListId
                          && l.Position >= destinationPosition
                          && l.Position < oldPosition)
                 .ToListAsync();
-            
+
             foreach (var row in rowsToShift) row.Position += 1;
         }
 
@@ -372,13 +370,6 @@ public class MediaListService : IMediaListService
 
         int finalCount = await GetItemCountAsync(mediaListId);
         return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, finalCount));
-
-
-
-
-
-
-
     }
 
     public async Task<ServiceResult<bool>> ReorderItemsAsync(int mediaListId, List<int> orderedItemIds, string requesterUserId)
@@ -389,21 +380,21 @@ public class MediaListService : IMediaListService
         if (requesterUser == null) return ServiceResult<bool>.Unauthorized();
         if (forbidden) return ServiceResult<bool>.Forbidden();
 
-        var linkRows = await _context.LinkMediaItemToMediaListTable
+        var linkRows = await _context.LinkMediaApiRefToMediaListTable
             .Where(l => l.HostListId == mediaListId)
             .ToListAsync();
 
 
 
-        // Verify all submitted MediaItem Ids actually belong to this list
+        // Verify all submitted MediaApiRef Ids actually belong to this list
 
-        // This line gets only the MediaItemIds (not the actual MediaItem objects) and puts them into a HashSet.
-        var listItemIds = linkRows.Select(l => l.MediaItemId).ToHashSet();
+        // This line gets only the MediaApiRefIds (not the actual MediaApiRef objects) and puts them into a HashSet.
+        var listItemIds = linkRows.Select(l => l.MediaApiRefId).ToHashSet();
         if (orderedItemIds.Count != listItemIds.Count || !orderedItemIds.All(listItemIds.Contains))
-            return ServiceResult<bool>.BadRequest("The submitted MediaItem IDs do not match the list's current contents.");
+            return ServiceResult<bool>.BadRequest("The submitted item IDs do not match the list's current contents.");
 
         // Assign positions based on the submitted order
-        var linkByItemId = linkRows.ToDictionary(l => l.MediaItemId);
+        var linkByItemId = linkRows.ToDictionary(l => l.MediaApiRefId);
         for (int i = 0; i < orderedItemIds.Count; i++)
             linkByItemId[orderedItemIds[i]].Position = i;
 

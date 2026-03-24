@@ -1,8 +1,13 @@
 import RowItemContent from '../RowItemContent';
 import RowItemStyling from '../RowItemStyling';
 import MediaTypeLabel from '../MediaTypeLabel';
-import type { MediaItemSummary } from '../../types/mediaItem';
 import AnimatedPage from '../AnimatedPage';
+
+// Generic item context shape — any object with name + mediaTypeId can be shown as a header
+interface ItemContext {
+    name: string;
+    mediaTypeId: number;
+}
 
 // This defines what the caller must pass in
 interface Props {
@@ -14,7 +19,7 @@ interface Props {
 
     // Optional: shows a standardized "selected item" header at the top of the modal
     // so the user can see which item the action is about.
-    itemContext?: MediaItemSummary;
+    itemContext?: ItemContext;
 }
 
 export default function ConfirmModal({ title, message, confirmLabel = "Confirm", onConfirm, onCancel, itemContext }: Props)

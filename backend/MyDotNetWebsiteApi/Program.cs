@@ -72,27 +72,17 @@ builder.Services.AddAuthentication(options =>
 
 
 
-builder.Services.Configure<MediaItemSettings>(
-
-    // Have the website load in the values I put into appsettings.json, specifically in the "MediaItemSettings"
-    builder.Configuration.GetSection("MediaItemSettings")
-
-    // Then, the wraparound method
-    // (  aka "builder.Services.Configure<MediaItemSettings>("  )
-    // associates the setting(s) it loaded into my
-    // backend/MyDotnetWebsiteApi/Settings/MediaITemSettings.cs class I created,
-    // which also has a field inside which matches the variable I named in the appsettings.json
-    // so it knows to match them together.
-);
-
-
 // Register Service Files
 //  (They are in the backend/MyDotNetWebsiteApi/Services folder)
 builder.Services.AddScoped<IMediaTypeService, MediaTypeService>();
-builder.Services.AddScoped<IMediaItemService, MediaItemService>();
 builder.Services.AddScoped<IMediaListService, MediaListService>();
+builder.Services.AddScoped<IMediaApiRefService, MediaApiRefService>();
+builder.Services.AddScoped<ICustomTagService, CustomTagService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+// Register ExternalMediaApiAdapterFactory as a singleton (it's stateless)
+builder.Services.AddSingleton<ExternalMediaApiAdapterFactory>();
 // Every time the backend receives an HTTPRequest the DI Container wakes up a creates a "scope" for this request
 //  -- new AppDbContext()
 //  -- Here in this .AddScoped(), it will also create these services too.

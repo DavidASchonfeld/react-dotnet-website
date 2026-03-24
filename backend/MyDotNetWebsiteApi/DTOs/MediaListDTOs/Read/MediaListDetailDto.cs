@@ -8,5 +8,5 @@ public class MediaListDetailDto
     public VisibilityStatus VisibilityStatus {get; set;}
     public bool CanEdit {get; set;}
 
-    public ICollection<MediaItemSummaryDto> ListContent {get; set;} = new List<MediaItemSummaryDto>();
+    public ICollection<MediaApiRefSummaryDto> ListContent {get; set;} = new List<MediaApiRefSummaryDto>();
 }

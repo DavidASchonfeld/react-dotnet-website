@@ -20,7 +20,7 @@ public class MediaList
 
 
     // Many-to-Many Relationships
-    public ICollection<LinkMediaItemToMediaList> ItemLinks {get; set; } = new List<LinkMediaItemToMediaList>();
+    public ICollection<LinkMediaApiRefToMediaList> ItemLinks {get; set; } = new List<LinkMediaApiRefToMediaList>();
     public ICollection<LinkPermissionsForMediaListToAppUser> SharedWith {get; set; } = new List<LinkPermissionsForMediaListToAppUser>();
 
 

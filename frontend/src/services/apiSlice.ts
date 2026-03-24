@@ -5,18 +5,24 @@ import { safeToast } from '../utils/safeToast'
 import { BACKEND_BASE_URL } from '../config'
 
 import type {
-    MediaItemDetail,
-    MediaItemSummary,
-    CreateMediaItemRequest,
-    PatchMediaItemBasicInfoRequest,
-} from '../types/mediaItem'
+    MediaApiRefSummary,
+    MediaApiRefDetail,
+    FindOrCreateMediaApiRefRequest,
+} from '../types/mediaApiRef'
+import type { ExternalApiSearchResult } from '../types/externalApiSearch'
+import type { ExternalApiSourceSummary } from '../types/externalApiSource'
+import type {
+    CustomTagSummary,
+    CreateCustomTagRequest,
+    UpdateCustomTagRequest,
+} from '../types/customTag'
 import type {
     MediaListDetail,
     MediaListSummary,
     CreateMediaListRequest,
     UpdateMediaListNotListContentRequest,
-    AddMediaItemToMediaListRequest,
-    MoveMediaItemWithinMediaListRequest,
+    AddMediaApiRefToMediaListRequest,
+    MoveMediaApiRefWithinMediaListRequest,
 } from '../types/mediaList'
 import type { MediaTypeSummary, MediaTypeDetail } from '../types/mediaType'
 
@@ -47,14 +53,14 @@ const baseQuery = fetchBaseQuery({
 
 
 // ---- Error Handling Wrapper ----
-// api.dispatch is injected by RTK's middleware 
+// api.dispatch is injected by RTK's middleware
 // This is a wrapper around baseQuery to handle errors.
 // This is the base query object that gets passed into apiSlice
 // Below, in apiSlice, every query listed is added at the end of this baseQuery
 // (as commanded in the object apiSlice's "baseQuery" value)
 // that way, whenever I call a query,
 // I never have to keep typing about the token, the BACKEND_BASE_URL etc.
-// 
+//
 const baseQueryWithErrorHandling: BaseQueryFn<
     string | FetchArgs,
     unknown,
@@ -83,7 +89,7 @@ const baseQueryWithErrorHandling: BaseQueryFn<
 
 
 // ---- API Slice ----
-// One file replaces: apiClient.ts, mediaItemService.ts, mediaListService.ts, mediaTypeService.ts
+// One file replaces: apiClient.ts, mediaApiRefService.ts, mediaListService.ts, mediaTypeService.ts, etc.
 // RTK Query auto-generates hooks for each endpoint.
 
 
@@ -91,107 +97,56 @@ export const apiSlice = createApi({
 
     // This is the name of the reducerPath,
     // so in store.ts, I will pass in apiSlice.reducerPath AKA accessing this specific value
-    reducerPath: 'api',  
+    reducerPath: 'api',
 
     baseQuery: baseQueryWithErrorHandling,
 
     // You have to mark each API call here with the type of object you are talking about
     // This is how, even though API calls
-    // might use MediaItemSummaryDTO or MediaItemDetailDTO,
-    // it knows that they are both MediaItem because they,
-    // in "invalidatesTags" or "providesTags" use ['MediaItem']
-    tagTypes: ['MediaItem', 'MediaList', 'MediaType'],
+    // might use MediaApiRefSummary or MediaApiRefDetail,
+    // it knows that they are both MediaApiRef because they,
+    // in "invalidatesTags" or "providesTags" use ['MediaApiRef']
+    tagTypes: ['MediaApiRef', 'MediaList', 'MediaType', 'CustomTag'],
     endpoints: (builder) => ({
 
 
-        // ---- MediaItem Endpoints ----
+        // ---- MediaApiRef Endpoints ----
 
-        getMediaItemDetail: builder.query<MediaItemDetail, number>({
-            query: (id) => `/api/mediaitem/${id}`,
-            providesTags: (_, __, id) => [{ type: 'MediaItem', id }],
+        getMediaApiRefDetail: builder.query<MediaApiRefDetail, number>({
+            query: (id) => `/api/mediaapiref/${id}`,
+            providesTags: (_, __, id) => [{ type: 'MediaApiRef', id }],
         }),
 
-        getRandomMediaItems: builder.query<MediaItemSummary[], number>({
-            query: (amount) => `/api/mediaitem/random/${amount}`,
+        // Searches the active external API for the given media type.
+        // Returns raw ExternalApiSearchResult items (not DB records yet).
+        searchExternalApi: builder.query<
+            ExternalApiSearchResult[],
+            { query: string; mediaTypeId: number; limit?: number }
+        >({
+            query: ({ query, mediaTypeId, limit = 10 }) => {
+                const params = new URLSearchParams({ q: query, mediaTypeId: String(mediaTypeId), limit: String(limit) })
+                return `/api/mediaapiref/search?${params}`
+            },
         }),
 
-        getAllApprovedMediaItemsForAdmin: builder.query<MediaItemSummary[], void>({
-            query: () => '/api/mediaitem/all-approved-admin',
-            providesTags: ['MediaItem'],
-        }),
-
-        createMediaItem: builder.mutation<MediaItemDetail, CreateMediaItemRequest>({
+        // Idempotent: finds existing MediaApiRef by (externalApiSourceId, externalId) or creates it.
+        // Call this after user picks an item from searchExternalApi results.
+        findOrCreateMediaApiRef: builder.mutation<MediaApiRefDetail, FindOrCreateMediaApiRefRequest>({
             query: (body) => ({
-                url: '/api/mediaitem/create',
+                url: '/api/mediaapiref/find-or-create',
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['MediaItem'],
-
-            // onQueryStarted(arg, { queryFulfilled, dispatch, getState })
-            // arg: the argument I passed to this mutaiton (CreateMediaITemRequest)
-            // queryFulfilled: A Promise that resolves with {data} when the request receives, or rejects when failed
-            // dispatch: Redux dispatch function, for dispatching other actions mid-flight
-            // getState: Read current Redux state mid-flight
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
-                    loading: 'Creating...',
-                    success: 'Media item created!',
-                    error: '',   // suppressed — baseQueryWithErrorHandling handles errors
-                })
-            },
+            invalidatesTags: ['MediaApiRef'],
         }),
 
-        deleteMediaItem: builder.mutation<void, number>({
-            query: (id) => ({
-                url: `/api/mediaitem/${id}`,
-                method: 'DELETE',
-            }),
-            invalidatesTags: ['MediaItem'],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
-                    loading: 'Deleting...',
-                    success: 'Media item deleted',
-                    error: '',   // suppressed — baseQueryWithErrorHandling handles errors
-                })
-            },
+        getMediaApiRefLists: builder.query<MediaListSummary[], number>({
+            query: (mediaApiRefId) => `/api/mediaapiref/${mediaApiRefId}/lists`,
         }),
 
-        patchMediaItemBasicInfo: builder.mutation<
-            MediaItemDetail,  // Here, we have the DTO this API call is using. and in invalidatesTags below, we know it is using the MediaItem.
-            { mediaItemId: number; data: PatchMediaItemBasicInfoRequest }
-        >({
-            query: ({ mediaItemId, data }) => ({
-                url: `/api/mediaitem/${mediaItemId}`,
-                method: 'PATCH',
-                body: data,
-            }),
-            invalidatesTags: (_, __, { mediaItemId }) => [
-                { type: 'MediaItem', id: mediaItemId },
-                'MediaItem',
-            ],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
-                    loading: 'Saving...',
-                    success: 'Changes saved',
-                    error: '',   // suppressed — baseQueryWithErrorHandling handles errors
-                })
-            },
-        }),
-
-        searchMediaItems: builder.query<
-            MediaItemSummary[],
-            { query: string; limit?: number; mediaTypeId?: number }
-        >({
-            query: ({ query, limit = 10, mediaTypeId }) => {
-                const params = new URLSearchParams({ q: query, limit: String(limit) })
-                if (mediaTypeId !== undefined) params.set('mediaTypeId', String(mediaTypeId))
-                return `/api/mediaitem/search?${params}`
-            },
-        }),
-
-        getMediaItemLists: builder.query<MediaListSummary[], number>({
-            query: (mediaItemId) => `/api/mediaitem/${mediaItemId}/lists`,
+        getMediaApiRefTags: builder.query<CustomTagSummary[], number>({
+            query: (mediaApiRefId) => `/api/mediaapiref/${mediaApiRefId}/tags`,
+            providesTags: (_, __, mediaApiRefId) => [{ type: 'CustomTag', id: `ref-${mediaApiRefId}` }],
         }),
 
 
@@ -263,19 +218,18 @@ export const apiSlice = createApi({
             },
         }),
 
-        addMediaItemToList: builder.mutation<
+        addMediaApiRefToList: builder.mutation<
             MediaListSummary,
-            { listId: number; mediaItemId: number; data?: AddMediaItemToMediaListRequest }
+            { listId: number; mediaApiRefId: number; data?: AddMediaApiRefToMediaListRequest }
         >({
-            query: ({ listId, mediaItemId, data }) => ({
-                url: `/api/medialist/${listId}/items/${mediaItemId}`,
+            query: ({ listId, mediaApiRefId, data }) => ({
+                url: `/api/medialist/${listId}/items/${mediaApiRefId}`,
                 method: 'POST',
                 body: data ?? {},
             }),
             invalidatesTags: (_, __, { listId }) => [
                 { type: 'MediaList', id: listId },
                 'MediaList',
-                'MediaItem',
             ],
             onQueryStarted: async (_, { queryFulfilled }) => {
                 await safeToast.promise(queryFulfilled, {
@@ -286,18 +240,17 @@ export const apiSlice = createApi({
             },
         }),
 
-        removeMediaItemFromList: builder.mutation<
+        removeMediaApiRefFromList: builder.mutation<
             MediaListSummary,
-            { listId: number; mediaItemId: number }
+            { listId: number; mediaApiRefId: number }
         >({
-            query: ({ listId, mediaItemId }) => ({
-                url: `/api/medialist/${listId}/items/${mediaItemId}`,
+            query: ({ listId, mediaApiRefId }) => ({
+                url: `/api/medialist/${listId}/items/${mediaApiRefId}`,
                 method: 'DELETE',
             }),
             invalidatesTags: (_, __, { listId }) => [
                 { type: 'MediaList', id: listId },
                 'MediaList',
-                'MediaItem',
             ],
             onQueryStarted: async (_, { queryFulfilled }) => {
                 await safeToast.promise(queryFulfilled, {
@@ -327,12 +280,12 @@ export const apiSlice = createApi({
             },
         }),
 
-        moveMediaItemWithinMediaList: builder.mutation<
+        moveMediaApiRefWithinMediaList: builder.mutation<
             MediaListSummary,
-            { listId: number; mediaItemId: number; data: MoveMediaItemWithinMediaListRequest }
+            { listId: number; mediaApiRefId: number; data: MoveMediaApiRefWithinMediaListRequest }
         >({
-            query: ({ listId, mediaItemId, data }) => ({
-                url: `/api/medialist/${listId}/items/${mediaItemId}`,
+            query: ({ listId, mediaApiRefId, data }) => ({
+                url: `/api/medialist/${listId}/items/${mediaApiRefId}`,
                 method: 'PATCH',
                 body: data,
             }),
@@ -358,6 +311,126 @@ export const apiSlice = createApi({
         }),
 
 
+        // ---- CustomTag Endpoints ----
+
+        getMyCustomTags: builder.query<CustomTagSummary[], void>({
+            query: () => '/api/customtag/my-tags',
+            providesTags: ['CustomTag'],
+        }),
+
+        createCustomTag: builder.mutation<CustomTagSummary, CreateCustomTagRequest>({
+            query: (body) => ({
+                url: '/api/customtag/create',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['CustomTag'],
+            onQueryStarted: async (_, { queryFulfilled }) => {
+                await safeToast.promise(queryFulfilled, {
+                    loading: 'Creating tag...',
+                    success: 'Tag created!',
+                    error: '',
+                })
+            },
+        }),
+
+        patchCustomTag: builder.mutation<
+            CustomTagSummary,
+            { tagId: number; data: UpdateCustomTagRequest }
+        >({
+            query: ({ tagId, data }) => ({
+                url: `/api/customtag/${tagId}`,
+                method: 'PATCH',
+                body: data,
+            }),
+            invalidatesTags: ['CustomTag'],
+            onQueryStarted: async (_, { queryFulfilled }) => {
+                await safeToast.promise(queryFulfilled, {
+                    loading: 'Saving...',
+                    success: 'Tag updated',
+                    error: '',
+                })
+            },
+        }),
+
+        deleteCustomTag: builder.mutation<void, number>({
+            query: (tagId) => ({
+                url: `/api/customtag/${tagId}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['CustomTag'],
+            onQueryStarted: async (_, { queryFulfilled }) => {
+                await safeToast.promise(queryFulfilled, {
+                    loading: 'Deleting tag...',
+                    success: 'Tag deleted',
+                    error: '',
+                })
+            },
+        }),
+
+        searchCustomTags: builder.query<
+            CustomTagSummary[],
+            { query: string; limit?: number }
+        >({
+            query: ({ query, limit = 10 }) => {
+                const params = new URLSearchParams({ q: query, limit: String(limit) })
+                return `/api/customtag/search?${params}`
+            },
+        }),
+
+        addTagToMediaApiRef: builder.mutation<
+            void,
+            { tagId: number; mediaApiRefId: number }
+        >({
+            query: ({ tagId, mediaApiRefId }) => ({
+                url: `/api/customtag/${tagId}/items/${mediaApiRefId}`,
+                method: 'POST',
+            }),
+            invalidatesTags: (_, __, { mediaApiRefId }) => [
+                { type: 'CustomTag', id: `ref-${mediaApiRefId}` },
+            ],
+            onQueryStarted: async (_, { queryFulfilled }) => {
+                await safeToast.promise(queryFulfilled, {
+                    loading: 'Tagging...',
+                    success: 'Tag applied',
+                    error: '',
+                })
+            },
+        }),
+
+        removeTagFromMediaApiRef: builder.mutation<
+            void,
+            { tagId: number; mediaApiRefId: number }
+        >({
+            query: ({ tagId, mediaApiRefId }) => ({
+                url: `/api/customtag/${tagId}/items/${mediaApiRefId}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: (_, __, { mediaApiRefId }) => [
+                { type: 'CustomTag', id: `ref-${mediaApiRefId}` },
+            ],
+            onQueryStarted: async (_, { queryFulfilled }) => {
+                await safeToast.promise(queryFulfilled, {
+                    loading: 'Removing tag...',
+                    success: 'Tag removed',
+                    error: '',
+                })
+            },
+        }),
+
+        getItemsByTag: builder.query<MediaApiRefSummary[], number>({
+            query: (tagId) => `/api/customtag/${tagId}/items`,
+            providesTags: (_, __, tagId) => [{ type: 'CustomTag', id: tagId }],
+        }),
+
+
+        // ---- ExternalApiSource Endpoints ----
+
+        getActiveApiSources: builder.query<ExternalApiSourceSummary[], void>({
+            query: () => '/api/externalapisource/active',
+        }),
+
+
         // ---- MediaType Endpoints ----
 
         getAllApprovedMediaTypes: builder.query<MediaTypeSummary[], void>({
@@ -373,27 +446,36 @@ export const apiSlice = createApi({
 })
 
 export const {
-    useGetMediaItemDetailQuery,
-    useLazyGetMediaItemDetailQuery,
-    useGetRandomMediaItemsQuery,
-    useGetAllApprovedMediaItemsForAdminQuery,
-    useCreateMediaItemMutation,
-    useDeleteMediaItemMutation,
-    usePatchMediaItemBasicInfoMutation,
-    useLazySearchMediaItemsQuery,
-    useGetMediaItemListsQuery,
-    useLazyGetMediaItemListsQuery,
+    // MediaApiRef
+    useGetMediaApiRefDetailQuery,
+    useLazySearchExternalApiQuery,
+    useFindOrCreateMediaApiRefMutation,
+    useGetMediaApiRefListsQuery,
+    useGetMediaApiRefTagsQuery,
+    // MediaList
     useGetMyMediaListsQuery,
     useLazyGetMyMediaListsQuery,
     useGetMediaListDetailQuery,
     useCreateMediaListMutation,
     useDeleteMediaListMutation,
     usePatchListBasicInfoMutation,
-    useAddMediaItemToListMutation,
-    useRemoveMediaItemFromListMutation,
+    useAddMediaApiRefToListMutation,
+    useRemoveMediaApiRefFromListMutation,
     useReorderMediaListItemsMutation,
-    useMoveMediaItemWithinMediaListMutation,
+    useMoveMediaApiRefWithinMediaListMutation,
     useLazySearchMediaListsQuery,
+    // CustomTag
+    useGetMyCustomTagsQuery,
+    useCreateCustomTagMutation,
+    usePatchCustomTagMutation,
+    useDeleteCustomTagMutation,
+    useLazySearchCustomTagsQuery,
+    useAddTagToMediaApiRefMutation,
+    useRemoveTagFromMediaApiRefMutation,
+    useGetItemsByTagQuery,
+    // ExternalApiSource
+    useGetActiveApiSourcesQuery,
+    // MediaType
     useGetAllApprovedMediaTypesQuery,
     useGetMediaTypeByIdQuery,
 } = apiSlice

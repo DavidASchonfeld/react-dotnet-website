@@ -13,13 +13,16 @@ import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-ki
 import type { RootState } from '../store/store';
 import {
     useGetMediaListDetailQuery,
-    useAddMediaItemToListMutation,
-    useRemoveMediaItemFromListMutation,
+    useAddMediaApiRefToListMutation,
+    useRemoveMediaApiRefFromListMutation,
     usePatchListBasicInfoMutation,
     useReorderMediaListItemsMutation,
-    useLazySearchMediaItemsQuery,
+    useLazySearchExternalApiQuery,
+    useFindOrCreateMediaApiRefMutation,
+    useGetActiveApiSourcesQuery,
 } from '../services/apiSlice';
-import type { MediaItemSummary } from '../types/mediaItem';
+import type { MediaApiRefSummary } from '../types/mediaApiRef';
+import type { ExternalApiSearchResult } from '../types/externalApiSearch';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import SwipeReorderRowItem from '../components/SwipeReorderRowItem';
 import RowItemStyling from '../components/RowItemStyling';
@@ -51,38 +54,47 @@ export default function MediaListDetailPage() {
         { skip: isNaN(mediaListId) }
     );
 
-    const [addItemMutation] = useAddMediaItemToListMutation();
-    const [removeItemMutation] = useRemoveMediaItemFromListMutation();
+    const [addItemMutation] = useAddMediaApiRefToListMutation();
+    const [removeItemMutation] = useRemoveMediaApiRefFromListMutation();
     const [patchListMutation] = usePatchListBasicInfoMutation();
     const [reorderMutation] = useReorderMediaListItemsMutation();
-    const [triggerSearchMediaItems] = useLazySearchMediaItemsQuery();
+    const [triggerSearchExternalApi] = useLazySearchExternalApiQuery();
+    const [findOrCreate] = useFindOrCreateMediaApiRefMutation();
 
+    // Active API sources tell us which ExternalApiSourceId to use per media type
+    const { data: activeApiSources } = useGetActiveApiSourcesQuery();
 
     // Local state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [showAddBrowsePanel, setShowAddBrowsePanel] = useState(false);
 
-    // Server-side search state for the Add Item modal
+    // Which media type to search in when adding items (default: Movie = 1)
+    const [searchMediaTypeId, setSearchMediaTypeId] = useState<number>(1);
+
+    // Server-side search state for the Add Item modal (searches external APIs)
     const {
         results: searchResults,
         isSearching,
         handleSearchChange,
         clearResults: clearSearchResults,
-    } = useSearch<MediaItemSummary>(
-        async (query) => await triggerSearchMediaItems({ query, limit: SEARCH_DEFAULT_LIMIT }).unwrap()
+    } = useSearch<ExternalApiSearchResult>(
+        async (query) => await triggerSearchExternalApi({
+            query,
+            mediaTypeId: searchMediaTypeId,
+            limit: SEARCH_DEFAULT_LIMIT,
+        }).unwrap()
     );
 
     // This is about showing/not showing the modal
-    // for confirming if a user wants to remove the selected MediaItem in the <ConfirmModal> section
+    // for confirming if a user wants to remove the selected item in the <ConfirmModal> section
     // from the current MediaList
-    // The actual dispatch to remove is located later in this file,
     const [confirmRemoveItem, setConfirmRemoveItem] = useState<{ id: number; name: string } | null>(null);
 
-    const [settingsItem, setSettingsItem] = useState<MediaItemSummary | null>(null);
+    const [settingsItem, setSettingsItem] = useState<MediaApiRefSummary | null>(null);
 
     // Local ordered list — kept in sync with the Redux store, updated optimistically on drag
-    const [orderedItems, setOrderedItems] = useState<MediaItemSummary[]>([]);
+    const [orderedItems, setOrderedItems] = useState<MediaApiRefSummary[]>([]);
     // Shown as an inline banner when a drag-reorder fails to save; cleared on dismiss
     const [reorderError, setReorderError] = useState<string | null>(null);
 
@@ -156,10 +168,11 @@ export default function MediaListDetailPage() {
                 dragDisabled={dragDisabled}
                 swipeDisabled={swipeDisabled}
                 swipeLeftAction={{ label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }}
-                swipeRightAction={{ label: '📑 Details', onPress: () => navigate(`/mediaitem/${item.id}`) }}
+                swipeRightAction={{ label: '📑 Details', onPress: () => navigate(`/mediaapiref/${item.id}`) }}
             >
                 <RowItemContent
                     firstString={item.name}
+                    secondString={item.creatorName ?? undefined}
                     labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
                 />
             </SwipeReorderRowItem>
@@ -167,18 +180,11 @@ export default function MediaListDetailPage() {
     }
 
 
-    // This is using the ternary operator:
-    // const theVariable = if_this_is_true ? "set_this_value" : "otherwise_set_value"
-
-    // If the settingsItem is set (aka the variable that the settingsMenu will focus on)
-    // then build the RowItem component
-    // otherwise, set the "preview" variable to undefined
-
     const preview = settingsItem ? (
         <RowItemStyling>
             <RowItemContent
                 firstString={settingsItem.name}
-                secondString={'TODO: ADD CREATORS'}
+                secondString={settingsItem.creatorName ?? undefined}
                 labelPill={<MediaTypeLabel mediaTypeId={settingsItem.mediaTypeId} faded={true} />}
             />
         </RowItemStyling>
@@ -267,12 +273,12 @@ export default function MediaListDetailPage() {
                                         id={item.id}
                                         isEditMode={isEditMode}
                                         swipeLeftAction={{ label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }}
-                                        swipeRightAction={{ label: '📑 Details', onPress: () => navigate(`/mediaitem/${item.id}`) }}
+                                        swipeRightAction={{ label: '📑 Details', onPress: () => navigate(`/mediaapiref/${item.id}`) }}
                                         onOptionsPress={() => setSettingsItem(item)}
                                     >
                                         <RowItemContent
                                             firstString={item.name}
-                                            secondString={'TODO: ADD CREATORS'}
+                                            secondString={item.creatorName ?? undefined}
                                             labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
                                         />
                                     </SwipeReorderRowItem>
@@ -293,37 +299,71 @@ export default function MediaListDetailPage() {
                 }}>+ Add Item</button>
             )}
 
-            {/* -- Add Item Modal — server-side search per keystroke; no Redux mediaItems used here -- */}
+            {/* -- Add Item Modal — searches external APIs; find-or-creates MediaApiRef on selection -- */}
             {isEditMode && showAddBrowsePanel && (
-                <ManageLinkModal
-                    modalTitle="Add Items to List"
-                    searchPlaceholder="Search by name (min. 2 characters)..."
-                    onSearchChange={handleSearchChange}
+                <div className="flex flex-col gap-2">
+                    {/* Media type selector — controls which external API to search */}
+                    <div className="flex flex-wrap gap-2">
+                        {activeApiSources?.map(source => (
+                            <button
+                                key={source.id}
+                                className={`btn ${searchMediaTypeId === source.mediaTypeId ? 'btn-primary' : 'btn-secondary'} w-fit`}
+                                onClick={() => {
+                                    setSearchMediaTypeId(source.mediaTypeId);
+                                    clearSearchResults();
+                                }}
+                            >
+                                <MediaTypeLabel mediaTypeId={source.mediaTypeId} />
+                            </button>
+                        ))}
+                    </div>
 
-                    // searchResults is a tool from my hook for searching
-                    //  this is the search results,which calls/retrieves info from the backend
-                    candidates={searchResults
-                        .map(item => ({
-                            id: String(item.id),
-                            primaryLabel: item.name,
-                            labelComponent: <MediaTypeLabel mediaTypeId={item.mediaTypeId} />,
-                        }))}
-                    candidatesLoading={isSearching}
-                    initialLinkedIds={[...existingIds].map(String)}
-                    onAdd={async (itemId) => {
-                    // RTK Query mutations handle what is/is not in a mediaList (and sends those commands to backend)
-                    //  Note: Here in onAdd (and in onRemove), mutations are only used to add/remove mediaItem from a mediaList
-                    // Here, mutations are NOT used/involved in search results
-                        const item = searchResults.find(i => String(i.id) === itemId)!;
-                        await addItemMutation({ listId: mediaListId, mediaItemId: item.id }).unwrap();
-                    }}
-                    onRemove={async (itemId) => {
-                        await removeItemMutation({ listId: mediaListId, mediaItemId: parseInt(itemId) }).unwrap();
-                    }}
-                    removeConfirmTitle="Remove item from list?"
-                    getRemoveConfirmMessage={(item) => `Remove "${item.primaryLabel}" from this list?`}
-                    onClose={() => setShowAddBrowsePanel(false)}
-                />
+                    <ManageLinkModal
+                        modalTitle="Add Items to List"
+                        searchPlaceholder="Search by name (min. 2 characters)..."
+                        onSearchChange={handleSearchChange}
+
+                        // searchResults are raw ExternalApiSearchResult items from the external API
+                        candidates={searchResults
+                            .map(item => ({
+                                id: item.externalId,
+                                primaryLabel: item.name,
+                                secondaryLabel: item.creatorName ?? undefined,
+                                labelComponent: <MediaTypeLabel mediaTypeId={searchMediaTypeId} />,
+                            }))}
+                        candidatesLoading={isSearching}
+                        initialLinkedIds={[...existingIds].map(String)}
+                        onAdd={async (externalId) => {
+                            const item = searchResults.find(r => r.externalId === externalId)!;
+                            const activeSource = activeApiSources?.find(s => s.mediaTypeId === searchMediaTypeId);
+                            if (!activeSource) return;
+
+                            // Upsert: find existing or create new MediaApiRef from this external API result
+                            const ref = await findOrCreate({
+                                externalApiSourceId: activeSource.id,
+                                externalId: item.externalId,
+                                name: item.name,
+                                mediaTypeId: searchMediaTypeId,
+                                creatorName: item.creatorName,
+                                publishedDate: item.publishedDate,
+                            }).unwrap();
+
+                            await addItemMutation({ listId: mediaListId, mediaApiRefId: ref.id }).unwrap();
+                        }}
+                        onRemove={async (externalId) => {
+                            // Find the MediaApiRef in the list by matching externalId
+                            const listItem = selectedMediaListDetail.listContent.find(
+                                i => i.externalId === externalId
+                            );
+                            if (listItem) {
+                                await removeItemMutation({ listId: mediaListId, mediaApiRefId: listItem.id }).unwrap();
+                            }
+                        }}
+                        removeConfirmTitle="Remove item from list?"
+                        getRemoveConfirmMessage={(item) => `Remove "${item.primaryLabel}" from this list?`}
+                        onClose={() => setShowAddBrowsePanel(false)}
+                    />
+                </div>
             )}
 
             {/* Edit MediaList's Basic Info Modal */}
@@ -345,48 +385,19 @@ export default function MediaListDetailPage() {
                 />
             )}
 
-            {/* MediaItem Settings Modal */}
+            {/* MediaApiRef Settings Modal */}
             <ItemSettingsDrawerModal
-
-                // !! casts the variable into a bool
-                // here open = true if I have a settingsItem in memory
                 open={!!settingsItem}
-
-                // onClose: pass in a function that it calls once it is finished closing.
-                //  In this case, I am passing in () => setSettingsItem(null),
-                //  which tells it that right after closing, run the code setSettingsItem(null) immediately
-                // (technically, after the MediaItemSettingsModal finishes animating its exit animation)
                 onClose={() => setSettingsItem(null)}
                 preview={preview}
             >
-
-                {/* This is a function which takes "close" as a parameter and returns JSX.
-                {(close) => <SomeRow />}
-                In MediaItemSettingsModal.tsx, it doesn't render the JSX items directly,
-                but instead treats them as one big function with a parameter to call MediaItemSettingsModal's close function.
-                {children(close)}
-                This is the only way give the passed-in JSX items
-                the ability to call MediaItemSettingsModal's exclusive/private function.
-                */}
-                {/* Render prop: the only way to access close() from here, since it is
-                a local variable inside MediaItemSettingsModal — not reachable any other way.
-                The modal calls children(close), handing us its close so our rows can trigger
-                the animated close sequence instead of abruptly destroying the modal. */}
-
-                {/*
-                    JSX (JavaScript XML) is what we always "return" in React components.
-                    (Technically, we could also return, null, a number and a few other small variable types)
-                */}
-
                 {(close) => (<>
                     <SettingsRow
                         icon="🔗"
                         label={canNativeShare ? "Share" : "Copy Link"}
                         onClick={() => {
-                            const url = `${window.location.origin}/mediaitem/${settingsItem!.id}`;
+                            const url = `${window.location.origin}/mediaapiref/${settingsItem!.id}`;
                             if (canNativeShare) {
-                                // .catch() swallows the AbortError thrown when the user
-                                // dismisses the native share sheet without sharing.
                                 navigator.share({ title: settingsItem!.name, url }).catch(() => {});
                             } else {
                                 navigator.clipboard.writeText(url).catch(() => {});
@@ -397,19 +408,13 @@ export default function MediaListDetailPage() {
                     <SettingsRow
                         icon="📄"
                         label="Go to Details"
-                        onClick={() => { navigate(`/mediaitem/${settingsItem!.id}`); close(); }}
+                        onClick={() => { navigate(`/mediaapiref/${settingsItem!.id}`); close(); }}
                     />
                     <SettingsRow
                         icon="⛓️‍💥"
                         label="Remove from List"
                         onClick={() => { setConfirmRemoveItem({ id: settingsItem!.id, name: settingsItem!.name }); close(); }}
                     />
-                    {/* TODO: Implement this page: navigate(`/mediaitem/${settingsItwm!.id}/creators`);
-                    <SettingsRow
-                        icon="👤"
-                        label="View Creators"
-                        onClick={() => { navigate(`/mediaitem/${settingsItem!.id}/creators`); close(); }}
-                    /> */}
                 </>)}
             </ItemSettingsDrawerModal>
 
@@ -421,7 +426,7 @@ export default function MediaListDetailPage() {
                     confirmLabel="Remove"
                     onConfirm={async () => {
                         try {
-                            await removeItemMutation({ listId: mediaListId, mediaItemId: confirmRemoveItem.id }).unwrap();
+                            await removeItemMutation({ listId: mediaListId, mediaApiRefId: confirmRemoveItem.id }).unwrap();
                         } catch (err) {
                             console.error(err);
                         }
