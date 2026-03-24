@@ -4,15 +4,12 @@ public class ApiUsageService : IApiUsageService
 {
     private readonly AppDbContext _context;
 
-    // Per-API config: period type, optional request limit, optional warning threshold.
-    // Limits and thresholds come from AppConstants so they stay in sync with the constants defined there.
-    private static readonly Dictionary<string, (string PeriodType, int? Limit, int? WarningThreshold)> _apiConfig = new()
-    {
-        ["OMDB"]        = (AppConstants.OmdbPeriodType,        AppConstants.OmdbDailyRequestLimit,    AppConstants.OmdbDailyWarningThreshold),
-        ["RAWG"]        = (AppConstants.RawgPeriodType,        AppConstants.RawgMonthlyRequestLimit,  AppConstants.RawgMonthlyWarningThreshold),
-        ["TVMaze"]      = (AppConstants.TvMazePeriodType,      null, null),  // no official rate limit
-        ["OpenLibrary"] = (AppConstants.OpenLibraryPeriodType, null, null),  // no official rate limit
-    };
+    // Derived from ExternalApiRegistry so there is exactly one place to add/update API config.
+    private static readonly Dictionary<string, (string PeriodType, int? Limit, int? WarningThreshold)> _apiConfig =
+        ExternalApiRegistry.Apis.ToDictionary(
+            kvp => kvp.Key,
+            kvp => (kvp.Value.PeriodType, kvp.Value.RequestLimit, kvp.Value.WarningThreshold)
+        );
 
     public ApiUsageService(AppDbContext context)
     {

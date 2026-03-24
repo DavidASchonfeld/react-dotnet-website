@@ -30,4 +30,33 @@ public class ApiUsageController : ControllerBase
         var stats = await _apiUsageService.GetAllUsageStatsAsync();
         return Ok(stats);
     }
+
+
+    // Returns static metadata for all external APIs (URLs, licensing, subscription plans).
+    // Admin-only — keeps consistency with GetAllUsageStats.
+    // No API keys are exposed; the DTO includes only a boolean RequiresApiKey flag.
+    [HttpGet("metadata")]
+    public async Task<IActionResult> GetAllApiMetadata()
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return Unauthorized();
+        if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
+
+        var metadata = ExternalApiRegistry.Apis.Values
+            .Select(api => new ExternalApiMetadataDto
+            {
+                Name = api.Name,
+                HomepageUrl = api.HomepageUrl,
+                ApiInfoUrl = api.ApiInfoUrl,
+                RequiresApiKey = api.ApiKeyConfigPath != null,
+                DataRules = api.DataRules,
+                SubscriptionPlan = api.SubscriptionPlan,
+                PeriodType = api.PeriodType,
+                RequestLimit = api.RequestLimit,
+            })
+            .ToList();
+
+        return Ok(metadata);
+    }
 }

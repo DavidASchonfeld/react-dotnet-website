@@ -2,15 +2,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     useGetMediaApiRefDetailQuery,
     useGetMediaApiRefListsQuery,
-    useGetMediaApiRefTagsQuery,
-    useAddTagToMediaApiRefMutation,
-    useRemoveTagFromMediaApiRefMutation,
-    useGetMyCustomTagsQuery,
+    // useGetMediaApiRefTagsQuery,
+    // useAddTagToMediaApiRefMutation,
+    // useRemoveTagFromMediaApiRefMutation,
+    // useGetMyCustomTagsQuery,
 } from '../services/apiSlice';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
+import { getAPIlink } from '../utils/apiLinks';
 
 
 export default function MediaApiRefDetailPage() {
@@ -27,19 +28,22 @@ export default function MediaApiRefDetailPage() {
         mediaApiRefId,
         { skip: isNaN(mediaApiRefId) }
     );
-    const { data: appliedTags } = useGetMediaApiRefTagsQuery(
-        mediaApiRefId,
-        { skip: isNaN(mediaApiRefId) }
-    );
-    const { data: myTags } = useGetMyCustomTagsQuery();
-    const [addTag] = useAddTagToMediaApiRefMutation();
-    const [removeTag] = useRemoveTagFromMediaApiRefMutation();
+
+    const goToExternalWebsite = (inURL: string): (Window | null) => {return  window.open(inURL, "_blank", "noopener,noreferrer");}
+
+    // const { data: appliedTags } = useGetMediaApiRefTagsQuery(
+    //     mediaApiRefId,
+    //     { skip: isNaN(mediaApiRefId) }
+    // );
+    // const { data: myTags } = useGetMyCustomTagsQuery();
+    // const [addTag] = useAddTagToMediaApiRefMutation();
+    // const [removeTag] = useRemoveTagFromMediaApiRefMutation();
 
     if (isLoading) return <div>Loading...</div>;
     if (error) return <div>Error loading item.</div>;
     if (!detail) return null;
 
-    const appliedTagIds = new Set(appliedTags?.map(t => t.id) ?? []);
+    // const appliedTagIds = new Set(appliedTags?.map(t => t.id) ?? []);
 
     return (
         <AnimatedPage>
@@ -48,17 +52,18 @@ export default function MediaApiRefDetailPage() {
 
             <h1 className="h1-styling">{detail.name}</h1>
             <MediaTypeLabel mediaTypeId={detail.mediaTypeId} />
+            
 
             <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 flex flex-col gap-1">
                 {detail.creatorName && <span>Creator: {detail.creatorName}</span>}
                 {detail.publishedDate && <span>Published: {new Date(detail.publishedDate).getFullYear()}</span>}
-                <span>Source: {detail.apiSourceName} · ID: {detail.externalId}</span>
+                <span onClick={() => goToExternalWebsite(getAPIlink("   "))}>Source: {detail.apiSourceName} · ID: {detail.externalId}</span>
             </div>
 
             <hr className="my-4" />
 
             {/* -- Custom Tags -- */}
-            <h2 className="font-semibold text-lg mb-2">Custom Tags</h2>
+ {/*            <h2 className="font-semibold text-lg mb-2">Custom Tags</h2>
             <div className="flex flex-wrap gap-2 mb-4">
                 {appliedTags?.map(tag => (
                     <span key={tag.id} className="badge badge-primary flex items-center gap-1">
@@ -71,9 +76,10 @@ export default function MediaApiRefDetailPage() {
                 ))}
                 {appliedTags?.length === 0 && <span className="text-gray-400 text-sm">No tags yet.</span>}
             </div>
+*/}
 
             {/* Add tag from user's tag list */}
-            {myTags && myTags.filter(t => !appliedTagIds.has(t.id)).length > 0 && (
+ {/*           {myTags && myTags.filter(t => !appliedTagIds.has(t.id)).length > 0 && (
                 <div>
                     <p className="text-sm text-gray-500 mb-1">Add a tag:</p>
                     <div className="flex flex-wrap gap-2">
@@ -89,6 +95,7 @@ export default function MediaApiRefDetailPage() {
                     </div>
                 </div>
             )}
+      */}  
 
             <hr className="my-4" />
 
