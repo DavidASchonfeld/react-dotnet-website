@@ -139,7 +139,7 @@ export default function SearchFilterDropdown({
                         {/* Advanced Search link — divides basic filters from complex/role-gated options */}
                         <div className="border-t border-border mt-1">
                             <Link
-                                to="/search/advanced"
+                                to="/search?showFilters=true"
                                 onClick={() => setIsOpen(false)}
                                 className="flex items-center justify-between w-full px-4 py-2.5 text-sm text-text/70 hover:bg-surface hover:text-text transition-colors"
                             >

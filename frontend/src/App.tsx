@@ -31,8 +31,7 @@ import MediaApiRefDetailPage from './pages/MediaApiRefDetailPage'
 import MyCustomTagsPage from './pages/MyCustomTagsPage'
 import ExploreByTagPage from './pages/ExploreByTagPage'
 import HomePage from './pages/HomePage'
-import SearchResultsPage from './pages/SearchResultsPage'
-import AdvancedSearchPage from './pages/AdvancedSearchPage'
+import SearchPage from './pages/SearchPage'
 import MySettingsPage from './pages/MySettingsPage'
 import MySettingsThemePage from './pages/MySettingsThemePage'
 import { DAY_NIGHT_MAP, setCurrentTheme, type DayNightTheme, type Theme } from './store/themeSlice'
@@ -173,13 +172,7 @@ function App() {
 
         <Route path = "/search" element = {
           <ProtectedRoute>
-            <SearchResultsPage />
-          </ProtectedRoute>
-        } />
-
-        <Route path = "/search/advanced" element = {
-          <ProtectedRoute>
-            <AdvancedSearchPage />
+            <SearchPage />
           </ProtectedRoute>
         } />
 

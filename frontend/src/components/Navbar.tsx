@@ -100,15 +100,15 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
     // Search filter state — kept in Navbar so both SearchBar and SearchFilterDropdown share it
     const [searchType, setSearchType] = useState<'media' | 'tags' | 'lists'>('media')
     const [searchScope, setSearchScope] = useState<'all' | 'mine'>('all')
-    const [selectedApiSourceId, setSelectedApiSourceId] = useState<number | null>(null)
     const { data: activeSources } = useGetActiveApiSourcesQuery()
 
-    // Initialize selectedApiSourceId to the first available API source once loaded
-    useEffect(() => {
-        if (selectedApiSourceId === null && activeSources && activeSources.length > 0)
-            setSelectedApiSourceId(activeSources[0].id)
-    }, [activeSources, selectedApiSourceId])
+    // Initialize selectedApiSourceId to first available source, matching SearchPage behavior
+    const [selectedApiSourceId, setSelectedApiSourceId] = useState<number | null>(() =>
+        activeSources?.[0]?.id ?? null
+    )
 
+    // Derive effective API source ID: use selected value or fall back to first available
+    const effectiveSelectedApiSourceId = selectedApiSourceId ?? activeSources?.[0]?.id ?? null
 
     // Pulling in ability to dispatch functions and get username:
     const { userName, roleLevel } = useSelector((state: RootState) => state.auth);
@@ -123,6 +123,13 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
         return () => window.removeEventListener('resize', check)
     }, [])
 
+    // Set default API source to first available when sources load
+    useEffect(() => {
+        if (selectedApiSourceId === null && activeSources && activeSources.length > 0) {
+            setSelectedApiSourceId(activeSources[0].id)
+        }
+    }, [activeSources, selectedApiSourceId])
+
     // Importing ability to Redirect
     const navigate = useNavigate();  // set up useNavigate React.js to use it later (just like with useAuth()  ).
 
@@ -135,8 +142,8 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
             scope: searchScope,
             page: '1',
         })
-        if (searchType === 'media' && selectedApiSourceId !== null)
-            params.set('api', String(selectedApiSourceId))
+        if (searchType === 'media' && effectiveSelectedApiSourceId !== null)
+            params.set('api', String(effectiveSelectedApiSourceId))
         navigate(`/search?${params}`)
     }
 

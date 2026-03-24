@@ -50,12 +50,8 @@ export default function SearchBar({
         defaultApiSourceId ?? null
     )
 
-    // Once API sources load, set a default if none is selected yet
-    useEffect(() => {
-        if (selectedApiSourceId === null && activeSources && activeSources.length > 0) {
-            setSelectedApiSourceId(defaultApiSourceId ?? activeSources[0].id)
-        }
-    }, [activeSources, selectedApiSourceId, defaultApiSourceId])
+    // Derive effective API source ID: use selected value or fall back to defaultApiSourceId, then first available
+    const effectiveSelectedApiSourceId = selectedApiSourceId ?? (defaultApiSourceId !== undefined ? defaultApiSourceId : activeSources?.[0]?.id) ?? null
 
     // Sync defaultQuery / defaultApiSourceId changes (when URL params update on SearchResultsPage)
     useEffect(() => {
@@ -79,13 +75,13 @@ export default function SearchBar({
 
         if (debounceTimer.current) clearTimeout(debounceTimer.current)
 
-        if (value.length < SEARCH_MIN_CHARS || selectedApiSourceId === null) {
+        if (value.length < SEARCH_MIN_CHARS || effectiveSelectedApiSourceId === null) {
             setDropdownResults([])
             setIsDropdownOpen(false)
             return
         }
 
-        const selectedSource = activeSources?.find(s => s.id === selectedApiSourceId)
+        const selectedSource = activeSources?.find(s => s.id === effectiveSelectedApiSourceId)
         if (!selectedSource) return
 
         debounceTimer.current = setTimeout(async () => {
@@ -113,9 +109,9 @@ export default function SearchBar({
 
     // ---- Typeahead result click: findOrCreate then navigate to detail page ----
     const handleResultClick = async (result: ExternalApiSearchResult) => {
-        if (selectedApiSourceId === null) return
+        if (effectiveSelectedApiSourceId === null) return
 
-        const activeSource = activeSources?.find(s => s.id === selectedApiSourceId)
+        const activeSource = activeSources?.find(s => s.id === effectiveSelectedApiSourceId)
         if (!activeSource) return
 
         setIsDropdownOpen(false)
