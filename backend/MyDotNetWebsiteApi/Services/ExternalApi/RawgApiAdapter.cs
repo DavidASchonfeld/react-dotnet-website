@@ -14,10 +14,42 @@ public class RawgApiAdapter : IExternalMediaApiAdapter
         _apiKey = apiKey;
     }
 
-    public Task<ExternalApiSearchResult?> GetByExternalIdAsync(string externalId)
+    public async Task<ExternalApiSearchResult?> GetByExternalIdAsync(string externalId)
     {
-        // TODO: implement using GET https://api.rawg.io/api/games/{id}?key={_apiKey}
-        return Task.FromResult<ExternalApiSearchResult?>(null);
+        // Fetch game details from RAWG API
+        var url = $"https://api.rawg.io/api/games/{Uri.EscapeDataString(externalId)}?key={_apiKey}";
+        var httpResponse = await FetchAsync(url);
+        if (httpResponse is null) return null;
+
+        RawgGameDetail? response;
+        try { response = await httpResponse.Content.ReadFromJsonAsync<RawgGameDetail>(); }
+        catch { return null; }
+
+        if (response is null) return null;
+
+        // Build genres string from the API response
+        var genres = response.Genres?.Count > 0
+            ? string.Join(", ", response.Genres.Select(g => g.Name))
+            : null;
+
+        // Build platforms string from the API response
+        var platforms = response.Platforms?.Count > 0
+            ? string.Join(", ", response.Platforms.Select(p => p.Platform?.Name).Where(n => n != null))
+            : null;
+
+        return new ExternalApiSearchResult
+        {
+            ExternalId = externalId,
+            Name = response.Name,
+            PublishedDate = DateTime.TryParse(response.Released, out var d) ? d : null,
+            ThumbnailUrl = response.BackgroundImage,
+            CreatorName = response.Developers?.FirstOrDefault()?.Name,
+            Poster = response.BackgroundImage,
+            Plot = response.Description != null && response.Description != "N/A" ? response.Description : response.DescriptionRaw,
+            Country = null, // RAWG doesn't provide country info for games
+            Genres = genres,
+            Rated = null // RAWG doesn't provide ESRB rating in the detail endpoint
+        };
     }
 
     public async Task<List<ExternalApiSearchResult>> SearchAsync(string query, int limit, int page = 1, string? subtype = null)
@@ -124,6 +156,38 @@ file class RawgGame
     [JsonPropertyName("background_image")]
     public string? BackgroundImage { get; set; }
     public List<RawgDeveloper>? Developers { get; set; }
+}
+
+// Game detail response from RAWG detail endpoint.
+file class RawgGameDetail
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Released { get; set; }
+    [JsonPropertyName("background_image")]
+    public string? BackgroundImage { get; set; }
+    public string? Description { get; set; }
+    [JsonPropertyName("description_raw")]
+    public string? DescriptionRaw { get; set; }
+    public List<RawgDeveloper>? Developers { get; set; }
+    public List<RawgGenre>? Genres { get; set; }
+    public List<RawgPlatformWrapper>? Platforms { get; set; }
+}
+
+file class RawgGenre
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+file class RawgPlatformWrapper
+{
+    [JsonPropertyName("platform")]
+    public RawgPlatform? Platform { get; set; }
+}
+
+file class RawgPlatform
+{
+    public string Name { get; set; } = string.Empty;
 }
 
 file class RawgDeveloper

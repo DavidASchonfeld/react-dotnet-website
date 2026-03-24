@@ -73,7 +73,13 @@ public class OmdbApiAdapter : IExternalMediaApiAdapter
             Name          = response.Title,
             PublishedDate = DateTime.TryParse(response.Year, out var d) ? d : null,
             ThumbnailUrl  = response.Poster == "N/A" ? null : response.Poster,
-            CreatorName   = response.Director == "N/A" ? null : response.Director
+            CreatorName   = response.Director == "N/A" ? null : response.Director,
+            Poster        = response.Poster == "N/A" ? null : response.Poster,
+            Plot          = response.Plot == "N/A" ? null : response.Plot,
+            Runtime       = response.Runtime == "N/A" ? null : response.Runtime,
+            Country       = response.Country == "N/A" ? null : response.Country,
+            Genres        = response.Genre == "N/A" ? null : response.Genre,
+            Rated         = response.Rated == "N/A" ? null : response.Rated
         };
     }
 }
@@ -103,6 +109,11 @@ file class OmdbDetailResponse
     public string ImdbID   { get; set; } = string.Empty;
     public string Poster   { get; set; } = string.Empty;
     public string Director { get; set; } = string.Empty;
+    public string Plot     { get; set; } = string.Empty;
+    public string Runtime  { get; set; } = string.Empty;
+    public string Country  { get; set; } = string.Empty;
+    public string Genre    { get; set; } = string.Empty;
+    public string Rated    { get; set; } = string.Empty;
     // "True" or "False" — OMDB signals errors here instead of via HTTP status codes.
     public string Response { get; set; } = "False";
 }

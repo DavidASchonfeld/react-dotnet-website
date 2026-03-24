@@ -20,6 +20,12 @@ export interface MediaApiRefDetail {
     externalId: string;
     dateAdded: string;
     apiHomepageUrl?: string;
+    poster?: string | null;
+    plot?: string | null;
+    runtime?: string | null;
+    country?: string | null;
+    genres?: string | null;
+    rated?: string | null;
 }
 
 export interface FindOrCreateMediaApiRefRequest {

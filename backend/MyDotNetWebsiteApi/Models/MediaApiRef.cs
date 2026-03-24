@@ -21,6 +21,14 @@ public class MediaApiRef
 
     public DateTime DateAdded {get; set;} = DateTime.UtcNow;
 
+    // Detailed metadata from external API (cached)
+    public string? Poster {get; set;}
+    public string? Plot {get; set;}
+    public string? Runtime {get; set;}
+    public string? Country {get; set;}
+    public string? Genres {get; set;}
+    public string? Rated {get; set;}
+    public DateTime? DetailsFetchedAt {get; set;}
 
 
     ///// C# Only - They do not exist in the SQL Database

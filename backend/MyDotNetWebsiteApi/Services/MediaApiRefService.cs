@@ -26,6 +26,30 @@ public class MediaApiRefService : IMediaApiRefService
 
         if (mediaApiRef == null) return ServiceResult<MediaApiRefDetailDto>.NotFound();
 
+        // If details haven't been fetched yet, fetch them now
+        if (mediaApiRef.DetailsFetchedAt == null)
+        {
+            var adapter = _adapterFactory.GetAdapter(mediaApiRef.ApiSource.ApiName);
+            if (adapter != null)
+            {
+                var detailedResult = await adapter.GetByExternalIdAsync(mediaApiRef.ExternalId);
+                if (detailedResult != null)
+                {
+                    // Update the cached fields in the database
+                    mediaApiRef.Poster = detailedResult.Poster;
+                    mediaApiRef.Plot = detailedResult.Plot;
+                    mediaApiRef.Runtime = detailedResult.Runtime;
+                    mediaApiRef.Country = detailedResult.Country;
+                    mediaApiRef.Genres = detailedResult.Genres;
+                    mediaApiRef.Rated = detailedResult.Rated;
+                    mediaApiRef.DetailsFetchedAt = DateTime.UtcNow;
+
+                    await _context.SaveChangesAsync();
+                    await _apiUsageService.TrackRequestAsync(mediaApiRef.ApiSource.ApiName);
+                }
+            }
+        }
+
         return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(mediaApiRef));
     }
 
@@ -280,6 +304,43 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
+    // Fetch and cache detailed information from the external API
+    public async Task<ServiceResult<MediaApiRefDetailDto>> FetchAndCacheDetailsAsync(int mediaApiRefId, string requesterUserId)
+    {
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return ServiceResult<MediaApiRefDetailDto>.Unauthorized();
+
+        var mediaApiRef = await _context.MediaApiRefs
+            .Include(r => r.ApiSource)
+            .FirstOrDefaultAsync(r => r.Id == mediaApiRefId);
+
+        if (mediaApiRef == null) return ServiceResult<MediaApiRefDetailDto>.NotFound();
+
+        var adapter = _adapterFactory.GetAdapter(mediaApiRef.ApiSource.ApiName);
+        if (adapter == null)
+            return ServiceResult<MediaApiRefDetailDto>.NotImplemented($"No adapter implemented for API '{mediaApiRef.ApiSource.ApiName}'.");
+
+        // Fetch detailed info from the external API
+        var detailedResult = await adapter.GetByExternalIdAsync(mediaApiRef.ExternalId);
+
+        if (detailedResult != null)
+        {
+            // Update the cached fields in the database
+            mediaApiRef.Poster = detailedResult.Poster;
+            mediaApiRef.Plot = detailedResult.Plot;
+            mediaApiRef.Runtime = detailedResult.Runtime;
+            mediaApiRef.Country = detailedResult.Country;
+            mediaApiRef.Genres = detailedResult.Genres;
+            mediaApiRef.Rated = detailedResult.Rated;
+            mediaApiRef.DetailsFetchedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            await _apiUsageService.TrackRequestAsync(mediaApiRef.ApiSource.ApiName);
+        }
+
+        return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(mediaApiRef));
+    }
+
     // Private helper
     private static MediaApiRefDetailDto ToDetailDto(MediaApiRef r) => new()
     {
@@ -292,6 +353,12 @@ public class MediaApiRefService : IMediaApiRefService
         ApiSourceName = r.ApiSource.ApiName,
         ExternalId = r.ExternalId,
         DateAdded = r.DateAdded,
-        ApiHomepageUrl = ExternalApiRegistry.Apis.TryGetValue(r.ApiSource.ApiName, out var metadata) ? metadata.HomepageUrl : null
+        ApiHomepageUrl = ExternalApiRegistry.Apis.TryGetValue(r.ApiSource.ApiName, out var metadata) ? metadata.HomepageUrl : null,
+        Poster = r.Poster,
+        Plot = r.Plot,
+        Runtime = r.Runtime,
+        Country = r.Country,
+        Genres = r.Genres,
+        Rated = r.Rated
     };
 }

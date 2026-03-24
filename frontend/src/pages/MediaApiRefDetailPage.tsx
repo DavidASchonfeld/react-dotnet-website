@@ -51,13 +51,48 @@ export default function MediaApiRefDetailPage() {
 
             <h1 className="h1-styling">{detail.name}</h1>
             <MediaTypeLabel mediaTypeId={detail.mediaTypeId} />
-            {/* [Image/Poster]
-            [Plot]
-            [Runtime] <- Only for TV Shows, Movies]
-            [Country]
-            [Genres]
-            [Rated]
-             */}
+
+            {detail.poster && (
+                <div className="my-4">
+                    <img
+                        src={detail.poster}
+                        alt={detail.name}
+                        className="max-w-xs rounded-lg shadow-md"
+                    />
+                </div>
+            )}
+
+            {detail.plot && (
+                <div className="my-4">
+                    <h2 className="font-semibold text-lg mb-2">Plot</h2>
+                    <p className="text-gray-700 dark:text-gray-300">{detail.plot}</p>
+                </div>
+            )}
+
+            {(detail.mediaTypeId === 1 || detail.mediaTypeId === 2) && detail.runtime && (
+                <div className="my-2 text-sm text-gray-600 dark:text-gray-400">
+                    <span>Runtime: {detail.runtime}</span>
+                </div>
+            )}
+
+            {detail.country && (
+                <div className="my-2 text-sm text-gray-600 dark:text-gray-400">
+                    <span>Country: {detail.country}</span>
+                </div>
+            )}
+
+            {detail.genres && (
+                <div className="my-2 text-sm text-gray-600 dark:text-gray-400">
+                    <span>Genres: {detail.genres}</span>
+                </div>
+            )}
+
+            {detail.rated && (
+                <div className="my-2 text-sm text-gray-600 dark:text-gray-400">
+                    <span>Rated: {detail.rated}</span>
+                </div>
+            )}
+
 
             <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 flex flex-col gap-1">
                 {detail.creatorName && <span>Creator: {detail.creatorName}</span>}
