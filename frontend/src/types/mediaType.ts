@@ -5,11 +5,8 @@ export interface MediaTypeSummary {
     id: number;
     name: string;
 
-    // string because, right now, the Icon will be an emoji.
-    icon: string;
-
     description: string | null;
-    
+
 }
 
 
@@ -17,9 +14,6 @@ export interface MediaTypeSummary {
 export interface MediaTypeDetail {
     id: number;
     name: string;
-
-    // string because, right now, the Icon will be an emoji.
-    icon: string;
 
     description: string | null;
 

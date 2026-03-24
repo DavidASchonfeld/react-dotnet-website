@@ -4,9 +4,6 @@ public class MediaTypeDetailDto
     public int Id {get; set; }
     public string Name {get; set;} = string.Empty;
 
-    // string because, right now, the Icon will be an emoji.
-    public string Icon {get; set; } = string.Empty;
-
     public string? Description {get; set;}
 
 

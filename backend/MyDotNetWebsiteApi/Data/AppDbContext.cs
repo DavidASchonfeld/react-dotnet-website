@@ -173,10 +173,10 @@ public class AppDbContext : IdentityDbContext<AppUser>
         // Media Types
         modelBuilder.Entity<MediaType>().HasData(
             // Note: You cannot use DateTime.UtcNow here since it will be a different value every time you run this file
-            new MediaType { Id = 1, Name = "Movie", Icon = "🎬", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new MediaType { Id = 2, Name = "TV Show", Icon = "📺", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new MediaType { Id = 3, Name = "Book", Icon = "📘", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
-            new MediaType { Id = 4, Name = "Video Game", Icon = "🎮", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)}
+            new MediaType { Id = 1, Name = "Movie", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new MediaType { Id = 2, Name = "TV Show", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new MediaType { Id = 3, Name = "Book", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)},
+            new MediaType { Id = 4, Name = "Video Game", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)}
         );
 
         // External API Sources — one per MediaType, all active by default

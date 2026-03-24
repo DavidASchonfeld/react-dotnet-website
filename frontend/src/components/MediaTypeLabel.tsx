@@ -1,6 +1,7 @@
 import { useSelector } from "react-redux";
 import type { RootState } from '../store/store';
 import { useGetAllApprovedMediaTypesQuery } from "../services/apiSlice";
+import { getMediaTypeIcon } from "../utils/mediaTypeIcons";
 
 export default function MediaTypeLabel({mediaTypeId, faded}: {mediaTypeId: number, faded?: boolean}){
 
@@ -35,13 +36,14 @@ export default function MediaTypeLabel({mediaTypeId, faded}: {mediaTypeId: numbe
             */}
             <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-text ${faded ? 'bg-border/60' : 'bg-surface-raised'}`}>
 
-                <span>{mediaType?.icon ?? ''}</span>
+                <span>{getMediaTypeIcon(mediaType?.name)}</span>
 
                 {/* The "..." below is to demonstrate that the name is still loading.
                 In the mediaTypeSlice, I have a fallback placeholder mediaType
                 so if the script cannot find info on the matching mediaTypeId,
                 the ... will still be replaced by that fallback's mediaType's Name
-                I hardcoded that fallback MediaType's Name to be "Unknown" and icon to "❓"*/}
+                I hardcoded that fallback MediaType's Name to be "Unknown"
+                getMediaTypeIcon returns "❓" for any unrecognized or undefined name */}
                 <span className="hidden sm:inline">{mediaType?.name ?? '❓'}</span>
             </span>
             </>
