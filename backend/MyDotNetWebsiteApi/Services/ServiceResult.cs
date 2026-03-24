@@ -37,6 +37,9 @@ public class ServiceResult<T>
     public static ServiceResult<T> NotImplemented(string message) =>
         new() { IsSuccess = false, ErrorMessage = message, StatusCode = 501};
 
+    public static ServiceResult<T> ServiceUnavailable(string message) =>
+        new() { IsSuccess = false, ErrorMessage = message, StatusCode = 503 };
+
 
 }
 

@@ -18,7 +18,12 @@ interface SearchBarProps {
     effectiveMinimized: boolean  // collapse the bar when navbar is minimized
     defaultQuery?: string        // pre-fill from URL params (on-submit mode)
     defaultMediaTypeId?: number  // pre-fill from URL params (on-submit mode)
-    onSubmit?: (query: string, mediaTypeId: number) => void
+    // mediaTypeId is optional — Navbar passes only query (filter dropdown handles type/scope separately)
+    onSubmit?: (query: string, mediaTypeId?: number) => void
+    // When false, hides the media type pill selector (Navbar uses its own SearchFilterDropdown instead)
+    showMediaTypePills?: boolean
+    // When false, hides the Search button (Navbar submits via Enter key instead)
+    showSearchButton?: boolean
 }
 
 export default function SearchBar({
@@ -28,6 +33,8 @@ export default function SearchBar({
     defaultQuery = '',
     defaultMediaTypeId,
     onSubmit,
+    showMediaTypePills = true, // default true preserves backward compat for SearchResultsPage
+    showSearchButton = true,
 }: SearchBarProps) {
     const navigate = useNavigate()
 
@@ -172,8 +179,8 @@ export default function SearchBar({
                 )}
             </div>
 
-            {/* Media type pills — hidden in minimized (already guarded above), shown when expanded */}
-            {mediaTypes && mediaTypes.length > 0 && (
+            {/* Media type pills — hidden when showMediaTypePills=false (Navbar uses SearchFilterDropdown instead) */}
+            {showMediaTypePills && mediaTypes && mediaTypes.length > 0 && (
                 <div className={`flex flex-wrap gap-1 ${isTop ? '' : 'w-full'}`}>
                     {mediaTypes.map(type => (
                         <button
@@ -196,8 +203,8 @@ export default function SearchBar({
                 </div>
             )}
 
-            {/* On-submit Search button (only in on-submit mode) */}
-            {mode === 'on-submit' && (
+            {/* On-submit Search button (only in on-submit mode and when showSearchButton is true) */}
+            {mode === 'on-submit' && showSearchButton && (
                 <button
                     onClick={handleSubmit}
                     disabled={inputQuery.length < SEARCH_MIN_CHARS || selectedMediaTypeId === null}

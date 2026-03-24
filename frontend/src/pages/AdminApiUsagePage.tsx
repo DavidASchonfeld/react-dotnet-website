@@ -1,5 +1,5 @@
 import AnimatedPage from '../components/AnimatedPage'
-import { useGetApiUsageStatsQuery } from '../services/apiSlice'
+import { useGetApiUsageStatsQuery, useToggleApiDisabledMutation } from '../services/apiSlice'
 import type { ApiUsageStats } from '../types/apiUsage'
 
 export default function AdminApiUsagePage() {
@@ -39,6 +39,8 @@ export default function AdminApiUsagePage() {
 
 function ApiUsageCard({ api }: { api: ApiUsageStats }) {
 
+    const [toggleApiDisabled, { isLoading: isToggling }] = useToggleApiDisabledMutation()
+
     const hasLimit = api.requestLimit !== null
 
     // Determine bar colour: red if approaching limit, amber if >75%, otherwise primary
@@ -64,6 +66,11 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
                 {api.isApproachingLimit && (
                     <span className="text-xs px-2 py-0.5 rounded bg-red-100 text-red-700 font-medium">
                         ⚠ Approaching limit
+                    </span>
+                )}
+                {api.isDisabledByAdmin && (
+                    <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 font-medium">
+                        Disabled
                     </span>
                 )}
             </div>
@@ -92,6 +99,21 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
                 ) : (
                     <StatItem label="Limit" value="No limit" muted />
                 )}
+            </div>
+
+            {/* Toggle disable/enable button */}
+            <div className="mt-3 flex justify-end">
+                <button
+                    onClick={() => toggleApiDisabled(api.externalApiSourceId)}
+                    disabled={isToggling}
+                    className={`px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 ${
+                        api.isDisabledByAdmin
+                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                            : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                >
+                    {api.isDisabledByAdmin ? 'Re-enable API' : 'Disable API'}
+                </button>
             </div>
 
         </div>

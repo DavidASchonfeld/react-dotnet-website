@@ -57,6 +57,9 @@ public class ApiUsageService : IApiUsageService
     {
         var stats = new List<ApiUsageStatsDto>();
 
+        var sourcesByApiName = await _context.ExternalApiSources
+            .ToDictionaryAsync(s => s.ApiName);
+
         foreach (var kvp in _apiConfig)
         {
             var apiName = kvp.Key;
@@ -68,6 +71,8 @@ public class ApiUsageService : IApiUsageService
                 .FirstOrDefaultAsync(r => r.ApiName == apiName && r.PeriodStart == periodStart);
 
             var used = record?.RequestCount ?? 0;
+
+            sourcesByApiName.TryGetValue(apiName, out var source);
 
             stats.Add(new ApiUsageStatsDto
             {
@@ -82,6 +87,8 @@ public class ApiUsageService : IApiUsageService
                 PeriodType = config.PeriodType,
                 PeriodStart = periodStart,
                 PeriodEnd = periodEnd,
+                ExternalApiSourceId = source?.Id ?? 0,
+                IsDisabledByAdmin = source?.IsDisabledByAdmin ?? false,
             });
         }
 

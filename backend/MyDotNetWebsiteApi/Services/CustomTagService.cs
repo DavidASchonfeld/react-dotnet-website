@@ -99,7 +99,7 @@ public class CustomTagService : ICustomTagService
     }
 
 
-    public async Task<ServiceResult<List<CustomTagSummaryDto>>> SearchTagsAsync(string query, int limit, string requesterUserId)
+    public async Task<ServiceResult<List<CustomTagSummaryDto>>> SearchTagsAsync(string query, int limit, string requesterUserId, bool mineOnly = false)
     {
         if (query.Length < AppConstants.SearchMinQueryLength)
             return ServiceResult<List<CustomTagSummaryDto>>.BadRequest("Search query must be at least 2 characters.");
@@ -113,7 +113,10 @@ public class CustomTagService : ICustomTagService
         var tags = await _context.CustomTags
             .Where(t =>
                 t.Name.ToLower().Contains(queryLower) &&
-                (t.CreatedById == requesterUserId || t.VisibilityStatus == VisibilityStatus.Public))
+                // mineOnly: return only the requester's own tags, skipping public tags from other users
+                (mineOnly
+                    ? t.CreatedById == requesterUserId
+                    : (t.CreatedById == requesterUserId || t.VisibilityStatus == VisibilityStatus.Public)))
             .OrderBy(t => t.Name)
             .Take(limit)
             .Select(t => new CustomTagSummaryDto

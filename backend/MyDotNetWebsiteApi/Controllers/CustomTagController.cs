@@ -51,10 +51,13 @@ public class CustomTagController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> SearchTags([FromQuery] string q, [FromQuery] int limit = 10)
+    public async Task<IActionResult> SearchTags(
+        [FromQuery] string q,
+        [FromQuery] int limit = 10,
+        [FromQuery] bool mineOnly = false) // when true, returns only the requester's own tags
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _customTagService.SearchTagsAsync(q, limit, requesterUserId);
+        var result = await _customTagService.SearchTagsAsync(q, limit, requesterUserId, mineOnly);
         return result.ToActionResult(this);
     }
 

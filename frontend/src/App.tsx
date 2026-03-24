@@ -32,6 +32,9 @@ import MyCustomTagsPage from './pages/MyCustomTagsPage'
 import ExploreByTagPage from './pages/ExploreByTagPage'
 import HomePage from './pages/HomePage'
 import SearchResultsPage from './pages/SearchResultsPage'
+import AdvancedSearchPage from './pages/AdvancedSearchPage'
+import MySettingsPage from './pages/MySettingsPage'
+import MySettingsThemePage from './pages/MySettingsThemePage'
 import { DAY_NIGHT_MAP, setCurrentTheme, type DayNightTheme, type Theme } from './store/themeSlice'
 import { useState } from 'react'
 
@@ -174,6 +177,24 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path = "/search/advanced" element = {
+          <ProtectedRoute>
+            <AdvancedSearchPage />
+          </ProtectedRoute>
+        } />
+
+
+        <Route path="/my-settings" element={
+          <ProtectedRoute>
+            <MySettingsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/my-settings/theme" element={
+          <ProtectedRoute>
+            <MySettingsThemePage />
+          </ProtectedRoute>
+        } />
 
         {/* Admin-Only Pages */}
         <Route path = "/admin/users" element = {

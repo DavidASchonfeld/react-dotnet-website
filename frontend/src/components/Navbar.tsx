@@ -6,9 +6,11 @@ import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "../store/store";
 import { clearCredentials } from "../store/authSlice";
 import SearchBar from "./SearchBar";
+import SearchFilterDropdown from "./SearchFilterDropdown";
 import DropdownMenuButton from "./DropdownMenuButton";
 import MinimizableIconTextButton from "./MinimizableIconTextButton";
 import { NAVBAR_AUTO_MINIMIZE_BREAKPOINT } from "../constants";
+import { useGetAllApprovedMediaTypesQuery } from "../services/apiSlice";
 
 
 
@@ -95,6 +97,18 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
+    // Search filter state — kept in Navbar so both SearchBar and SearchFilterDropdown share it
+    const [searchType, setSearchType] = useState<'media' | 'tags' | 'lists'>('media')
+    const [searchScope, setSearchScope] = useState<'all' | 'mine'>('all')
+    const [selectedMediaTypeId, setSelectedMediaTypeId] = useState<number | null>(null)
+    const { data: mediaTypes } = useGetAllApprovedMediaTypesQuery()
+
+    // Initialize selectedMediaTypeId to the first available media type once loaded
+    useEffect(() => {
+        if (selectedMediaTypeId === null && mediaTypes && mediaTypes.length > 0)
+            setSelectedMediaTypeId(mediaTypes[0].id)
+    }, [mediaTypes, selectedMediaTypeId])
+
 
     // Pulling in ability to dispatch functions and get username:
     const { userName, roleLevel } = useSelector((state: RootState) => state.auth);
@@ -113,8 +127,17 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
     const navigate = useNavigate();  // set up useNavigate React.js to use it later (just like with useAuth()  ).
 
 
-    const handleSearchSubmit = (query: string, mediaTypeId: number) => {
-        navigate(`/search?q=${encodeURIComponent(query)}&mediaType=${mediaTypeId}&page=1`)
+    const handleSearchSubmit = (query: string) => {
+        // Build URL with type and scope from filter dropdown; mediaType resolved by SearchResultsPage
+        const params = new URLSearchParams({
+            q: encodeURIComponent(query),
+            type: searchType,
+            scope: searchScope,
+            page: '1',
+        })
+        if (searchType === 'media' && selectedMediaTypeId !== null)
+            params.set('mediaTypeId', String(selectedMediaTypeId))
+        navigate(`/search?${params}`)
     }
 
     const handleLogout = () => {
@@ -197,14 +220,32 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
                 <MinimizableIconTextButton title="About" icon="ⓘ" label="About" onClick={() => navigate("/about")} mode={effectiveMinimized ? "minimized" : "expanded"} isTop={isTop} />
 
-                {/* Search bar — only shown when logged in (search requires auth) */}
+                {/* Search bar + filter dropdown — only shown when logged in (search requires auth) */}
                 {userName && (
-                    <SearchBar
-                        mode="typeahead"
-                        isTop={isTop}
-                        effectiveMinimized={effectiveMinimized}
-                        onSubmit={handleSearchSubmit}
-                    />
+                    // Wrapper keeps input, filter button, and Search button aligned as a row (top) or column (left)
+                    <div className={`flex items-center ${isTop ? 'flex-row gap-1' : 'flex-col gap-1 w-full'}`}>
+                        <SearchBar
+                            mode="on-submit"
+                            showMediaTypePills={false}
+                            showSearchButton={false}
+                            isTop={isTop}
+                            effectiveMinimized={effectiveMinimized}
+                            defaultMediaTypeId={selectedMediaTypeId ?? undefined}
+                            onSubmit={handleSearchSubmit}
+                        />
+                        {/* Filter dropdown: type (Media/Tags/Lists) and scope (All/Mine) */}
+                        {!effectiveMinimized && (
+                            <SearchFilterDropdown
+                                searchType={searchType}
+                                scope={searchScope}
+                                onSearchTypeChange={setSearchType}
+                                onScopeChange={setSearchScope}
+                                selectedMediaTypeId={selectedMediaTypeId}
+                                onMediaTypeChange={setSelectedMediaTypeId}
+                                isTop={isTop}
+                            />
+                        )}
+                    </div>
                 )}
 
 
@@ -310,6 +351,8 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                         <DropdownMenuButton icon="☰" label="My Lists" title="My Lists" onClick={() => navigate("/my-medialists")} />
 
                                         <DropdownMenuButton icon="◎" label="My Tags" title="My Tags" onClick={() => navigate("/my-tags")} />
+
+                                        <DropdownMenuButton icon="⚙" label="My Settings" title="My Settings" onClick={() => navigate("/my-settings")} />
 
                                         {/* These options only appear to users who are Administrators */}
                                         {roleLevel === 'Administrator' && (

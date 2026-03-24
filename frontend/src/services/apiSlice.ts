@@ -81,6 +81,9 @@ const baseQueryWithErrorHandling: BaseQueryFn<
             safeToast.error('Access denied.')
         } else if (status === 429) {
             safeToast.error('Too many requests. Please slow down.')
+        } else if (status === 503) {
+            const detail = (result.error.data as { detail?: string })?.detail
+            safeToast.error(detail ?? 'This API is temporarily unavailable.')
         } else if (typeof status === 'number' && status >= 500) {
             safeToast.error('A server error occurred. Please try again later.')
         }
@@ -108,7 +111,7 @@ export const apiSlice = createApi({
     // might use MediaApiRefSummary or MediaApiRefDetail,
     // it knows that they are both MediaApiRef because they,
     // in "invalidatesTags" or "providesTags" use ['MediaApiRef']
-    tagTypes: ['MediaApiRef', 'MediaList', 'MediaType', 'CustomTag'],
+    tagTypes: ['MediaApiRef', 'MediaList', 'MediaType', 'CustomTag', 'ExternalApiSource'],
     endpoints: (builder) => ({
 
 
@@ -316,11 +319,14 @@ export const apiSlice = createApi({
 
         searchMediaLists: builder.query<
             MediaListSummary[],
-            { query: string; limit?: number; ownedByUserId?: string }
+            { query: string; limit?: number; ownedByUserId?: string; mineOnly?: boolean }
         >({
-            query: ({ query, limit = 10, ownedByUserId }) => {
+            query: ({ query, limit = 10, ownedByUserId, mineOnly }) => {
                 const params = new URLSearchParams({ q: query, limit: String(limit) })
                 if (ownedByUserId !== undefined) params.set('ownedByUserId', ownedByUserId)
+                // mineOnly=true tells the backend to filter by the requesting user's own lists
+                // (avoids needing to pass a GUID userId from the frontend)
+                if (mineOnly) params.set('mineOnly', 'true')
                 return `/api/medialist/search?${params}`
             },
         }),
@@ -388,10 +394,12 @@ export const apiSlice = createApi({
 
         searchCustomTags: builder.query<
             CustomTagSummary[],
-            { query: string; limit?: number }
+            { query: string; limit?: number; mineOnly?: boolean }
         >({
-            query: ({ query, limit = 10 }) => {
+            query: ({ query, limit = 10, mineOnly }) => {
                 const params = new URLSearchParams({ q: query, limit: String(limit) })
+                // mineOnly=true tells the backend to return only the current user's tags (skip public tags from others)
+                if (mineOnly) params.set('mineOnly', 'true')
                 return `/api/customtag/search?${params}`
             },
         }),
@@ -457,6 +465,25 @@ export const apiSlice = createApi({
         // Returns usage stats for all external APIs. Admin-only — backend returns 403 for non-admins.
         getApiUsageStats: builder.query<ApiUsageStats[], void>({
             query: () => '/api/apiusage',
+            providesTags: ['ExternalApiSource'],
+        }),
+
+        toggleApiDisabled: builder.mutation<
+            { id: number; apiName: string; isDisabledByAdmin: boolean },
+            number  // externalApiSourceId
+        >({
+            query: (id) => ({
+                url: `/api/externalapisource/${id}/toggle-disabled`,
+                method: 'PATCH',
+            }),
+            invalidatesTags: ['ExternalApiSource'],
+            onQueryStarted: async (_, { queryFulfilled }) => {
+                await safeToast.promise(queryFulfilled, {
+                    loading: 'Updating...',
+                    success: 'API status updated',
+                    error: '',
+                })
+            },
         }),
 
 
@@ -493,18 +520,21 @@ export const {
     useRemoveMediaApiRefFromListMutation,
     useReorderMediaListItemsMutation,
     useMoveMediaApiRefWithinMediaListMutation,
+    useSearchMediaListsQuery,
     useLazySearchMediaListsQuery,
     // CustomTag
     useGetMyCustomTagsQuery,
     useCreateCustomTagMutation,
     usePatchCustomTagMutation,
     useDeleteCustomTagMutation,
+    useSearchCustomTagsQuery,
     useLazySearchCustomTagsQuery,
     useAddTagToMediaApiRefMutation,
     useRemoveTagFromMediaApiRefMutation,
     useGetItemsByTagQuery,
     // API Usage
     useGetApiUsageStatsQuery,
+    useToggleApiDisabledMutation,
     // ExternalApiSource
     useGetActiveApiSourcesQuery,
     // MediaType

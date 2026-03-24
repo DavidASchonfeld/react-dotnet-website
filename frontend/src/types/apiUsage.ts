@@ -8,4 +8,6 @@ export interface ApiUsageStats {
     periodType: string                 // "Daily" or "Monthly"
     periodStart: string                // ISO 8601 UTC string
     periodEnd: string                  // ISO 8601 UTC string (exclusive)
+    externalApiSourceId: number        // Id of the ExternalApiSource row for this API
+    isDisabledByAdmin: boolean         // true when an admin has temporarily blocked this API
 }

@@ -88,11 +88,18 @@ public class MediaListController : ControllerBase
     // ownedByUserId = absent/null      → all visible (owner || admin || public)
     // ownedByUserId = current user ID  → own lists only
     // ownedByUserId = another user ID  → that user's public lists (or all if admin)
+    // mineOnly = true                  → shorthand for ownedByUserId = requesterUserId (avoids exposing GUID to frontend)
     [HttpGet("search")]
-    public async Task<IActionResult> SearchLists([FromQuery] string q, [FromQuery] int limit = 10, [FromQuery] string? ownedByUserId = null)
+    public async Task<IActionResult> SearchLists(
+        [FromQuery] string q,
+        [FromQuery] int limit = 10,
+        [FromQuery] string? ownedByUserId = null,
+        [FromQuery] bool mineOnly = false) // when true, overrides ownedByUserId with requester's own ID
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaListService.SearchListsAsync(q, limit, ownedByUserId, requesterUserId);
+        // mineOnly is a convenience flag so the frontend never needs to know the user's GUID
+        var resolvedOwnerId = mineOnly ? requesterUserId : ownedByUserId;
+        var result = await _mediaListService.SearchListsAsync(q, limit, resolvedOwnerId, requesterUserId);
         return result.ToActionResult(this);
     }
 

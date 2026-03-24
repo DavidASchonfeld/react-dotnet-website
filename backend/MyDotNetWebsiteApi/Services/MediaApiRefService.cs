@@ -46,6 +46,10 @@ public class MediaApiRefService : IMediaApiRefService
         if (activeSource == null)
             return ServiceResult<List<ExternalApiSearchResult>>.NotFound("No active API source found for this media type.");
 
+        if (activeSource.IsDisabledByAdmin)
+            return ServiceResult<List<ExternalApiSearchResult>>.ServiceUnavailable(
+                $"The {activeSource.ApiName} API is temporarily disabled for all users.");
+
         var adapter = _adapterFactory.GetAdapter(activeSource.ApiName);
         if (adapter == null)
             return ServiceResult<List<ExternalApiSearchResult>>.NotImplemented($"No adapter implemented for API '{activeSource.ApiName}'.");
