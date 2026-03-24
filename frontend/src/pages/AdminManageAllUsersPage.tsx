@@ -146,7 +146,7 @@ export default function AdminManageAllUsersPage() {
                                         so the programming logic would never reach this line of code.*/}
                                         <button
                                             disabled = {isCurrentUser}
-                                            className = {isCurrentUser ? 'cursor-not-allowed opacity-50': ''}
+                                            className = {isCurrentUser ? 'w-fit cursor-not-allowed opacity-50': 'w-fit'}
                                             onClick={() => handleSaveRole(eachUser.id, selectedRoles[eachUser.id] as UserRole)}
                                         >
                                             Save

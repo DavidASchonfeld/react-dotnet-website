@@ -6,6 +6,9 @@ import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "../store/store";
 import { clearCredentials } from "../store/authSlice";
 import SearchBar from "./SearchBar";
+import DropdownMenuButton from "./DropdownMenuButton";
+import MinimizableIconTextButton from "./MinimizableIconTextButton";
+import { NAVBAR_AUTO_MINIMIZE_BREAKPOINT } from "../constants";
 
 
 
@@ -33,7 +36,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
     // so there is never a flash of "wrong" state on page load.
     // setState is only ever called inside the 'resize' event callback, never in the effect body,
     // which avoids the "calling setState synchronously in an effect" linter error.
-    const [overflowing, setOverflowing] = useState(() => window.innerWidth < 640)
+    const [overflowing, setOverflowing] = useState(() => window.innerWidth < NAVBAR_AUTO_MINIMIZE_BREAKPOINT)
 
     // autoMinimized: derived (not its own state). True only when BOTH:
     //   -- the nav is in top mode (isTop), AND
@@ -101,7 +104,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
     // Subscribe to window resize events to keep 'overflowing' up to date.
     // No setState is called directly in the effect body — only inside the 'resize' callback.
     useEffect(() => {
-        const check = () => setOverflowing(window.innerWidth < 640)
+        const check = () => setOverflowing(window.innerWidth < NAVBAR_AUTO_MINIMIZE_BREAKPOINT)
         window.addEventListener('resize', check)
         return () => window.removeEventListener('resize', check)
     }, [])
@@ -123,57 +126,6 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
         // Navigate to the login page.
         navigate('/login');
     }
-
-    // Using Tailwind Classes to minimize
-    //
-    // This class string is applied to each nav item's text label <span>.
-    // - overflow-hidden + whitespace-nowrap: prevents text from wrapping or visually
-    //   bleeding outside the span while its width is animating.
-    // - text-ellipsis: shows "..." when the text is too long to fit, instead of just cutting off abruptly.
-    // - transition-all duration-300: makes the max-width and opacity changes animate smoothly
-    //   over 300ms instead of snapping instantly.
-    // - When minimized (either mode): max-w-0 shrinks the span's allowed width to zero
-    //   (the text collapses away), and opacity-0 simultaneously fades it out.
-    // - When in LEFT mode expanded: responsive max-w scales with screen size so labels don't
-    //   overflow the sidebar on small screens (e.g. max-w-[80px] on mobile, up to max-w-[140px]
-    //   on sm+ screens). The sidebar itself also scales (see nav className), so these track together.
-    // - In top mode: responsive max-w compresses labels on narrow screens so items don't overflow
-    //   the full-width bar (max-w-[60px] on mobile → max-w-[200px] on md+ screens).
-    //
-    //
-    // As equivalent if-statements, the ternary chain on the three lines inside resolves to:
-    //
-    //   if (effectiveMinimized) {
-    //       classes = 'max-w-0 opacity-0'          // Nav is minimized -> collapse label to 0 width + fade out
-    //   } else if (!isTop) {                       // Left-sidebar mode, expanded
-    //       classes = 'max-w-[80px] sm:max-w-[120px] md:max-w-[140px] opacity-100'
-    //   } else {                                   // Top-bar mode, expanded  (the final fallback)
-    //       classes = 'max-w-[60px] sm:max-w-[120px] md:max-w-[200px] opacity-100'
-    //   }
-    //
-    // The ternary chain is equivalent because:
-    //   condA ? X : condB ? Y : Z
-    //   reads as: "if condA then X, else if condB then Y, else Z"
-    const labelClass = `overflow-hidden whitespace-nowrap text-ellipsis transition-all duration-300 ${
-        effectiveMinimized ? 'max-w-0 opacity-0' :
-        !isTop             ? 'max-w-[80px] sm:max-w-[120px] md:max-w-[140px] opacity-100' :
-                             'max-w-[60px] sm:max-w-[120px] md:max-w-[200px] opacity-100'
-    }`;
-
-    // Icon span class: always visible. shrink-0 ensures the icon never gets squeezed by its flex container.
-    const iconClass = `shrink-0 transition-all duration-300`;
-
-    // In left mode:
-    //   -- w-full fills the container so all buttons are the same width,
-    //   -- px-2 py-1.5 (small screens) → px-3 py-2 (sm+) scales padding with the sidebar width
-    //      so buttons don't feel cramped on narrow screens or over-padded on tiny ones.
-    //   -- rounded-lg + hover:bg-white/10 gives a subtle pill-style hover highlight.
-    // When minimized (applies in BOTH top and left modes):
-    //   -- justify-center horizontally centers the icon within the button.
-    //   -- gap-0 removes the gap between the icon and the now-invisible label.
-    //      Without this, the 8px gap still takes up space to the right of the icon,
-    //      which offsets it slightly left of true center even with justify-center.
-    const buttonClass = `flex items-center${effectiveMinimized ? ' justify-center gap-0' : ' gap-2'} px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 transition-colors${!isTop ? ' w-full' : ''}`;
 
     // When isTop = true, put the navigation bar on the top of the screen
     // When isTop = false, put the navigation bar on the left of the screen
@@ -198,7 +150,10 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                 //
                 // justify-center centers items in top mode (horizontal bar).
                 // justify-start + pt-3 sm:pt-4 pins items to the top in left mode (vertical sidebar).
-                `fixed top-0 left-0 flex items-center
+                // z-10: z is the frontness/behindness axis. It is needed here because things marked with opacity
+                //   on the main webpage render on top on items that don't have z-values.
+                //   So navbar needs a z-value so it will always render on top of transparent items that exist on the main website
+                `fixed top-0 left-0 z-10 flex items-center
                 gap-y-1 sm:gap-y-2 gap-x-2 sm:gap-x-4 bg-bg/80 backdrop-blur-md border border-border shadow-lg
                 transition-all duration-300
                 ${isTop ? 'rounded-b-xl' : 'rounded-r-xl'}
@@ -215,10 +170,10 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                 CSS handles the show/hide transitions (and Tailwind handles the CSS).
 
                 Items are always in the DOM, and CSS handles the show/hide transition:
-                - In TOP mode minimized: text labels collapse (max-w-0) and icons shrink via iconClass,
+                - In TOP mode minimized: text labels collapse (max-w-0) and icons remain visible,
                   so the icons remain visible and clickable in the thin h-8 strip.
                 - In LEFT mode minimized: this wrapper's visibility never changes — instead, each button's
-                  text label <span> uses labelClass (defined above) to animate its own width to zero.
+                  text label <span> animates its own width to zero (handled inside MinimizableIconTextButton).
 
                 Note: overflow-hidden is intentionally NOT added to this wrapper, because the
                 user dropdown menu uses position:absolute and needs to extend outside the wrapper
@@ -233,21 +188,14 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
                 {/* Each button has 2 children:
                     1. The icon <span> (e.g. ⌂) has shrink-0 so it never gets squeezed — always visible.
-                    2. A label <span> using labelClass — this is what animates away in left-minimized mode.
+                    2. A label <span> — this is what animates away in left-minimized mode (see MinimizableIconTextButton).
                     flex items-center gap-2 on the button keeps icon and label side by side with spacing. */}
 
                 {/* title="..." is the browser's native tooltip — shown on hover (desktop only; no touch support).
                     Useful in minimized mode where the text label is hidden. */}
-                <button title="Home" className={buttonClass} onClick={() => navigate("/")}>
-                    <span className={iconClass}>⌂</span>
-                    <span className={labelClass}>Home</span>
-                </button>
+                <MinimizableIconTextButton title="Home" icon="⌂" label="Home" onClick={() => navigate("/")} mode={effectiveMinimized ? "minimized" : "expanded"} isTop={isTop} />
 
-
-                <button title="About" className={buttonClass} onClick={() => navigate("/about")}>
-                    <span className={iconClass}>ⓘ</span>
-                    <span className={labelClass}>About</span>
-                </button>
+                <MinimizableIconTextButton title="About" icon="ⓘ" label="About" onClick={() => navigate("/about")} mode={effectiveMinimized ? "minimized" : "expanded"} isTop={isTop} />
 
                 {/* Search bar — only shown when logged in (search requires auth) */}
                 {userName && (
@@ -261,10 +209,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
 
                 {!userName &&
-                <button title="Log In" className={buttonClass} onClick={() => navigate("/login")}>
-                    <span className={iconClass}>⇥</span>
-                    <span className={labelClass}>Log In</span>
-                </button>
+                <MinimizableIconTextButton title="Log In" icon="⇥" label="Log In" onClick={() => navigate("/login")} mode={effectiveMinimized ? "minimized" : "expanded"} isTop={isTop} />
                 }
 
                 {userName &&
@@ -275,19 +220,17 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                         {/* Potential Icons to Use for Opening/Closing Menus:
                         ⇤⤒⬇︎▼▲—|⬅︎⬆︎
                         */}
-                        <button title={userName ?? undefined} className={buttonClass} onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
-                            {/* ● is the always-visible icon for the user button.
-                                The username text, role badge, and dropdown arrow all live inside
-                                the labelClass span, so they all collapse together in left-minimized mode. */}
-                            <span className={iconClass}>●</span>
-                            <span className={labelClass}>
+                        <MinimizableIconTextButton
+                            title={userName ?? ''}
+                            icon="●"
+                            label={<>
                                 {userName}
                                 {/* If the user is a Moderator or an Administrator,
                                 display a badge describing if he is a moderator or administrator
                                 ml-1 means: Margin-Left add space 1
                                 bg-amber-500 means set background to amber and use amber shade 500 (I could use any number between 50 and 950.)
                                 */}
-                                
+
                                 {" "}
                                 {/* {" "} is adding a manual space there. I'm adding it here
                                 so there is a space between the username, the badge and the dropdown icon for the dropdown menu. */}
@@ -302,11 +245,13 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                         <span className="ml-1 text-xs bg-amber-500 text-white px-1 rounded">ADMIN</span>
                                         {" "}
                                     </>
-                                    
                                 )}
                                 {isUserMenuOpen ? "▲" : "▼"}
-                            </span>
-                        </button>
+                            </>}
+                            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                            mode={effectiveMinimized ? "minimized" : "expanded"}
+                            isTop={isTop}
+                        />
 
                         {/* The Dropdown Menu */}
                         {isUserMenuOpen &&(
@@ -362,21 +307,9 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                     {/* Primary navigation items */}
                                     <div className="py-1">
 
-                                        <button
-                                            className="relative flex items-center w-full px-4 py-2.5 text-sm text-text hover:bg-surface-raised transition-colors duration-150"
-                                            onClick={() => navigate("/my-medialists")}
-                                        >
-                                            <span className="absolute left-4">☰</span>
-                                            <span className="flex-1 text-center">My Lists</span>
-                                        </button>
+                                        <DropdownMenuButton icon="☰" label="My Lists" title="My Lists" onClick={() => navigate("/my-medialists")} />
 
-                                        <button title="My Tags"
-                                            className="relative flex items-center w-full px-4 py-2.5 text-sm text-text hover:bg-surface-raised transition-colors duration-150"
-                                            onClick={() => navigate("/my-tags")}
-                                        >
-                                            <span className="absolute left-4">◎</span>
-                                            <span className="flex-1 text-center">My Tags</span>
-                                        </button>
+                                        <DropdownMenuButton icon="◎" label="My Tags" title="My Tags" onClick={() => navigate("/my-tags")} />
 
                                         {/* These options only appear to users who are Administrators */}
                                         {roleLevel === 'Administrator' && (
@@ -384,20 +317,8 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                                 {/* Thin divider + "Admin" label to visually group admin-only actions */}
                                                 <div className="h-px bg-border mx-3 my-1" />
                                                 <p className="px-4 py-1 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">Admin</p>
-                                                <button
-                                                    className="relative flex items-center w-full px-4 py-2.5 text-sm text-text hover:bg-surface-raised transition-colors duration-150"
-                                                    onClick={() => navigate("/admin/users")}
-                                                >
-                                                    <span className="absolute left-4">⚙</span>
-                                                    <span className="flex-1 text-center">Manage Users</span>
-                                                </button>
-                                                <button
-                                                    className="relative flex items-center w-full px-4 py-2.5 text-sm text-text hover:bg-surface-raised transition-colors duration-150"
-                                                    onClick={() => navigate("/admin/api-usage")}
-                                                >
-                                                    <span className="absolute left-4">📊</span>
-                                                    <span className="flex-1 text-center">API Usage</span>
-                                                </button>
+                                                <DropdownMenuButton icon="⚙" label="Manage Users" title="Manage Users" onClick={() => navigate("/admin/users")} />
+                                                <DropdownMenuButton icon="📊" label="API Usage" title="API Usage" onClick={() => navigate("/admin/api-usage")} />
                                             </>
                                         )}
 
@@ -406,13 +327,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                     {/* Log Out — separated from other actions by a border and colored red.
                                         Red signals a destructive/exit action (standard UX convention). */}
                                     <div className="border-t border-border py-1">
-                                        <button
-                                            className="relative flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150"
-                                            onClick={handleLogout}
-                                        >
-                                            <span className="absolute left-4">⇤</span>
-                                            <span className="flex-1 text-center">Log Out</span>
-                                        </button>
+                                        <DropdownMenuButton icon="⇤" label="Log Out" title="Log Out" onClick={handleLogout} variant="RedText" />
                                     </div>
 
                                 </div>
@@ -428,11 +343,14 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
 
 
-                <button title={isTop ? 'Set Menu to Left' : 'Set Menu to Top'} className={buttonClass} onClick={() => setIsTop(!isTop)}>
-
-                    <span className={iconClass}>{isTop ? '◀' : '▲'}</span>
-                    <span className={labelClass}>{isTop ? 'Set Menu to Left' : 'Set Menu to Top'}</span>
-                </button>
+                <MinimizableIconTextButton
+                    title={isTop ? 'Set Menu to Left' : 'Set Menu to Top'}
+                    icon={isTop ? '◀' : '▲'}
+                    label={isTop ? 'Set Menu to Left' : 'Set Menu to Top'}
+                    onClick={() => setIsTop(!isTop)}
+                    mode={effectiveMinimized ? "minimized" : "expanded"}
+                    isTop={isTop}
+                />
                 {/* Here, setIsTop changes isTop to its opposite value. */}
 
             </div>
