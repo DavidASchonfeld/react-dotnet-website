@@ -119,7 +119,7 @@ export const apiSlice = createApi({
 
         // ---- MediaApiRef Endpoints ----
 
-        getMediaApiRefDetail: builder.query<MediaApiRefDetail, number>({
+        getMediaApiRefDetail: builder.query<CachedResponse<MediaApiRefDetail>, number>({
             query: (id) => `/api/mediaapiref/${id}`,
             providesTags: (_, __, id) => [{ type: 'MediaApiRef', id }],
         }),

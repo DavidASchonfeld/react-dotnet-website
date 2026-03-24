@@ -20,7 +20,7 @@ public class MediaApiRefController : ControllerBase
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var result = await _mediaApiRefService.GetMediaApiRefDetailAsync(mediaApiRefId, requesterUserId);
-        return result.ToActionResult(this);
+        return WrapCachedResponse(result);
     }
 
     // Proxies the search to the active external API for the given media type.

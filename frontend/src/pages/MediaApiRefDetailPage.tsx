@@ -11,6 +11,7 @@ import MediaTypeLabel from '../components/MediaTypeLabel';
 import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
+import { CacheStatusPill } from '../components/CacheStatusPill';
 
 
 export default function MediaApiRefDetailPage() {
@@ -19,10 +20,13 @@ export default function MediaApiRefDetailPage() {
 
     const mediaApiRefId = parseInt(id ?? '');
 
-    const { data: detail, isLoading, error } = useGetMediaApiRefDetailQuery(
+    const { data: cachedResponse, isLoading, error } = useGetMediaApiRefDetailQuery(
         mediaApiRefId,
         { skip: isNaN(mediaApiRefId) }
     );
+    const detail = cachedResponse?.data;
+    const cacheMetadata = cachedResponse?.cacheMetadata;
+
     const { data: lists } = useGetMediaApiRefListsQuery(
         mediaApiRefId,
         { skip: isNaN(mediaApiRefId) }
@@ -50,6 +54,7 @@ export default function MediaApiRefDetailPage() {
             <button className="btn btn-secondary w-fit" onClick={() => navigate(-1)}>⬅︎ Back</button>
 
             <h1 className="h1-styling">{detail.name}</h1>
+            <CacheStatusPill cacheMetadata={cacheMetadata} />
             <MediaTypeLabel mediaTypeId={detail.mediaTypeId} />
 
             {detail.poster && (

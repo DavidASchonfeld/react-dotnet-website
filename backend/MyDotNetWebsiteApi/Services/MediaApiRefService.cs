@@ -26,6 +26,10 @@ public class MediaApiRefService : IMediaApiRefService
 
         if (mediaApiRef == null) return ServiceResult<MediaApiRefDetailDto>.NotFound();
 
+        // Track whether details were cached before this request
+        var wasDetailsCached = mediaApiRef.DetailsFetchedAt != null;
+        var detailsCachedAt = mediaApiRef.DetailsFetchedAt;
+
         // If details haven't been fetched yet, fetch them now
         if (mediaApiRef.DetailsFetchedAt == null)
         {
@@ -48,6 +52,12 @@ public class MediaApiRefService : IMediaApiRefService
                     await _apiUsageService.TrackRequestAsync(mediaApiRef.ApiSource.ApiName);
                 }
             }
+        }
+
+        // Return with cache metadata if details were already cached
+        if (wasDetailsCached && detailsCachedAt.HasValue)
+        {
+            return ServiceResult<MediaApiRefDetailDto>.OkFromCache(ToDetailDto(mediaApiRef), detailsCachedAt.Value);
         }
 
         return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(mediaApiRef));
