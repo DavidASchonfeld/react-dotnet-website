@@ -243,12 +243,6 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                     <span className={labelClass}>Home</span>
                 </button>
 
-                {/* Only appears if logged in */}
-                {userName && <button title="My Tags" className={buttonClass} onClick={() => navigate("/my-tags")}>
-                    <span className={iconClass}>◎</span>
-                    <span className={labelClass}>My Tags</span>
-                </button>}
-
 
                 <button title="About" className={buttonClass} onClick={() => navigate("/about")}>
                     <span className={iconClass}>ⓘ</span>
@@ -374,6 +368,14 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                         >
                                             <span className="absolute left-4">☰</span>
                                             <span className="flex-1 text-center">My Lists</span>
+                                        </button>
+
+                                        <button title="My Tags"
+                                            className="relative flex items-center w-full px-4 py-2.5 text-sm text-text hover:bg-surface-raised transition-colors duration-150"
+                                            onClick={() => navigate("/my-tags")}
+                                        >
+                                            <span className="absolute left-4">◎</span>
+                                            <span className="flex-1 text-center">My Tags</span>
                                         </button>
 
                                         {/* These options only appear to users who are Administrators */}

@@ -11,12 +11,16 @@ import AnimatedPage from '../components/AnimatedPage';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
+import PaginationControls from '../components/PaginationControls';
 
 
 export default function MyCustomTagsPage() {
     const navigate = useNavigate();
 
-    const { data: tags, isLoading } = useGetMyCustomTagsQuery();
+    const [page, setPage] = useState(1);
+
+    const { data: result, isLoading } = useGetMyCustomTagsQuery({ page });
+    const tags = result?.items ?? [];
     const [createTag] = useCreateCustomTagMutation();
     const [patchTag] = usePatchCustomTagMutation();
     const [deleteTag] = useDeleteCustomTagMutation();
@@ -94,7 +98,7 @@ export default function MyCustomTagsPage() {
                                     <RowItemContent
                                         firstString={tag.name}
                                         secondString={tag.visibilityStatus === VisibilityStatus.Public ? 'Public' : 'Private'}
-                                        onClick={() => navigate(`/tags/${tag.id}/items`)}
+                                        onClick={() => navigate(`/tags/${tag.id}/items`, { state: { tagName: tag.name } })}
                                     />
                                     <div className="flex gap-2 shrink-0 ml-2">
                                         <button className="btn btn-secondary btn-sm" onClick={() => setEditingTag({ id: tag.id, name: tag.name })}>Edit</button>
@@ -105,6 +109,16 @@ export default function MyCustomTagsPage() {
                         </RowItemStyling>
                     ))}
                 </div>
+            )}
+
+            {result && (
+                <PaginationControls
+                    page={result.page}
+                    totalPages={result.totalPages}
+                    hasNextPage={result.hasNextPage}
+                    hasPreviousPage={result.hasPreviousPage}
+                    onPageChange={setPage}
+                />
             )}
 
             {confirmDeleteId && (

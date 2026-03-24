@@ -16,6 +16,7 @@ import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import RowItemContent from '../components/RowItemContent';
 import AnimatedPage from '../components/AnimatedPage';
+import PaginationControls from '../components/PaginationControls';
 
 
 
@@ -27,7 +28,10 @@ export default function MyMediaListsPage() {
     // Importing ability to Redirect
     const navigate = useNavigate();
 
-    const { data: mediaLists = [], isLoading, error, refetch } = useGetMyMediaListsQuery();
+    const [page, setPage] = useState(1);
+
+    const { data: result, isLoading, error, refetch } = useGetMyMediaListsQuery({ page });
+    const mediaLists = result?.items ?? [];
     const [createList] = useCreateMediaListMutation();
     const [deleteList] = useDeleteMediaListMutation();
 
@@ -42,10 +46,11 @@ export default function MyMediaListsPage() {
 
     // Runs after Page Loads, adds EventListener for scroll tracking
     useEffect(() => {
-        let lastScrollY = window.scrollY;
+        let lastScrollY = 0;
         function handleScroll() {
             const currentScrollY = window.scrollY;
             if (currentScrollY === 0 && lastScrollY > 0){
+                setPage(1);
                 refetch();
             }
             lastScrollY = currentScrollY;
@@ -140,6 +145,16 @@ export default function MyMediaListsPage() {
                 ))}
 
             </div>
+
+            {result && (
+                <PaginationControls
+                    page={result.page}
+                    totalPages={result.totalPages}
+                    hasNextPage={result.hasNextPage}
+                    hasPreviousPage={result.hasPreviousPage}
+                    onPageChange={setPage}
+                />
+            )}
 
 
             {/*

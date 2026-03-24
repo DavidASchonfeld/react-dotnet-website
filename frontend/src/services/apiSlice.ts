@@ -26,6 +26,7 @@ import type {
 } from '../types/mediaList'
 import type { MediaTypeSummary, MediaTypeDetail } from '../types/mediaType'
 import type { ApiUsageStats } from '../types/apiUsage'
+import type { PaginatedResult } from '../types/pagination'
 
 
 // ---- Base HTTP Query ----
@@ -163,8 +164,11 @@ export const apiSlice = createApi({
 
         // ---- MediaList Endpoints ----
 
-        getMyMediaLists: builder.query<MediaListSummary[], void>({
-            query: () => '/api/medialist/my-lists',
+        getMyMediaLists: builder.query<PaginatedResult<MediaListSummary>, { page?: number; pageSize?: number }>({
+            query: ({ page = 1, pageSize = 10 }) => {
+                const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+                return `/api/medialist/my-lists?${params}`
+            },
             providesTags: ['MediaList'], // refetches ALL mediaList queries
         }),
 
@@ -324,8 +328,11 @@ export const apiSlice = createApi({
 
         // ---- CustomTag Endpoints ----
 
-        getMyCustomTags: builder.query<CustomTagSummary[], void>({
-            query: () => '/api/customtag/my-tags',
+        getMyCustomTags: builder.query<PaginatedResult<CustomTagSummary>, { page?: number; pageSize?: number }>({
+            query: ({ page = 1, pageSize = 10 }) => {
+                const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+                return `/api/customtag/my-tags?${params}`
+            },
             providesTags: ['CustomTag'],
         }),
 
@@ -429,9 +436,12 @@ export const apiSlice = createApi({
             },
         }),
 
-        getItemsByTag: builder.query<MediaApiRefSummary[], number>({
-            query: (tagId) => `/api/customtag/${tagId}/items`,
-            providesTags: (_, __, tagId) => [{ type: 'CustomTag', id: tagId }],
+        getItemsByTag: builder.query<PaginatedResult<MediaApiRefSummary>, { tagId: number; page?: number; pageSize?: number }>({
+            query: ({ tagId, page = 1, pageSize = 10 }) => {
+                const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+                return `/api/customtag/${tagId}/items?${params}`
+            },
+            providesTags: (_, __, { tagId }) => [{ type: 'CustomTag', id: tagId }],
         }),
 
 

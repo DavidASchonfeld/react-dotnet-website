@@ -1,6 +1,6 @@
 public interface IMediaListService
 {
-    Task<ServiceResult<List<MediaListSummaryDto>>> GetMyListsAsync(string requesterUserId);
+    Task<ServiceResult<PaginatedResultDto<MediaListSummaryDto>>> GetMyListsAsync(string requesterUserId, int page, int pageSize);
     Task<ServiceResult<MediaListDetailDto>> GetMediaListDetailAsync(int mediaListId, string requesterUserId);
     Task<ServiceResult<MediaListSummaryDto>> CreateListAsync(CreateMediaListDto dto, string requesterUserId);
     Task<ServiceResult<bool>> DeleteListAsync(int mediaListId, string requesterUserId);

@@ -1,5 +1,8 @@
 public static class AppConstants
 {
+    //// Pagination
+    public const int DefaultPageSize = 10;
+
     //// Searching-Related Constants:
 
     // Server-side cap on # of search results — must stay in sync with frontend's SEARCH_DEFAULT_LIMIT (frontend/src/constants.ts).

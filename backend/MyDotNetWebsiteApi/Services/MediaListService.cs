@@ -79,13 +79,19 @@ public class MediaListService : IMediaListService
 
     // ---- Public Service Methods ----
 
-    public async Task<ServiceResult<List<MediaListSummaryDto>>> GetMyListsAsync(string requesterUserId)
+    public async Task<ServiceResult<PaginatedResultDto<MediaListSummaryDto>>> GetMyListsAsync(string requesterUserId, int page, int pageSize)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<List<MediaListSummaryDto>>.Unauthorized();
+        if (requesterUser == null) return ServiceResult<PaginatedResultDto<MediaListSummaryDto>>.Unauthorized();
 
-        var lists = await _context.MediaLists
-            .Where(l => l.SubmittedById == requesterUserId)
+        var query = _context.MediaLists.Where(l => l.SubmittedById == requesterUserId);
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderBy(l => l.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(l => new MediaListSummaryDto
             {
                 Id = l.Id,
@@ -97,7 +103,14 @@ public class MediaListService : IMediaListService
                 CanEdit = true  // GetMyLists only returns lists the user submitted, so they always own them
             })
             .ToListAsync();
-        return ServiceResult<List<MediaListSummaryDto>>.Ok(lists);
+
+        return ServiceResult<PaginatedResultDto<MediaListSummaryDto>>.Ok(new PaginatedResultDto<MediaListSummaryDto>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        });
     }
 
 

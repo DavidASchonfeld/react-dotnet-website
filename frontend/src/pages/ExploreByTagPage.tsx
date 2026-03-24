@@ -1,26 +1,29 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import {
-    useGetItemsByTagQuery,
-    useGetMyCustomTagsQuery,
-} from '../services/apiSlice';
+import { useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useGetItemsByTagQuery } from '../services/apiSlice';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
+import PaginationControls from '../components/PaginationControls';
 
 
 export default function ExploreByTagPage() {
     const { tagId } = useParams<{ tagId: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const parsedTagId = parseInt(tagId ?? '');
+    // Tag name passed via navigation state from MyCustomTagsPage; falls back gracefully
+    const tagName: string | undefined = (location.state as { tagName?: string } | null)?.tagName;
 
-    const { data: items, isLoading, error } = useGetItemsByTagQuery(
-        parsedTagId,
+    const [page, setPage] = useState(1);
+
+    const { data: result, isLoading, error } = useGetItemsByTagQuery(
+        { tagId: parsedTagId, page },
         { skip: isNaN(parsedTagId) }
     );
-    const { data: myTags } = useGetMyCustomTagsQuery();
-    const tag = myTags?.find(t => t.id === parsedTagId);
+    const items = result?.items ?? [];
 
     if (isLoading) return <div>Loading...</div>;
     if (error) return <div>Error loading tag items. The tag may be private.</div>;
@@ -30,18 +33,13 @@ export default function ExploreByTagPage() {
         <div className="page">
             <button className="btn btn-secondary w-fit" onClick={() => navigate(-1)}>⬅︎ Back</button>
             <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="h1-styling">{tag?.name ?? `Tag #${parsedTagId}`}</h1>
-                {tag && (
-                    <span className="badge badge-outline text-sm">
-                        {tag.visibilityStatus === 1 ? 'Public' : 'Private'}
-                    </span>
-                )}
+                <h1 className="h1-styling">{tagName ?? `Tag #${parsedTagId}`}</h1>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-                {items?.length ?? 0} item{items?.length !== 1 ? 's' : ''} with this tag
+                {result?.totalCount ?? 0} item{result?.totalCount !== 1 ? 's' : ''} with this tag
             </p>
 
-            {items && items.length > 0 ? (
+            {items.length > 0 ? (
                 <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     {items.map(item => (
                         <RowItemStyling key={item.id} onClick={() => navigate(`/mediaapiref/${item.id}`)}>
@@ -55,6 +53,16 @@ export default function ExploreByTagPage() {
                 </div>
             ) : (
                 <p className="text-gray-400">No items have been tagged with this tag yet.</p>
+            )}
+
+            {result && (
+                <PaginationControls
+                    page={result.page}
+                    totalPages={result.totalPages}
+                    hasNextPage={result.hasNextPage}
+                    hasPreviousPage={result.hasPreviousPage}
+                    onPageChange={setPage}
+                />
             )}
         </div>
         </AnimatedPage>

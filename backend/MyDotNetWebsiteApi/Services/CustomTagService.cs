@@ -10,14 +10,20 @@ public class CustomTagService : ICustomTagService
     }
 
 
-    public async Task<ServiceResult<List<CustomTagSummaryDto>>> GetMyTagsAsync(string requesterUserId)
+    public async Task<ServiceResult<PaginatedResultDto<CustomTagSummaryDto>>> GetMyTagsAsync(string requesterUserId, int page, int pageSize)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<List<CustomTagSummaryDto>>.Unauthorized();
+        if (requesterUser == null) return ServiceResult<PaginatedResultDto<CustomTagSummaryDto>>.Unauthorized();
 
-        var tags = await _context.CustomTags
+        var query = _context.CustomTags
             .Where(t => t.CreatedById == requesterUserId || t.VisibilityStatus == VisibilityStatus.Public)
-            .OrderBy(t => t.Name)
+            .OrderBy(t => t.Name);
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(t => new CustomTagSummaryDto
             {
                 Id = t.Id,
@@ -27,7 +33,13 @@ public class CustomTagService : ICustomTagService
             })
             .ToListAsync();
 
-        return ServiceResult<List<CustomTagSummaryDto>>.Ok(tags);
+        return ServiceResult<PaginatedResultDto<CustomTagSummaryDto>>.Ok(new PaginatedResultDto<CustomTagSummaryDto>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        });
     }
 
 
@@ -176,21 +188,28 @@ public class CustomTagService : ICustomTagService
     }
 
 
-    public async Task<ServiceResult<List<MediaApiRefSummaryDto>>> GetItemsByTagAsync(int tagId, string requesterUserId)
+    public async Task<ServiceResult<PaginatedResultDto<MediaApiRefSummaryDto>>> GetItemsByTagAsync(int tagId, string requesterUserId, int page, int pageSize)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<List<MediaApiRefSummaryDto>>.Unauthorized();
+        if (requesterUser == null) return ServiceResult<PaginatedResultDto<MediaApiRefSummaryDto>>.Unauthorized();
 
         var tag = await _context.CustomTags.FindAsync(tagId);
-        if (tag == null) return ServiceResult<List<MediaApiRefSummaryDto>>.NotFound("Tag not found.");
+        if (tag == null) return ServiceResult<PaginatedResultDto<MediaApiRefSummaryDto>>.NotFound("Tag not found.");
 
         // Can only view items for a tag if it's public or the requester created it
         if (tag.VisibilityStatus == VisibilityStatus.Private && tag.CreatedById != requesterUserId)
-            return ServiceResult<List<MediaApiRefSummaryDto>>.Forbidden();
+            return ServiceResult<PaginatedResultDto<MediaApiRefSummaryDto>>.Forbidden();
 
-        var items = await _context.LinkCustomTagToMediaApiRefTable
+        var tagQuery = _context.LinkCustomTagToMediaApiRefTable
+            .Where(l => l.CustomTagId == tagId);
+
+        var totalCount = await tagQuery.CountAsync();
+
+        var items = await tagQuery
             .Include(l => l.MediaApiRef)
-            .Where(l => l.CustomTagId == tagId)
+            .OrderBy(l => l.MediaApiRefId)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(l => new MediaApiRefSummaryDto
             {
                 Id = l.MediaApiRef.Id,
@@ -202,7 +221,13 @@ public class CustomTagService : ICustomTagService
             })
             .ToListAsync();
 
-        return ServiceResult<List<MediaApiRefSummaryDto>>.Ok(items);
+        return ServiceResult<PaginatedResultDto<MediaApiRefSummaryDto>>.Ok(new PaginatedResultDto<MediaApiRefSummaryDto>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        });
     }
 
 

@@ -15,12 +15,14 @@ public class CustomTagController : ControllerBase
     }
 
 
-    // Returns the requester's own tags plus all public tags
+    // Returns the requester's own tags plus all public tags (paginated)
     [HttpGet("my-tags")]
-    public async Task<IActionResult> GetMyTags()
+    public async Task<IActionResult> GetMyTags([FromQuery] int page = 1, [FromQuery] int pageSize = AppConstants.DefaultPageSize)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _customTagService.GetMyTagsAsync(requesterUserId);
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, AppConstants.DefaultPageSize);
+        var result = await _customTagService.GetMyTagsAsync(requesterUserId, page, pageSize);
         return result.ToActionResult(this);
     }
 
@@ -72,12 +74,14 @@ public class CustomTagController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    // Returns all MediaApiRef items that have the given tag
+    // Returns all MediaApiRef items that have the given tag (paginated)
     [HttpGet("{tagId}/items")]
-    public async Task<IActionResult> GetItemsByTag(int tagId)
+    public async Task<IActionResult> GetItemsByTag(int tagId, [FromQuery] int page = 1, [FromQuery] int pageSize = AppConstants.DefaultPageSize)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _customTagService.GetItemsByTagAsync(tagId, requesterUserId);
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, AppConstants.DefaultPageSize);
+        var result = await _customTagService.GetItemsByTagAsync(tagId, requesterUserId, page, pageSize);
         return result.ToActionResult(this);
     }
 }

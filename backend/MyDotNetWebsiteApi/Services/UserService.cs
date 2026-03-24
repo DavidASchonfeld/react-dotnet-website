@@ -19,20 +19,24 @@ public class UserService : IUserService
 
     // Functions
 
-    public async Task<ServiceResult<List<UserSummaryDto>>> GetAllUsersAsync(string requesterUserId)
+    public async Task<ServiceResult<PaginatedResultDto<UserSummaryDto>>> GetAllUsersAsync(string requesterUserId, int page, int pageSize)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<List<UserSummaryDto>>.Unauthorized();
+        if (requesterUser == null) return ServiceResult<PaginatedResultDto<UserSummaryDto>>.Unauthorized();
 
 
         // Permissions
         if(!PermissionHelper.CanSeeAllUsers(requesterUser))
-            return ServiceResult<List<UserSummaryDto>>.Forbidden();
+            return ServiceResult<PaginatedResultDto<UserSummaryDto>>.Forbidden();
 
 
-        // for each user, get the user from the 
-        var users = await _context.Users
-                    
+        var query = _context.Users.OrderBy(u => u.UserName);
+
+        var totalCount = await query.CountAsync();
+
+        var users = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
                     .Select(u => new UserSummaryDto
                     {
                         Id = u.Id,
@@ -42,9 +46,13 @@ public class UserService : IUserService
                     })
                     .ToListAsync();
 
-
-
-        return ServiceResult<List<UserSummaryDto>>.Ok(users);
+        return ServiceResult<PaginatedResultDto<UserSummaryDto>>.Ok(new PaginatedResultDto<UserSummaryDto>
+        {
+            Items = users,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        });
     }
 
 

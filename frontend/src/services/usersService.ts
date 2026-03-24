@@ -2,6 +2,7 @@ import { BACKEND_BASE_URL } from "../config";
 // Note: user management calls use fetch() directly (not apiSlice) because
 // AdminManageAllUsersPage is a small standalone admin tool that does not need RTK Query caching.
 import type { UserRole } from "../types/userRole";
+import type { PaginatedResult } from "../types/pagination";
 
 export type UserSummary = {
     id: string;
@@ -10,8 +11,9 @@ export type UserSummary = {
     roleLevel: UserRole;
 };
 
-export async function getAllUsers(token: string): Promise<UserSummary[]> {
-    const response = await fetch(`${BACKEND_BASE_URL}/api/user/all`, {
+export async function getAllUsers(token: string, page = 1, pageSize = 10): Promise<PaginatedResult<UserSummary>> {
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    const response = await fetch(`${BACKEND_BASE_URL}/api/user/all?${params}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -21,8 +23,8 @@ export async function getAllUsers(token: string): Promise<UserSummary[]> {
     });
     if (!response.ok)
         throw new Error("Failed to fetch users.");
-    
-    const data: UserSummary[] = await response.json();
+
+    const data: PaginatedResult<UserSummary> = await response.json();
     return data;
 }
 

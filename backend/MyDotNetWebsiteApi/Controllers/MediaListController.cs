@@ -19,10 +19,12 @@ public class MediaListController : ControllerBase
     // Routing and Endpoints
 
     [HttpGet("my-lists")]
-    public async Task<IActionResult> GetMyLists()
+    public async Task<IActionResult> GetMyLists([FromQuery] int page = 1, [FromQuery] int pageSize = AppConstants.DefaultPageSize)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;  // I am adding a "!" here to tell C# that this will never return a null. I know this because this controller has a [Authorize] at the top, meaning that the user will always be logged in before he ever encounters this part of the code.
-        var result = await _mediaListService.GetMyListsAsync(requesterUserId);
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, AppConstants.DefaultPageSize);
+        var result = await _mediaListService.GetMyListsAsync(requesterUserId, page, pageSize);
         return result.ToActionResult(this);
     }
 

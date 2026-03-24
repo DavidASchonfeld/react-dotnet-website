@@ -9,6 +9,7 @@ import type { UserSummary } from '../services/usersService';
 import type { UserRole } from '../types/userRole';
 import AnimatedPage from '../components/AnimatedPage';
 import { safeToast } from '../utils/safeToast';
+import PaginationControls from '../components/PaginationControls';
 
 
 
@@ -16,12 +17,16 @@ export default function AdminManageAllUsersPage() {
 
     const { token, userName } = useSelector((state: RootState) => state.auth);
 
-    
+
 
     // Adding variables exclusively-to-this component:
     const [userList, setUserList] = useState<UserSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [hasNextPage, setHasNextPage] = useState(false);
+    const [hasPreviousPage, setHasPreviousPage] = useState(false);
 
     // This state object will keep track of each user's RoleLevel individually,
     // so I can easily change one in a dropdown menu and then click Save to send
@@ -49,13 +54,16 @@ export default function AdminManageAllUsersPage() {
         async function fetchUsers() {
             setLoading(true);
             try {
-                const data = await getAllUsers(token!);
-                setUserList(data);
+                const data = await getAllUsers(token!, page);
+                setUserList(data.items);
+                setTotalPages(data.totalPages);
+                setHasNextPage(data.hasNextPage);
+                setHasPreviousPage(data.hasPreviousPage);
 
                 // Build initial selectedRoles from the fetched data
                 const initial: Record<string, string> = {};
 
-                data.forEach(user => {initial[user.id] = user.roleLevel});
+                data.items.forEach(user => {initial[user.id] = user.roleLevel});
 
                 setSelectedRoles(initial);
 
@@ -68,7 +76,7 @@ export default function AdminManageAllUsersPage() {
 
         fetchUsers();
 
-    }, [token]);
+    }, [token, page]);
 
     return (
         <AnimatedPage>
@@ -84,7 +92,7 @@ export default function AdminManageAllUsersPage() {
                 {/* Remember, you need "() =>"" so the function
                 only runs when the button is clicked, instead
                 of when the button is rendered. */}
-                <button onClick={ () => { getAllUsers(token!).then(setUserList)} }>Refresh</button>
+                <button onClick={ () => { getAllUsers(token!, page).then(d => setUserList(d.items))} }>Refresh</button>
 
                 {!loading && !error && (
                     <table className="w-full text-sm">
@@ -151,7 +159,14 @@ export default function AdminManageAllUsersPage() {
                         </tbody>
                     </table>
                 )}
-                
+
+                <PaginationControls
+                    page={page}
+                    totalPages={totalPages}
+                    hasNextPage={hasNextPage}
+                    hasPreviousPage={hasPreviousPage}
+                    onPageChange={setPage}
+                />
 
 
             </div>
