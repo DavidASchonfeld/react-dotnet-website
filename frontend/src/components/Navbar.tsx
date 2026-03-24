@@ -10,7 +10,7 @@ import SearchFilterDropdown from "./SearchFilterDropdown";
 import DropdownMenuButton from "./DropdownMenuButton";
 import MinimizableIconTextButton from "./MinimizableIconTextButton";
 import { NAVBAR_AUTO_MINIMIZE_BREAKPOINT } from "../constants";
-import { useGetAllApprovedMediaTypesQuery } from "../services/apiSlice";
+import { useGetActiveApiSourcesQuery } from "../services/apiSlice";
 
 
 
@@ -100,14 +100,14 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
     // Search filter state — kept in Navbar so both SearchBar and SearchFilterDropdown share it
     const [searchType, setSearchType] = useState<'media' | 'tags' | 'lists'>('media')
     const [searchScope, setSearchScope] = useState<'all' | 'mine'>('all')
-    const [selectedMediaTypeId, setSelectedMediaTypeId] = useState<number | null>(null)
-    const { data: mediaTypes } = useGetAllApprovedMediaTypesQuery()
+    const [selectedApiSourceId, setSelectedApiSourceId] = useState<number | null>(null)
+    const { data: activeSources } = useGetActiveApiSourcesQuery()
 
-    // Initialize selectedMediaTypeId to the first available media type once loaded
+    // Initialize selectedApiSourceId to the first available API source once loaded
     useEffect(() => {
-        if (selectedMediaTypeId === null && mediaTypes && mediaTypes.length > 0)
-            setSelectedMediaTypeId(mediaTypes[0].id)
-    }, [mediaTypes, selectedMediaTypeId])
+        if (selectedApiSourceId === null && activeSources && activeSources.length > 0)
+            setSelectedApiSourceId(activeSources[0].id)
+    }, [activeSources, selectedApiSourceId])
 
 
     // Pulling in ability to dispatch functions and get username:
@@ -128,15 +128,15 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
 
     const handleSearchSubmit = (query: string) => {
-        // Build URL with type and scope from filter dropdown; mediaType resolved by SearchResultsPage
+        // Build URL with type, scope, and selected API source from filter dropdown
         const params = new URLSearchParams({
             q: encodeURIComponent(query),
             type: searchType,
             scope: searchScope,
             page: '1',
         })
-        if (searchType === 'media' && selectedMediaTypeId !== null)
-            params.set('mediaTypeId', String(selectedMediaTypeId))
+        if (searchType === 'media' && selectedApiSourceId !== null)
+            params.set('api', String(selectedApiSourceId))
         navigate(`/search?${params}`)
     }
 
@@ -226,11 +226,11 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                     <div className={`flex items-center ${isTop ? 'flex-row gap-1' : 'flex-col gap-1 w-full'}`}>
                         <SearchBar
                             mode="on-submit"
-                            showMediaTypePills={false}
+                            showApiSourcePills={false}
                             showSearchButton={false}
                             isTop={isTop}
                             effectiveMinimized={effectiveMinimized}
-                            defaultMediaTypeId={selectedMediaTypeId ?? undefined}
+                            defaultApiSourceId={selectedApiSourceId ?? undefined}
                             onSubmit={handleSearchSubmit}
                         />
                         {/* Filter dropdown: type (Media/Tags/Lists) and scope (All/Mine) */}
@@ -240,8 +240,8 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                 scope={searchScope}
                                 onSearchTypeChange={setSearchType}
                                 onScopeChange={setSearchScope}
-                                selectedMediaTypeId={selectedMediaTypeId}
-                                onMediaTypeChange={setSelectedMediaTypeId}
+                                selectedApiSourceId={selectedApiSourceId}
+                                onApiSourceChange={setSelectedApiSourceId}
                                 isTop={isTop}
                             />
                         )}

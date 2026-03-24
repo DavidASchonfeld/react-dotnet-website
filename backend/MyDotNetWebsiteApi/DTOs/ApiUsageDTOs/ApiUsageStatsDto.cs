@@ -10,5 +10,6 @@ public class ApiUsageStatsDto
     public DateTime PeriodStart { get; set; }       // UTC start of the current billing period
     public DateTime PeriodEnd { get; set; }         // UTC end of the current billing period (exclusive)
     public int ExternalApiSourceId { get; set; }    // Id of the ExternalApiSource row for this API
-    public bool IsDisabledByAdmin { get; set; }     // true when an admin has temporarily blocked this API
+    public bool IsDisabledByAdmin { get; set; }         // true when an admin has temporarily blocked this API
+    public bool UseNonSearchQueryCache { get; set; }    // true when non-search detail-fetch caching is enabled for this API
 }

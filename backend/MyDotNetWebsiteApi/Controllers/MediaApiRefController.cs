@@ -30,10 +30,22 @@ public class MediaApiRefController : ControllerBase
         [FromQuery] string q,
         [FromQuery] int mediaTypeId,
         [FromQuery] int limit = 10,
-        [FromQuery] int page = 1)
+        [FromQuery] int page = 1,
+        [FromQuery] string? subtype = null)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaApiRefService.SearchExternalApiAsync(q, limit, mediaTypeId, requesterUserId, page);
+        var result = await _mediaApiRefService.SearchExternalApiAsync(q, limit, mediaTypeId, requesterUserId, page, subtype);
+        return result.ToActionResult(this);
+    }
+
+    // Fetches a single item by its external API ID, using non-search caching when enabled.
+    [HttpGet("external-detail")]
+    public async Task<IActionResult> GetExternalApiItem(
+        [FromQuery] string externalItemId,
+        [FromQuery] int sourceId)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaApiRefService.GetExternalApiItemAsync(externalItemId, sourceId, requesterUserId);
         return result.ToActionResult(this);
     }
 

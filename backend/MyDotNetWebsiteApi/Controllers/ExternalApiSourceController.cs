@@ -71,4 +71,22 @@ public class ExternalApiSourceController : ControllerBase
 
         return Ok(new { source.Id, source.ApiName, source.IsDisabledByAdmin });
     }
+
+    // Flips UseNonSearchQueryCache for the given source. Admin-only.
+    [HttpPatch("{id}/toggle-nonsearch-cache")]
+    public async Task<IActionResult> ToggleNonSearchCache(int id)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return Unauthorized();
+        if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
+
+        var source = await _context.ExternalApiSources.FindAsync(id);
+        if (source == null) return NotFound();
+
+        source.UseNonSearchQueryCache = !source.UseNonSearchQueryCache;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { source.Id, source.ApiName, source.UseNonSearchQueryCache });
+    }
 }

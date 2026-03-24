@@ -32,6 +32,9 @@ public class AppDbContext : IdentityDbContext<AppUser>
 
     // AppUser:  we are not listing it, since IdentityDbContext<AppUser> above takes care of AppUser
 
+    public DbSet<SearchQueryCache> SearchQueryCaches {get; set;}
+    public DbSet<NonSearchQueryCache> NonSearchQueryCaches {get; set;}
+    public DbSet<AppGlobalSettings> AppGlobalSettings {get; set;}
     public DbSet<ApiUsageRecord> ApiUsageRecords {get; set;}
     public DbSet<ExternalApiSource> ExternalApiSources {get; set;}
     public DbSet<MediaApiRef> MediaApiRefs {get; set;}
@@ -127,6 +130,30 @@ public class AppDbContext : IdentityDbContext<AppUser>
             .HasIndex(r => new { r.ExternalApiSourceId, r.ExternalId })
             .IsUnique();
 
+        // Block: SearchQueryCache -> ExternalApiSource
+        modelBuilder.Entity<SearchQueryCache>()
+            .HasOne(c => c.ExternalApiSource)
+            .WithMany()
+            .HasForeignKey(c => c.ExternalApiSourceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Unique index: one cache entry per (query, api source, page, subtype) combination
+        modelBuilder.Entity<SearchQueryCache>()
+            .HasIndex(c => new { c.NormalizedQuery, c.ExternalApiSourceId, c.Page, c.Subtype })
+            .IsUnique();
+
+        // Block: NonSearchQueryCache -> ExternalApiSource
+        modelBuilder.Entity<NonSearchQueryCache>()
+            .HasOne(c => c.ExternalApiSource)
+            .WithMany()
+            .HasForeignKey(c => c.ExternalApiSourceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Unique index: one cache entry per (externalItemId, api source) combination
+        modelBuilder.Entity<NonSearchQueryCache>()
+            .HasIndex(c => new { c.ExternalApiSourceId, c.ExternalItemId })
+            .IsUnique();
+
 
         // Cascade Deletions
         //// Means: If that item is deleted, if it has a foreign key in another table rows, those rows are automatically deleted
@@ -155,10 +182,15 @@ public class AppDbContext : IdentityDbContext<AppUser>
         // External API Sources — one per MediaType, all active by default
         // These are stubs; real HTTP calls are implemented in the adapter classes
         modelBuilder.Entity<ExternalApiSource>().HasData(
-            new ExternalApiSource { Id = 1, ApiName = "OMDB", MediaTypeId = 1, IsActive = true },
-            new ExternalApiSource { Id = 2, ApiName = "TVMaze", MediaTypeId = 2, IsActive = true },
-            new ExternalApiSource { Id = 3, ApiName = "OpenLibrary", MediaTypeId = 3, IsActive = true },
-            new ExternalApiSource { Id = 4, ApiName = "RAWG", MediaTypeId = 4, IsActive = true }
+            new ExternalApiSource { Id = 1, ApiName = "OMDB",        MediaTypeId = 1, IsActive = true, UseNonSearchQueryCache = true },
+            new ExternalApiSource { Id = 2, ApiName = "TVMaze",      MediaTypeId = 2, IsActive = true, UseNonSearchQueryCache = true },
+            new ExternalApiSource { Id = 3, ApiName = "OpenLibrary", MediaTypeId = 3, IsActive = true, UseNonSearchQueryCache = true },
+            new ExternalApiSource { Id = 4, ApiName = "RAWG",        MediaTypeId = 4, IsActive = true, UseNonSearchQueryCache = true }
+        );
+
+        // Global settings singleton — Id is always 1; never insert a second row.
+        modelBuilder.Entity<AppGlobalSettings>().HasData(
+            new AppGlobalSettings { Id = 1, UseNonSearchQueryCache = true }
         );
     }
 

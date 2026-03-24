@@ -26,6 +26,7 @@ import type {
 } from '../types/mediaList'
 import type { MediaTypeSummary, MediaTypeDetail } from '../types/mediaType'
 import type { ApiUsageStats } from '../types/apiUsage'
+import type { AppGlobalSettings } from '../types/appGlobalSettings'
 import type { PaginatedResult } from '../types/pagination'
 
 
@@ -111,7 +112,7 @@ export const apiSlice = createApi({
     // might use MediaApiRefSummary or MediaApiRefDetail,
     // it knows that they are both MediaApiRef because they,
     // in "invalidatesTags" or "providesTags" use ['MediaApiRef']
-    tagTypes: ['MediaApiRef', 'MediaList', 'MediaType', 'CustomTag', 'ExternalApiSource'],
+    tagTypes: ['MediaApiRef', 'MediaList', 'MediaType', 'CustomTag', 'ExternalApiSource', 'AppGlobalSettings'],
     endpoints: (builder) => ({
 
 
@@ -127,15 +128,16 @@ export const apiSlice = createApi({
         // `page` is 1-based for paginated results (used by SearchResultsPage).
         searchExternalApi: builder.query<
             ExternalApiSearchResult[],
-            { query: string; mediaTypeId: number; limit?: number; page?: number }
+            { query: string; mediaTypeId: number; limit?: number; page?: number; subtype?: string }
         >({
-            query: ({ query, mediaTypeId, limit = 10, page = 1 }) => {
+            query: ({ query, mediaTypeId, limit = 10, page = 1, subtype }) => {
                 const params = new URLSearchParams({
                     q: query,
                     mediaTypeId: String(mediaTypeId),
                     limit: String(limit),
                     page: String(page),
                 })
+                if (subtype) params.set('subtype', subtype)
                 return `/api/mediaapiref/search?${params}`
             },
         }),
@@ -486,6 +488,47 @@ export const apiSlice = createApi({
             },
         }),
 
+        // Flips UseNonSearchQueryCache for one API source. Admin-only.
+        toggleApiNonSearchCache: builder.mutation<
+            { id: number; apiName: string; useNonSearchQueryCache: boolean },
+            number  // externalApiSourceId
+        >({
+            query: (id) => ({
+                url: `/api/externalapisource/${id}/toggle-nonsearch-cache`,
+                method: 'PATCH',
+            }),
+            invalidatesTags: ['ExternalApiSource'],
+            onQueryStarted: async (_, { queryFulfilled }) => {
+                await safeToast.promise(queryFulfilled, {
+                    loading: 'Updating...',
+                    success: 'Cache setting updated',
+                    error: '',
+                })
+            },
+        }),
+
+        // Returns global app settings. Admin-only.
+        getAppGlobalSettings: builder.query<AppGlobalSettings, void>({
+            query: () => '/api/appsettings',
+            providesTags: ['AppGlobalSettings'],
+        }),
+
+        // Flips the global UseNonSearchQueryCache flag. Admin-only.
+        toggleGlobalNonSearchCache: builder.mutation<AppGlobalSettings, void>({
+            query: () => ({
+                url: '/api/appsettings/toggle-nonsearch-cache',
+                method: 'PATCH',
+            }),
+            invalidatesTags: ['AppGlobalSettings'],
+            onQueryStarted: async (_, { queryFulfilled }) => {
+                await safeToast.promise(queryFulfilled, {
+                    loading: 'Updating...',
+                    success: 'Global cache setting updated',
+                    error: '',
+                })
+            },
+        }),
+
 
         // ---- MediaType Endpoints ----
 
@@ -535,6 +578,10 @@ export const {
     // API Usage
     useGetApiUsageStatsQuery,
     useToggleApiDisabledMutation,
+    useToggleApiNonSearchCacheMutation,
+    // App Global Settings
+    useGetAppGlobalSettingsQuery,
+    useToggleGlobalNonSearchCacheMutation,
     // ExternalApiSource
     useGetActiveApiSourcesQuery,
     // MediaType

@@ -2,7 +2,6 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import {
     useSearchExternalApiQuery,
     useFindOrCreateMediaApiRefMutation,
-    useGetAllApprovedMediaTypesQuery,
     useGetActiveApiSourcesQuery,
     useSearchCustomTagsQuery,
     useSearchMediaListsQuery,
@@ -12,7 +11,7 @@ import SearchBar from '../components/SearchBar'
 import RowItemStyling from '../components/RowItemStyling'
 import RowItemContent from '../components/RowItemContent'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
-import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT } from '../constants'
+import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES } from '../constants'
 
 const PAGE_SIZE = SEARCH_DEFAULT_LIMIT
 
@@ -31,7 +30,8 @@ export default function SearchResultsPage() {
     const navigate = useNavigate()
 
     const query = searchParams.get('q') ?? ''
-    const mediaTypeIdParam = searchParams.get('mediaType')
+    const apiSourceIdParam = searchParams.get('api')
+    const subtypeParam = searchParams.get('subtype') ?? undefined
     const pageParam = searchParams.get('page')
     const page = Math.max(1, parseInt(pageParam ?? '1') || 1)
 
@@ -39,21 +39,28 @@ export default function SearchResultsPage() {
     const searchType = (searchParams.get('type') ?? 'media') as SearchType
     const scope = (searchParams.get('scope') ?? 'all') as SearchScope
 
-    const { data: mediaTypes } = useGetAllApprovedMediaTypesQuery()
     const { data: activeSources } = useGetActiveApiSourcesQuery()
 
-    // Derive mediaTypeId from URL or fall back to first type (Media search only)
-    const parsedMediaTypeId = mediaTypeIdParam ? parseInt(mediaTypeIdParam) : null
-    const mediaTypeId = (parsedMediaTypeId && !isNaN(parsedMediaTypeId))
-        ? parsedMediaTypeId
-        : (mediaTypes?.[0]?.id ?? null)
+    // Derive apiSourceId from URL or fall back to first active source
+    const parsedApiSourceId = apiSourceIdParam ? parseInt(apiSourceIdParam) : null
+    const apiSourceId = (parsedApiSourceId && !isNaN(parsedApiSourceId))
+        ? parsedApiSourceId
+        : (activeSources?.[0]?.id ?? null)
+
+    // Derive mediaTypeId from the selected API source (needed for search endpoint and findOrCreate)
+    const selectedSource = activeSources?.find(s => s.id === apiSourceId)
+    const mediaTypeId = selectedSource?.mediaTypeId ?? null
+
+    // Subtypes available for the currently selected API
+    const availableSubtypes = selectedSource ? (API_SUBTYPES[selectedSource.apiName] ?? []) : []
+    const activeSubtype = availableSubtypes.find(s => s.value === subtypeParam)?.value ?? undefined
 
     const shouldFetch = query.length >= SEARCH_MIN_CHARS
 
     // ---- Media search (external API) ----
     const { data: mediaResults, isLoading: mediaLoading, isFetching: mediaFetching } =
         useSearchExternalApiQuery(
-            { query, mediaTypeId: mediaTypeId!, limit: PAGE_SIZE, page },
+            { query, mediaTypeId: mediaTypeId!, limit: PAGE_SIZE, page, subtype: activeSubtype },
             { skip: !shouldFetch || searchType !== 'media' || mediaTypeId === null }
         )
 
@@ -75,13 +82,13 @@ export default function SearchResultsPage() {
 
     // Navigate to a media item's detail page after finding/creating the DB record
     const handleMediaResultClick = async (result: ExternalApiSearchResult) => {
-        if (mediaTypeId === null) return
-        const activeSource = activeSources?.find(s => s.mediaTypeId === mediaTypeId)
-        if (!activeSource) return
+        if (mediaTypeId === null || apiSourceId === null) return
+        const source = activeSources?.find(s => s.id === apiSourceId)
+        if (!source) return
 
         try {
             const created = await findOrCreate({
-                externalApiSourceId: activeSource.id,
+                externalApiSourceId: source.id,
                 externalId: result.externalId,
                 name: result.name,
                 mediaTypeId,
@@ -95,31 +102,44 @@ export default function SearchResultsPage() {
     }
 
     // Preserve all current URL params when submitting a new query
-    const handleSearchSubmit = (newQuery: string) => {
+    const handleSearchSubmit = (newQuery: string, newApiSourceId?: number) => {
+        const effectiveApiSourceId = newApiSourceId ?? apiSourceId
         setSearchParams({
             q: newQuery,
             type: searchType,
             scope,
-            ...(searchType === 'media' ? { mediaType: String(mediaTypeId ?? '') } : {}),
+            ...(searchType === 'media' && effectiveApiSourceId ? { api: String(effectiveApiSourceId) } : {}),
+            ...(searchType === 'media' && activeSubtype ? { subtype: activeSubtype } : {}),
             page: '1',
         })
     }
 
-    // Switching media sub-type (Pokemon vs Books) — only relevant in Media mode
-    const handleMediaTypeChange = (newMediaTypeId: number) => {
-        setSearchParams({ q: query, type: searchType, scope, mediaType: String(newMediaTypeId), page: '1' })
+    // Switching API source — resets subtype since each API has different subtypes
+    const handleApiSourceChange = (newApiSourceId: number) => {
+        setSearchParams({ q: query, type: searchType, scope, api: String(newApiSourceId), page: '1' })
     }
 
-    // Switching search type tab (Media/Tags/Lists) resets page and clears mediaType if leaving Media
+    // Switching subtype filter
+    const handleSubtypeChange = (newSubtype: string) => {
+        const params: Record<string, string> = { q: query, type: searchType, scope, page: '1' }
+        if (apiSourceId) params.api = String(apiSourceId)
+        if (newSubtype) params.subtype = newSubtype
+        setSearchParams(params)
+    }
+
+    // Switching search type tab (Media/Tags/Lists) resets page and clears api/subtype if leaving Media
     const handleTypeChange = (newType: SearchType) => {
         const params: Record<string, string> = { q: query, type: newType, scope, page: '1' }
-        if (newType === 'media' && mediaTypeId) params.mediaType = String(mediaTypeId)
+        if (newType === 'media' && apiSourceId) params.api = String(apiSourceId)
         setSearchParams(params)
     }
 
     // Pagination is only used for Media results (tags/lists results are a single page)
     const handlePageChange = (newPage: number) => {
-        setSearchParams({ q: query, type: searchType, scope, mediaType: String(mediaTypeId ?? ''), page: String(newPage) })
+        const params: Record<string, string> = { q: query, type: searchType, scope, page: String(newPage) }
+        if (apiSourceId) params.api = String(apiSourceId)
+        if (activeSubtype) params.subtype = activeSubtype
+        setSearchParams(params)
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
@@ -136,15 +156,15 @@ export default function SearchResultsPage() {
         <div className="page">
             <h1 className="h1-styling">Search</h1>
 
-            {/* Search bar (on-submit mode) — pills still shown here since this page owns media type selection */}
+            {/* Search bar (on-submit mode) — API source pills hidden here; handled below */}
             <SearchBar
                 mode="on-submit"
                 isTop={false}
                 effectiveMinimized={false}
                 defaultQuery={query}
-                defaultMediaTypeId={mediaTypeId ?? undefined}
+                defaultApiSourceId={apiSourceId ?? undefined}
                 onSubmit={handleSearchSubmit}
-                showMediaTypePills={false}
+                showApiSourcePills={false}
             />
 
             {/* Search type tabs: Media | Tags | Lists */}
@@ -164,20 +184,39 @@ export default function SearchResultsPage() {
                 ))}
             </div>
 
-            {/* Media sub-type filter pills (Pokemon, Books, etc.) — only shown in Media mode */}
-            {searchType === 'media' && mediaTypes && mediaTypes.length > 0 && (
+            {/* API source pills — only shown in Media mode */}
+            {searchType === 'media' && activeSources && activeSources.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
-                    {mediaTypes.map(type => (
+                    {activeSources.map(source => (
                         <button
-                            key={type.id}
-                            onClick={() => handleMediaTypeChange(type.id)}
+                            key={source.id}
+                            onClick={() => handleApiSourceChange(source.id)}
                             className={`px-3 py-1 rounded-full border text-sm transition-colors ${
-                                mediaTypeId === type.id
+                                apiSourceId === source.id
                                     ? 'bg-primary text-white border-primary'
                                     : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
                             }`}
                         >
-                            {type.icon} {type.name}
+                            {source.apiName}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Subtype pills — shown when the selected API has subtypes */}
+            {searchType === 'media' && availableSubtypes.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-1">
+                    {availableSubtypes.map(sub => (
+                        <button
+                            key={sub.value}
+                            onClick={() => handleSubtypeChange(sub.value)}
+                            className={`px-2.5 py-0.5 rounded-full border text-xs transition-colors ${
+                                activeSubtype === sub.value
+                                    ? 'bg-primary/20 text-primary border-primary/40'
+                                    : 'border-border text-text/50 hover:border-primary/40 hover:text-text/80'
+                            }`}
+                        >
+                            {sub.label}
                         </button>
                     ))}
                 </div>

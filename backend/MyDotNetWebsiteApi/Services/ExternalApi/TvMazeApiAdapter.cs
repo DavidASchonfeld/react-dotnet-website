@@ -3,9 +3,15 @@
 //       TVMaze is free and does not require an API key.
 public class TvMazeApiAdapter : IExternalMediaApiAdapter
 {
-    public Task<List<ExternalApiSearchResult>> SearchAsync(string query, int limit, int page = 1)
+    public Task<List<ExternalApiSearchResult>> SearchAsync(string query, int limit, int page = 1, string? subtype = null)
     {
         // Stub: returns empty list until real implementation is added
         return Task.FromResult(new List<ExternalApiSearchResult>());
+    }
+
+    public Task<ExternalApiSearchResult?> GetByExternalIdAsync(string externalId)
+    {
+        // TODO: implement using GET https://api.tvmaze.com/shows/{id}
+        return Task.FromResult<ExternalApiSearchResult?>(null);
     }
 }

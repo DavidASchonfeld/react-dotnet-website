@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useGetAllApprovedMediaTypesQuery } from '../services/apiSlice'
+import { useGetActiveApiSourcesQuery } from '../services/apiSlice'
 
 // Search types the user can switch between
 type SearchType = 'media' | 'tags' | 'lists'
@@ -11,8 +11,8 @@ interface SearchFilterDropdownProps {
     scope: SearchScope
     onSearchTypeChange: (type: SearchType) => void
     onScopeChange: (scope: SearchScope) => void
-    selectedMediaTypeId?: number | null
-    onMediaTypeChange?: (id: number) => void
+    selectedApiSourceId?: number | null
+    onApiSourceChange?: (id: number) => void
     // Controls dropdown panel direction: top nav opens downward, left nav opens rightward
     isTop: boolean
 }
@@ -46,12 +46,12 @@ export default function SearchFilterDropdown({
     scope,
     onSearchTypeChange,
     onScopeChange,
-    selectedMediaTypeId,
-    onMediaTypeChange,
+    selectedApiSourceId,
+    onApiSourceChange,
     isTop,
 }: SearchFilterDropdownProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const { data: mediaTypes } = useGetAllApprovedMediaTypesQuery()
+    const { data: activeSources } = useGetActiveApiSourcesQuery()
 
     return (
         <div className="relative">
@@ -91,15 +91,15 @@ export default function SearchFilterDropdown({
                                 active={searchType === 'media'}
                                 onClick={() => onSearchTypeChange('media')}
                             />
-                            {/* Media sub-type options — shown when Media is selected */}
-                            {searchType === 'media' && mediaTypes && mediaTypes.length > 0 && (
+                            {/* API source sub-options — shown when Media is selected */}
+                            {searchType === 'media' && activeSources && activeSources.length > 0 && (
                                 <div className="pl-4 flex flex-col">
-                                    {mediaTypes.map(type => (
+                                    {activeSources.map(source => (
                                         <OptionButton
-                                            key={type.id}
-                                            label={`${type.icon} ${type.name}`}
-                                            active={selectedMediaTypeId === type.id}
-                                            onClick={() => onMediaTypeChange?.(type.id)}
+                                            key={source.id}
+                                            label={source.apiName}
+                                            active={selectedApiSourceId === source.id}
+                                            onClick={() => onApiSourceChange?.(source.id)}
                                         />
                                     ))}
                                 </div>

@@ -26,6 +26,15 @@ public static class AppConstants
     public const int RawgMonthlyWarningThreshold = 18_000;  // 90% of monthly limit — stay below this
 
 
+    //// Search Cache
+    // Number of days before a cached search result is considered stale — must stay in sync with frontend's SEARCH_CACHE_STALE_DAYS (frontend/src/constants.ts).
+    public const int SearchCacheStaleDays = 30;
+
+    //// Non-Search Cache
+    // Number of days before a cached detail-fetch result is considered stale — must stay in sync with frontend's NONSEARCH_CACHE_STALE_DAYS (frontend/src/constants.ts).
+    public const int NonSearchCacheStaleDays = 30;
+
+
     //// API Usage Tracking — Period Types
     // Used by ApiUsageService to determine the reset cadence per API.
     public const string OmdbPeriodType = "Daily";           // resets at UTC midnight

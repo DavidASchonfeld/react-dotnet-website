@@ -11,11 +11,12 @@ public class OmdbApiAdapter : IExternalMediaApiAdapter
         _apiKey = apiKey;
     }
 
-    public async Task<List<ExternalApiSearchResult>> SearchAsync(string query, int limit, int page = 1)
+    public async Task<List<ExternalApiSearchResult>> SearchAsync(string query, int limit, int page = 1, string? subtype = null)
     {
-        // &type=movie filters TV series out; limit is applied client-side (OMDB caps at 10 results/page).
+        // subtype controls the OMDB &type= filter: "movie" (default), "series", or "episode".
         // &page is 1-based and supported natively by OMDB.
-        var url = $"http://www.omdbapi.com/?s={Uri.EscapeDataString(query)}&apikey={_apiKey}&type=movie&page={page}";
+        var omdbType = subtype is "series" or "episode" ? subtype : "movie";
+        var url = $"http://www.omdbapi.com/?s={Uri.EscapeDataString(query)}&apikey={_apiKey}&type={omdbType}&page={page}";
 
         OmdbSearchResponse? response;
         try
@@ -46,6 +47,35 @@ public class OmdbApiAdapter : IExternalMediaApiAdapter
             })
             .ToList();
     }
+    public async Task<ExternalApiSearchResult?> GetByExternalIdAsync(string externalId)
+    {
+        // OMDB detail endpoint: ?i= fetches a single item by IMDB ID.
+        var url = $"http://www.omdbapi.com/?i={Uri.EscapeDataString(externalId)}&apikey={_apiKey}";
+
+        OmdbDetailResponse? response;
+        try
+        {
+            response = await _httpClient.GetFromJsonAsync<OmdbDetailResponse>(url);
+        }
+        catch (Exception)
+        {
+            // Network or parse failure — return null rather than propagating.
+            return null;
+        }
+
+        // OMDB signals "not found" via Response == "False", not via HTTP status.
+        if (response is null || response.Response == "False")
+            return null;
+
+        return new ExternalApiSearchResult
+        {
+            ExternalId    = response.ImdbID,
+            Name          = response.Title,
+            PublishedDate = DateTime.TryParse(response.Year, out var d) ? d : null,
+            ThumbnailUrl  = response.Poster == "N/A" ? null : response.Poster,
+            CreatorName   = response.Director == "N/A" ? null : response.Director
+        };
+    }
 }
 
 // Top-level OMDB search response envelope.
@@ -63,4 +93,16 @@ file class OmdbSearchItem
     public string Year   { get; set; } = string.Empty;
     public string ImdbID { get; set; } = string.Empty;
     public string Poster { get; set; } = string.Empty;
+}
+
+// Single-item detail response from OMDB's ?i= endpoint.
+file class OmdbDetailResponse
+{
+    public string Title    { get; set; } = string.Empty;
+    public string Year     { get; set; } = string.Empty;
+    public string ImdbID   { get; set; } = string.Empty;
+    public string Poster   { get; set; } = string.Empty;
+    public string Director { get; set; } = string.Empty;
+    // "True" or "False" — OMDB signals errors here instead of via HTTP status codes.
+    public string Response { get; set; } = "False";
 }

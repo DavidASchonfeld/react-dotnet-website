@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 
 public class MediaApiRefService : IMediaApiRefService
@@ -29,7 +30,7 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<List<ExternalApiSearchResult>>> SearchExternalApiAsync(string query, int limit, int mediaTypeId, string requesterUserId, int page = 1)
+    public async Task<ServiceResult<List<ExternalApiSearchResult>>> SearchExternalApiAsync(string query, int limit, int mediaTypeId, string requesterUserId, int page = 1, string? subtype = null)
     {
         if (query.Length < AppConstants.SearchMinQueryLength)
             return ServiceResult<List<ExternalApiSearchResult>>.BadRequest("Search query must be at least 2 characters.");
@@ -54,9 +55,131 @@ public class MediaApiRefService : IMediaApiRefService
         if (adapter == null)
             return ServiceResult<List<ExternalApiSearchResult>>.NotImplemented($"No adapter implemented for API '{activeSource.ApiName}'.");
 
-        var results = await adapter.SearchAsync(query, limit, page);
+        // Check cache before hitting the external API
+        var normalizedQuery = query.Trim().ToLower();
+        var staleThreshold = DateTime.UtcNow.AddDays(-AppConstants.SearchCacheStaleDays);
+
+        var cachedEntry = await _context.SearchQueryCaches
+            .Where(c => c.NormalizedQuery == normalizedQuery
+                     && c.ExternalApiSourceId == activeSource.Id
+                     && c.Page == page
+                     && c.Subtype == subtype
+                     && c.CachedAt >= staleThreshold)
+            .FirstOrDefaultAsync();
+
+        if (cachedEntry != null)
+        {
+            var cachedResults = JsonSerializer.Deserialize<List<ExternalApiSearchResult>>(cachedEntry.ResultsJson)!;
+            return ServiceResult<List<ExternalApiSearchResult>>.Ok(cachedResults);
+        }
+
+        // Cache miss — call the external API and store the result
+        var results = await adapter.SearchAsync(query, limit, page, subtype);
         await _apiUsageService.TrackRequestAsync(activeSource.ApiName);
+
+        var resultsJson = JsonSerializer.Serialize(results);
+        var existingEntry = await _context.SearchQueryCaches
+            .FirstOrDefaultAsync(c => c.NormalizedQuery == normalizedQuery
+                                   && c.ExternalApiSourceId == activeSource.Id
+                                   && c.Page == page
+                                   && c.Subtype == subtype);
+
+        if (existingEntry != null)
+        {
+            existingEntry.ResultsJson = resultsJson;
+            existingEntry.CachedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            _context.SearchQueryCaches.Add(new SearchQueryCache
+            {
+                NormalizedQuery = normalizedQuery,
+                ExternalApiSourceId = activeSource.Id,
+                Page = page,
+                Subtype = subtype,
+                ResultsJson = resultsJson,
+                CachedAt = DateTime.UtcNow
+            });
+        }
+
+        await _context.SaveChangesAsync();
         return ServiceResult<List<ExternalApiSearchResult>>.Ok(results);
+    }
+
+
+    public async Task<ServiceResult<ExternalApiSearchResult>> GetExternalApiItemAsync(string externalItemId, int externalApiSourceId, string requesterUserId)
+    {
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return ServiceResult<ExternalApiSearchResult>.Unauthorized();
+
+        var source = await _context.ExternalApiSources.FindAsync(externalApiSourceId);
+        if (source == null)
+            return ServiceResult<ExternalApiSearchResult>.NotFound("External API source not found.");
+
+        if (source.IsDisabledByAdmin)
+            return ServiceResult<ExternalApiSearchResult>.ServiceUnavailable(
+                $"The {source.ApiName} API is temporarily disabled for all users.");
+
+        var adapter = _adapterFactory.GetAdapter(source.ApiName);
+        if (adapter == null)
+            return ServiceResult<ExternalApiSearchResult>.NotImplemented($"No adapter implemented for API '{source.ApiName}'.");
+
+        // Caching is active only when both the global master switch AND the per-source flag are true.
+        var globalSettings = await _context.AppGlobalSettings.FindAsync(1);
+        var cachingEnabled = (globalSettings?.UseNonSearchQueryCache ?? true) && source.UseNonSearchQueryCache;
+
+        if (cachingEnabled)
+        {
+            var staleThreshold = DateTime.UtcNow.AddDays(-AppConstants.NonSearchCacheStaleDays);
+            var cachedEntry = await _context.NonSearchQueryCaches
+                .Where(c => c.ExternalItemId == externalItemId
+                         && c.ExternalApiSourceId == externalApiSourceId
+                         && c.CachedAt >= staleThreshold)
+                .FirstOrDefaultAsync();
+
+            if (cachedEntry != null)
+            {
+                var cachedResult = JsonSerializer.Deserialize<ExternalApiSearchResult>(cachedEntry.ResultsJson)!;
+                return ServiceResult<ExternalApiSearchResult>.Ok(cachedResult);
+            }
+        }
+
+        // Cache miss (or caching disabled) — call the external API.
+        var result = await adapter.GetByExternalIdAsync(externalItemId);
+        if (result == null)
+            return ServiceResult<ExternalApiSearchResult>.NotFound("Item not found in the external API.");
+
+        await _apiUsageService.TrackRequestAsync(source.ApiName);
+
+        if (cachingEnabled)
+        {
+            var resultJson = JsonSerializer.Serialize(result);
+
+            // Upsert: update the existing entry if present, otherwise insert a new one.
+            var existingEntry = await _context.NonSearchQueryCaches
+                .FirstOrDefaultAsync(c => c.ExternalItemId == externalItemId
+                                       && c.ExternalApiSourceId == externalApiSourceId);
+
+            if (existingEntry != null)
+            {
+                existingEntry.ResultsJson = resultJson;
+                existingEntry.CachedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                _context.NonSearchQueryCaches.Add(new NonSearchQueryCache
+                {
+                    ExternalItemId      = externalItemId,
+                    ExternalApiSourceId = externalApiSourceId,
+                    ResultsJson         = resultJson,
+                    CachedAt            = DateTime.UtcNow
+                });
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        return ServiceResult<ExternalApiSearchResult>.Ok(result);
     }
 
 

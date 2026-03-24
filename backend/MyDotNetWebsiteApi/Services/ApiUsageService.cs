@@ -89,6 +89,7 @@ public class ApiUsageService : IApiUsageService
                 PeriodEnd = periodEnd,
                 ExternalApiSourceId = source?.Id ?? 0,
                 IsDisabledByAdmin = source?.IsDisabledByAdmin ?? false,
+                UseNonSearchQueryCache = source?.UseNonSearchQueryCache ?? true,
             });
         }
 

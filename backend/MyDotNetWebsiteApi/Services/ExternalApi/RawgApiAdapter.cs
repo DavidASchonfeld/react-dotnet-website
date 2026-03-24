@@ -14,77 +14,131 @@ public class RawgApiAdapter : IExternalMediaApiAdapter
         _apiKey = apiKey;
     }
 
-    public async Task<List<ExternalApiSearchResult>> SearchAsync(string query, int limit, int page = 1)
+    public Task<ExternalApiSearchResult?> GetByExternalIdAsync(string externalId)
     {
-        // page_size caps results at the requested limit; page is 1-based and supported natively by RAWG.
+        // TODO: implement using GET https://api.rawg.io/api/games/{id}?key={_apiKey}
+        return Task.FromResult<ExternalApiSearchResult?>(null);
+    }
+
+    public async Task<List<ExternalApiSearchResult>> SearchAsync(string query, int limit, int page = 1, string? subtype = null)
+    {
+        // subtype routes to different RAWG endpoints: "game" (default), "publisher", or "developer".
+        return subtype switch
+        {
+            "publisher" => await SearchPublishersAsync(query, limit, page),
+            "developer" => await SearchDevelopersAsync(query, limit, page),
+            _           => await SearchGamesAsync(query, limit, page),
+        };
+    }
+
+    private async Task<List<ExternalApiSearchResult>> SearchGamesAsync(string query, int limit, int page)
+    {
         var url = $"https://api.rawg.io/api/games?key={_apiKey}&search={Uri.EscapeDataString(query)}&page_size={limit}&page={page}";
+        var httpResponse = await FetchAsync(url);
+        if (httpResponse is null) return [];
 
-        HttpResponseMessage httpResponse;
-        try
-        {
-            httpResponse = await _httpClient.GetAsync(url);
-        }
-        catch (Exception)
-        {
-            // Network failure — return empty rather than propagating.
-            return [];
-        }
+        RawgGameResponse? response;
+        try { response = await httpResponse.Content.ReadFromJsonAsync<RawgGameResponse>(); }
+        catch { return []; }
 
-        // HTTP 429 means the monthly request limit has been reached.
-        if (httpResponse.StatusCode == HttpStatusCode.TooManyRequests)
-            return [];
-
-        if (!httpResponse.IsSuccessStatusCode)
-            return [];
-
-        RawgSearchResponse? response;
-        try
-        {
-            response = await httpResponse.Content.ReadFromJsonAsync<RawgSearchResponse>();
-        }
-        catch (Exception)
-        {
-            // Parse failure — return empty rather than propagating.
-            return [];
-        }
-
-        if (response is null)
-            return [];
+        if (response is null) return [];
 
         return response.Results
             .Select(item => new ExternalApiSearchResult
             {
-                ExternalId    = item.Id.ToString(),  // RAWG Id is int; ExternalId is string.
+                ExternalId    = item.Id.ToString(),
                 Name          = item.Name,
                 PublishedDate = DateTime.TryParse(item.Released, out var d) ? d : null,
                 ThumbnailUrl  = item.BackgroundImage,
-                // First developer used as creator; null if the developers list is absent or empty.
                 CreatorName   = item.Developers?.FirstOrDefault()?.Name
             })
             .ToList();
     }
+
+    private async Task<List<ExternalApiSearchResult>> SearchPublishersAsync(string query, int limit, int page)
+    {
+        var url = $"https://api.rawg.io/api/publishers?key={_apiKey}&search={Uri.EscapeDataString(query)}&page_size={limit}&page={page}";
+        var httpResponse = await FetchAsync(url);
+        if (httpResponse is null) return [];
+
+        RawgEntityResponse? response;
+        try { response = await httpResponse.Content.ReadFromJsonAsync<RawgEntityResponse>(); }
+        catch { return []; }
+
+        if (response is null) return [];
+
+        return response.Results
+            .Select(item => new ExternalApiSearchResult
+            {
+                ExternalId = $"publisher-{item.Id}",
+                Name       = item.Name,
+            })
+            .ToList();
+    }
+
+    private async Task<List<ExternalApiSearchResult>> SearchDevelopersAsync(string query, int limit, int page)
+    {
+        var url = $"https://api.rawg.io/api/developers?key={_apiKey}&search={Uri.EscapeDataString(query)}&page_size={limit}&page={page}";
+        var httpResponse = await FetchAsync(url);
+        if (httpResponse is null) return [];
+
+        RawgEntityResponse? response;
+        try { response = await httpResponse.Content.ReadFromJsonAsync<RawgEntityResponse>(); }
+        catch { return []; }
+
+        if (response is null) return [];
+
+        return response.Results
+            .Select(item => new ExternalApiSearchResult
+            {
+                ExternalId = $"developer-{item.Id}",
+                Name       = item.Name,
+            })
+            .ToList();
+    }
+
+    // Shared HTTP fetch with rate-limit and error handling.
+    private async Task<HttpResponseMessage?> FetchAsync(string url)
+    {
+        HttpResponseMessage httpResponse;
+        try { httpResponse = await _httpClient.GetAsync(url); }
+        catch { return null; }
+
+        if (httpResponse.StatusCode == HttpStatusCode.TooManyRequests) return null;
+        if (!httpResponse.IsSuccessStatusCode) return null;
+        return httpResponse;
+    }
 }
 
-// Top-level RAWG search response envelope.
-file class RawgSearchResponse
+// Games search response.
+file class RawgGameResponse
 {
     public List<RawgGame> Results { get; set; } = [];
 }
 
-// One result item from RAWG's results array.
 file class RawgGame
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    // ISO date string e.g. "2019-09-26"; nullable since not all games have a release date.
     public string? Released { get; set; }
-    [JsonPropertyName("background_image")]  // snake_case JSON key → PascalCase C# property
+    [JsonPropertyName("background_image")]
     public string? BackgroundImage { get; set; }
     public List<RawgDeveloper>? Developers { get; set; }
 }
 
-// Developer entry from RAWG (only Name is needed from the search endpoint).
 file class RawgDeveloper
 {
+    public string Name { get; set; } = string.Empty;
+}
+
+// Shared response shape for publishers and developers (both return { id, name }).
+file class RawgEntityResponse
+{
+    public List<RawgEntity> Results { get; set; } = [];
+}
+
+file class RawgEntity
+{
+    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
 }

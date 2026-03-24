@@ -1,23 +1,51 @@
 import AnimatedPage from '../components/AnimatedPage'
-import { useGetApiUsageStatsQuery, useToggleApiDisabledMutation } from '../services/apiSlice'
+import {
+    useGetApiUsageStatsQuery,
+    useToggleApiDisabledMutation,
+    useToggleApiNonSearchCacheMutation,
+    useGetAppGlobalSettingsQuery,
+    useToggleGlobalNonSearchCacheMutation,
+} from '../services/apiSlice'
 import type { ApiUsageStats } from '../types/apiUsage'
 
 export default function AdminApiUsagePage() {
 
-    const { data: stats = [], isLoading, error, refetch } = useGetApiUsageStatsQuery()
+    const { data: stats = [], isLoading, error } = useGetApiUsageStatsQuery(undefined, {
+        pollingInterval: 30_000,
+    })
+    const { data: globalSettings } = useGetAppGlobalSettingsQuery()
+    const [toggleGlobalNonSearchCache, { isLoading: isTogglingGlobal }] = useToggleGlobalNonSearchCacheMutation()
 
     return (
         <AnimatedPage>
             <div className="page">
 
-                <div className="flex items-center justify-between mb-6">
+                <div className="mb-6">
                     <h1 className="text-2xl font-bold">API Usage Tracker</h1>
-                    <button
-                        onClick={refetch}
-                        className="px-3 py-1.5 text-sm bg-surface-raised hover:bg-border rounded transition-colors duration-150"
-                    >
-                        ↻ Refresh
-                    </button>
+                </div>
+
+                {/* Global non-search cache toggle — master switch for all APIs */}
+                <div className="bg-surface-raised rounded-lg p-4 border border-border mb-4">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                            <h2 className="font-semibold">Global Non-Search Cache</h2>
+                            <p className="text-sm text-text-muted">
+                                Master switch for caching detail/lookup fetches across all APIs.
+                                Per-API settings only apply when this is enabled.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => toggleGlobalNonSearchCache()}
+                            disabled={isTogglingGlobal || globalSettings === undefined}
+                            className={`px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 ${
+                                globalSettings?.useNonSearchQueryCache
+                                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                                    : 'bg-green-600 hover:bg-green-700 text-white'
+                            }`}
+                        >
+                            {globalSettings?.useNonSearchQueryCache ? 'Disable' : 'Enable'}
+                        </button>
+                    </div>
                 </div>
 
                 {isLoading && <p className="text-text-muted">Loading...</p>}
@@ -40,6 +68,7 @@ export default function AdminApiUsagePage() {
 function ApiUsageCard({ api }: { api: ApiUsageStats }) {
 
     const [toggleApiDisabled, { isLoading: isToggling }] = useToggleApiDisabledMutation()
+    const [toggleApiNonSearchCache, { isLoading: isTogglingCache }] = useToggleApiNonSearchCacheMutation()
 
     const hasLimit = api.requestLimit !== null
 
@@ -101,8 +130,22 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
                 )}
             </div>
 
-            {/* Toggle disable/enable button */}
-            <div className="mt-3 flex justify-end">
+            {/* Action buttons row */}
+            <div className="mt-3 flex justify-end gap-2 flex-wrap">
+                {/* Toggle non-search cache for this API */}
+                <button
+                    onClick={() => toggleApiNonSearchCache(api.externalApiSourceId)}
+                    disabled={isTogglingCache}
+                    className={`px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 ${
+                        api.useNonSearchQueryCache
+                            ? 'bg-red-600 hover:bg-red-700 text-white'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                    }`}
+                >
+                    {api.useNonSearchQueryCache ? 'Disable Detail Cache' : 'Enable Detail Cache'}
+                </button>
+
+                {/* Toggle API availability for all users */}
                 <button
                     onClick={() => toggleApiDisabled(api.externalApiSourceId)}
                     disabled={isToggling}

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MyDotNetWebsiteApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260324072941_AddSearchQueryCache")]
+    partial class AddSearchQueryCache
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.3");
@@ -39,27 +42,6 @@ namespace MyDotNetWebsiteApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ApiUsageRecords");
-                });
-
-            modelBuilder.Entity("AppGlobalSettings", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("UseNonSearchQueryCache")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AppGlobalSettings");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            UseNonSearchQueryCache = true
-                        });
                 });
 
             modelBuilder.Entity("AppUser", b =>
@@ -177,9 +159,6 @@ namespace MyDotNetWebsiteApi.Migrations
                     b.Property<int>("MediaTypeId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("UseNonSearchQueryCache")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
                     b.HasIndex("MediaTypeId");
@@ -193,8 +172,7 @@ namespace MyDotNetWebsiteApi.Migrations
                             ApiName = "OMDB",
                             IsActive = true,
                             IsDisabledByAdmin = false,
-                            MediaTypeId = 1,
-                            UseNonSearchQueryCache = true
+                            MediaTypeId = 1
                         },
                         new
                         {
@@ -202,8 +180,7 @@ namespace MyDotNetWebsiteApi.Migrations
                             ApiName = "TVMaze",
                             IsActive = true,
                             IsDisabledByAdmin = false,
-                            MediaTypeId = 2,
-                            UseNonSearchQueryCache = true
+                            MediaTypeId = 2
                         },
                         new
                         {
@@ -211,8 +188,7 @@ namespace MyDotNetWebsiteApi.Migrations
                             ApiName = "OpenLibrary",
                             IsActive = true,
                             IsDisabledByAdmin = false,
-                            MediaTypeId = 3,
-                            UseNonSearchQueryCache = true
+                            MediaTypeId = 3
                         },
                         new
                         {
@@ -220,8 +196,7 @@ namespace MyDotNetWebsiteApi.Migrations
                             ApiName = "RAWG",
                             IsActive = true,
                             IsDisabledByAdmin = false,
-                            MediaTypeId = 4,
-                            UseNonSearchQueryCache = true
+                            MediaTypeId = 4
                         });
                 });
 
@@ -566,34 +541,6 @@ namespace MyDotNetWebsiteApi.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("NonSearchQueryCache", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CachedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("ExternalApiSourceId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ExternalItemId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResultsJson")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExternalApiSourceId", "ExternalItemId")
-                        .IsUnique();
-
-                    b.ToTable("NonSearchQueryCaches");
-                });
-
             modelBuilder.Entity("SearchQueryCache", b =>
                 {
                     b.Property<int>("Id")
@@ -803,17 +750,6 @@ namespace MyDotNetWebsiteApi.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("NonSearchQueryCache", b =>
-                {
-                    b.HasOne("ExternalApiSource", "ExternalApiSource")
-                        .WithMany()
-                        .HasForeignKey("ExternalApiSourceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ExternalApiSource");
                 });
 
             modelBuilder.Entity("SearchQueryCache", b =>

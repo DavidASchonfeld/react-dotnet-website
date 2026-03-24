@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../store/store'
 import AnimatedPage from '../components/AnimatedPage'
-import { SEARCH_MIN_CHARS } from '../constants'
+import { useGetActiveApiSourcesQuery } from '../services/apiSlice'
+import { SEARCH_MIN_CHARS, API_SUBTYPES } from '../constants'
 
 // Search types available on this page (same set as the navbar dropdown)
 const SEARCH_TYPES = [
@@ -21,9 +22,28 @@ export default function AdvancedSearchPage() {
     const [query, setQuery] = useState('')
     const [searchType, setSearchType] = useState<SearchType>('media')
     const [scope, setScope] = useState<'all' | 'mine'>('all')
+    const [selectedApiSourceId, setSelectedApiSourceId] = useState<number | null>(null)
+    const [selectedSubtype, setSelectedSubtype] = useState<string | null>(null)
+
+    const { data: activeSources } = useGetActiveApiSourcesQuery()
 
     // Role check: admins and moderators get access to the extra filter section
     const isModerator = roleLevel === 'Moderator' || roleLevel === 'Administrator'
+
+    // Initialize to first active source once loaded
+    useEffect(() => {
+        if (selectedApiSourceId === null && activeSources && activeSources.length > 0)
+            setSelectedApiSourceId(activeSources[0].id)
+    }, [activeSources, selectedApiSourceId])
+
+    // When API source changes, reset subtype
+    const handleApiSourceChange = (id: number) => {
+        setSelectedApiSourceId(id)
+        setSelectedSubtype(null)
+    }
+
+    const selectedSource = activeSources?.find(s => s.id === selectedApiSourceId)
+    const availableSubtypes = selectedSource ? (API_SUBTYPES[selectedSource.apiName] ?? []) : []
 
     const handleSubmit = () => {
         if (query.length < SEARCH_MIN_CHARS) return
@@ -33,6 +53,10 @@ export default function AdvancedSearchPage() {
             scope,
             page: '1',
         })
+        if (searchType === 'media' && selectedApiSourceId !== null)
+            params.set('api', String(selectedApiSourceId))
+        if (searchType === 'media' && selectedSubtype)
+            params.set('subtype', selectedSubtype)
         navigate(`/search?${params}`)
     }
 
@@ -84,6 +108,52 @@ export default function AdvancedSearchPage() {
                     ))}
                 </div>
             </div>
+
+            {/* API source selector — shown when Media is selected */}
+            {searchType === 'media' && activeSources && activeSources.length > 0 && (
+                <div className="mt-4">
+                    <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">API</p>
+                    <div className="flex flex-wrap gap-2">
+                        {activeSources.map(source => (
+                            <button
+                                key={source.id}
+                                onClick={() => handleApiSourceChange(source.id)}
+                                className={`px-3 py-1 rounded-full border text-sm transition-colors ${
+                                    selectedApiSourceId === source.id
+                                        ? 'bg-primary text-white border-primary'
+                                        : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
+                                }`}
+                            >
+                                {source.apiName}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* API-specific sub-options — shown when selected API has subtypes */}
+            {searchType === 'media' && availableSubtypes.length > 0 && (
+                <div className="mt-3">
+                    <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+                        Search for
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                        {availableSubtypes.map(sub => (
+                            <button
+                                key={sub.value}
+                                onClick={() => setSelectedSubtype(sub.value === selectedSubtype ? null : sub.value)}
+                                className={`px-3 py-1 rounded-full border text-sm transition-colors ${
+                                    selectedSubtype === sub.value
+                                        ? 'bg-primary/20 text-primary border-primary/40'
+                                        : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
+                                }`}
+                            >
+                                {sub.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Scope selector — hidden for Media (external API has no "mine" concept) */}
             {searchType !== 'media' && (

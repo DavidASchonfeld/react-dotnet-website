@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import {
     useLazySearchExternalApiQuery,
     useFindOrCreateMediaApiRefMutation,
-    useGetAllApprovedMediaTypesQuery,
     useGetActiveApiSourcesQuery,
 } from '../services/apiSlice'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
@@ -17,11 +16,11 @@ interface SearchBarProps {
     isTop: boolean               // from Navbar — controls horizontal vs vertical layout
     effectiveMinimized: boolean  // collapse the bar when navbar is minimized
     defaultQuery?: string        // pre-fill from URL params (on-submit mode)
-    defaultMediaTypeId?: number  // pre-fill from URL params (on-submit mode)
-    // mediaTypeId is optional — Navbar passes only query (filter dropdown handles type/scope separately)
-    onSubmit?: (query: string, mediaTypeId?: number) => void
-    // When false, hides the media type pill selector (Navbar uses its own SearchFilterDropdown instead)
-    showMediaTypePills?: boolean
+    defaultApiSourceId?: number  // pre-fill from URL params (on-submit mode)
+    // apiSourceId is optional — Navbar passes only query (filter dropdown handles type/scope separately)
+    onSubmit?: (query: string, apiSourceId?: number) => void
+    // When false, hides the API source pill selector (Navbar uses its own SearchFilterDropdown instead)
+    showApiSourcePills?: boolean
     // When false, hides the Search button (Navbar submits via Enter key instead)
     showSearchButton?: boolean
 }
@@ -31,9 +30,9 @@ export default function SearchBar({
     isTop,
     effectiveMinimized,
     defaultQuery = '',
-    defaultMediaTypeId,
+    defaultApiSourceId,
     onSubmit,
-    showMediaTypePills = true, // default true preserves backward compat for SearchResultsPage
+    showApiSourcePills = true, // default true preserves backward compat for SearchResultsPage
     showSearchButton = true,
 }: SearchBarProps) {
     const navigate = useNavigate()
@@ -44,31 +43,30 @@ export default function SearchBar({
 
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    const { data: mediaTypes } = useGetAllApprovedMediaTypesQuery()
     const { data: activeSources } = useGetActiveApiSourcesQuery()
 
-    // Default to first available media type once loaded
-    const [selectedMediaTypeId, setSelectedMediaTypeId] = useState<number | null>(
-        defaultMediaTypeId ?? null
+    // Default to first available API source once loaded
+    const [selectedApiSourceId, setSelectedApiSourceId] = useState<number | null>(
+        defaultApiSourceId ?? null
     )
 
-    // Once media types load, set a default if none is selected yet
+    // Once API sources load, set a default if none is selected yet
     useEffect(() => {
-        if (selectedMediaTypeId === null && mediaTypes && mediaTypes.length > 0) {
-            setSelectedMediaTypeId(defaultMediaTypeId ?? mediaTypes[0].id)
+        if (selectedApiSourceId === null && activeSources && activeSources.length > 0) {
+            setSelectedApiSourceId(defaultApiSourceId ?? activeSources[0].id)
         }
-    }, [mediaTypes, selectedMediaTypeId, defaultMediaTypeId])
+    }, [activeSources, selectedApiSourceId, defaultApiSourceId])
 
-    // Sync defaultQuery / defaultMediaTypeId changes (when URL params update on SearchResultsPage)
+    // Sync defaultQuery / defaultApiSourceId changes (when URL params update on SearchResultsPage)
     useEffect(() => {
         setInputQuery(defaultQuery)
     }, [defaultQuery])
 
     useEffect(() => {
-        if (defaultMediaTypeId !== undefined) {
-            setSelectedMediaTypeId(defaultMediaTypeId)
+        if (defaultApiSourceId !== undefined) {
+            setSelectedApiSourceId(defaultApiSourceId)
         }
-    }, [defaultMediaTypeId])
+    }, [defaultApiSourceId])
 
     const [triggerSearch, { isFetching: isSearching }] = useLazySearchExternalApiQuery()
     const [findOrCreate] = useFindOrCreateMediaApiRefMutation()
@@ -81,16 +79,19 @@ export default function SearchBar({
 
         if (debounceTimer.current) clearTimeout(debounceTimer.current)
 
-        if (value.length < SEARCH_MIN_CHARS || selectedMediaTypeId === null) {
+        if (value.length < SEARCH_MIN_CHARS || selectedApiSourceId === null) {
             setDropdownResults([])
             setIsDropdownOpen(false)
             return
         }
 
+        const selectedSource = activeSources?.find(s => s.id === selectedApiSourceId)
+        if (!selectedSource) return
+
         debounceTimer.current = setTimeout(async () => {
             const result = await triggerSearch({
                 query: value,
-                mediaTypeId: selectedMediaTypeId,
+                mediaTypeId: selectedSource.mediaTypeId,
                 limit: 5,
             })
             if (result.data) {
@@ -102,8 +103,8 @@ export default function SearchBar({
 
     // ---- On-Submit handler (Enter key or Search button) ----
     const handleSubmit = () => {
-        if (inputQuery.length < SEARCH_MIN_CHARS || selectedMediaTypeId === null) return
-        onSubmit?.(inputQuery, selectedMediaTypeId)
+        if (inputQuery.length < SEARCH_MIN_CHARS || selectedApiSourceId === null) return
+        onSubmit?.(inputQuery, selectedApiSourceId)
     }
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -112,9 +113,9 @@ export default function SearchBar({
 
     // ---- Typeahead result click: findOrCreate then navigate to detail page ----
     const handleResultClick = async (result: ExternalApiSearchResult) => {
-        if (selectedMediaTypeId === null) return
+        if (selectedApiSourceId === null) return
 
-        const activeSource = activeSources?.find(s => s.mediaTypeId === selectedMediaTypeId)
+        const activeSource = activeSources?.find(s => s.id === selectedApiSourceId)
         if (!activeSource) return
 
         setIsDropdownOpen(false)
@@ -125,7 +126,7 @@ export default function SearchBar({
                 externalApiSourceId: activeSource.id,
                 externalId: result.externalId,
                 name: result.name,
-                mediaTypeId: selectedMediaTypeId,
+                mediaTypeId: activeSource.mediaTypeId,
                 creatorName: result.creatorName,
                 publishedDate: result.publishedDate,
             }).unwrap()
@@ -151,7 +152,7 @@ export default function SearchBar({
     // ---- Hide entirely when minimized ----
     if (effectiveMinimized) return null
 
-    const selectedType = mediaTypes?.find(t => t.id === selectedMediaTypeId)
+    const selectedSource = activeSources?.find(s => s.id === selectedApiSourceId)
 
     return (
         <div className={`relative flex items-center ${isTop ? 'flex-row gap-1' : 'flex-col gap-1 w-full'}`}>
@@ -164,7 +165,7 @@ export default function SearchBar({
                     value={inputQuery}
                     onChange={e => handleInputChange(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={selectedType ? `${selectedType.icon} ${selectedType.name}…` : 'Search…'}
+                    placeholder={selectedSource ? `${selectedSource.apiName}…` : 'Search…'}
                     className="form-input pl-7 pr-7 py-1 text-sm w-full rounded-lg"
                 />
                 {inputQuery.length > 0 && (
@@ -179,25 +180,24 @@ export default function SearchBar({
                 )}
             </div>
 
-            {/* Media type pills — hidden when showMediaTypePills=false (Navbar uses SearchFilterDropdown instead) */}
-            {showMediaTypePills && mediaTypes && mediaTypes.length > 0 && (
+            {/* API source pills — hidden when showApiSourcePills=false (Navbar uses SearchFilterDropdown instead) */}
+            {showApiSourcePills && activeSources && activeSources.length > 0 && (
                 <div className={`flex flex-wrap gap-1 ${isTop ? '' : 'w-full'}`}>
-                    {mediaTypes.map(type => (
+                    {activeSources.map(source => (
                         <button
-                            key={type.id}
+                            key={source.id}
                             onClick={() => {
-                                setSelectedMediaTypeId(type.id)
+                                setSelectedApiSourceId(source.id)
                                 setDropdownResults([])
                                 setIsDropdownOpen(false)
                             }}
                             className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
-                                selectedMediaTypeId === type.id
+                                selectedApiSourceId === source.id
                                     ? 'bg-primary text-white border-primary'
                                     : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
                             }`}
-                            title={type.name}
                         >
-                            {type.icon} <span className="hidden sm:inline">{type.name}</span>
+                            {source.apiName}
                         </button>
                     ))}
                 </div>
@@ -207,7 +207,7 @@ export default function SearchBar({
             {mode === 'on-submit' && showSearchButton && (
                 <button
                     onClick={handleSubmit}
-                    disabled={inputQuery.length < SEARCH_MIN_CHARS || selectedMediaTypeId === null}
+                    disabled={inputQuery.length < SEARCH_MIN_CHARS || selectedApiSourceId === null}
                     className="btn text-sm py-1 px-3 shrink-0 disabled:opacity-40"
                 >
                     Search
