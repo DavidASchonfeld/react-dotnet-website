@@ -3,9 +3,11 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { ErrorBoundary } from './ErrorBoundary';
+import { ANIMATION_VARIANTS, type AnimationVariant } from '../constants/animations';
 
 interface Props {
     children: ReactNode;
+    variant?: AnimationVariant;
 }
 
 // Why a whole page for this?
@@ -17,23 +19,24 @@ interface Props {
 // And you can see in here, it is wrapped by my homemade <ErrorBoundary>
 // so if there is an error, my website will still work.
 
-function AnimatedPageInner({ children }: Props) {
+function AnimatedPageInner({ children, variant = 'page' }: Props) {
+    const config = ANIMATION_VARIANTS[variant];
     return (
         <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            initial={config.initial}
+            animate={config.animate}
+            exit={config.exit}
+            transition={config.transition}
         >
             {children}
         </motion.div>
     );
 }
 
-export default function AnimatedPage({ children }: Props) {
+export default function AnimatedPage({ children, variant = 'page' }: Props) {
     return (
         <ErrorBoundary label="AnimatedPage" fallback={<>{children}</>}>
-            <AnimatedPageInner>{children}</AnimatedPageInner>
+            <AnimatedPageInner variant={variant}>{children}</AnimatedPageInner>
         </ErrorBoundary>
     );
 }

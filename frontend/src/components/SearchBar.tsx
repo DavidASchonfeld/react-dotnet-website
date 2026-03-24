@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
     useLazySearchExternalApiQuery,
@@ -68,7 +68,7 @@ export default function SearchBar({
     const [findOrCreate] = useFindOrCreateMediaApiRefMutation()
 
     // ---- Typeahead debounced search ----
-    const handleInputChange = (value: string) => {
+    const handleInputChange = useCallback((value: string) => {
         setInputQuery(value)
 
         if (mode !== 'typeahead') return
@@ -90,25 +90,25 @@ export default function SearchBar({
                 mediaTypeId: selectedSource.mediaTypeId,
                 limit: 5,
             })
-            if (result.data) {
-                setDropdownResults(result.data)
-                setIsDropdownOpen(result.data.length > 0)
+            if (result.data?.data) {
+                setDropdownResults(result.data.data)
+                setIsDropdownOpen(result.data.data.length > 0)
             }
         }, SEARCH_DEBOUNCE_MS)
-    }
+    }, [mode, effectiveSelectedApiSourceId, activeSources, triggerSearch])
 
     // ---- On-Submit handler (Enter key or Search button) ----
-    const handleSubmit = () => {
+    const handleSubmit = useCallback(() => {
         if (inputQuery.length < SEARCH_MIN_CHARS || selectedApiSourceId === null) return
         onSubmit?.(inputQuery, selectedApiSourceId)
-    }
+    }, [inputQuery, selectedApiSourceId, onSubmit])
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') handleSubmit()
-    }
+    }, [handleSubmit])
 
     // ---- Typeahead result click: findOrCreate then navigate to detail page ----
-    const handleResultClick = async (result: ExternalApiSearchResult) => {
+    const handleResultClick = useCallback(async (result: ExternalApiSearchResult) => {
         if (effectiveSelectedApiSourceId === null) return
 
         const activeSource = activeSources?.find(s => s.id === effectiveSelectedApiSourceId)
@@ -130,13 +130,19 @@ export default function SearchBar({
         } catch {
             // Error toast is handled by baseQueryWithErrorHandling
         }
-    }
+    }, [effectiveSelectedApiSourceId, activeSources, findOrCreate, navigate])
 
-    const handleClear = () => {
+    const handleClear = useCallback(() => {
         setInputQuery('')
         setDropdownResults([])
         setIsDropdownOpen(false)
-    }
+    }, [])
+
+    const handleSourceSelect = useCallback((sourceId: number) => {
+        setSelectedApiSourceId(sourceId)
+        setDropdownResults([])
+        setIsDropdownOpen(false)
+    }, [])
 
     // Cleanup debounce on unmount
     useEffect(() => {
@@ -182,11 +188,7 @@ export default function SearchBar({
                     {activeSources.map(source => (
                         <button
                             key={source.id}
-                            onClick={() => {
-                                setSelectedApiSourceId(source.id)
-                                setDropdownResults([])
-                                setIsDropdownOpen(false)
-                            }}
+                            onClick={() => handleSourceSelect(source.id)}
                             className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
                                 selectedApiSourceId === source.id
                                     ? 'bg-primary text-white border-primary'

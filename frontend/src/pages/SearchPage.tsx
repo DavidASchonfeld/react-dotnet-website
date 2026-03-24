@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../store/store'
@@ -32,7 +32,6 @@ export default function SearchPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const navigate = useNavigate()
     const { roleLevel } = useSelector((state: RootState) => state.auth)
-    const detailsRef = useRef<HTMLDetailsElement>(null)
 
     // Parse URL parameters
     const query = searchParams.get('q') ?? ''
@@ -42,12 +41,29 @@ export default function SearchPage() {
     const showFiltersParam = searchParams.get('showFilters') === 'true'
     const page = Math.max(1, parseInt(pageParam ?? '1') || 1)
 
-    const searchType = (searchParams.get('type') ?? 'media') as SearchType
-    const scope = (searchParams.get('scope') ?? 'all') as SearchScope
+    // Determine if filters should be open by default
+    const shouldShowFilters = showFiltersParam || !query
+    const [isFiltersOpen, setIsFiltersOpen] = useState(shouldShowFilters)
+
+    const urlSearchType = (searchParams.get('type') ?? 'media') as SearchType
+    const urlScope = (searchParams.get('scope') ?? 'all') as SearchScope
+
+    // Local state for filters — these don't trigger searches when changed
+    const [filters, setFilters] = useState({
+        searchType: urlSearchType,
+        scope: urlScope,
+        apiSourceId: apiSourceIdParam ? parseInt(apiSourceIdParam) : null,
+        subtype: subtypeParam,
+    })
 
     const { data: activeSources } = useGetActiveApiSourcesQuery()
 
-    // Derive apiSourceId
+    // Derive apiSourceId from filter state, falling back to first available source
+    const effectiveLocalApiSourceId = filters.apiSourceId ?? activeSources?.[0]?.id ?? null
+
+    // Use URL-based filters for actual search queries (these are set when user submits)
+    const searchType = urlSearchType
+    const scope = urlScope
     const parsedApiSourceId = apiSourceIdParam ? parseInt(apiSourceIdParam) : null
     const apiSourceId = (parsedApiSourceId && !isNaN(parsedApiSourceId))
         ? parsedApiSourceId
@@ -57,6 +73,17 @@ export default function SearchPage() {
     const mediaTypeId = selectedSource?.mediaTypeId ?? null
     const availableSubtypes = selectedSource ? (API_SUBTYPES[selectedSource.apiName] ?? []) : []
     const activeSubtype = availableSubtypes.find(s => s.value === subtypeParam)?.value ?? undefined
+
+    // Sync filter state when URL params change (e.g., browser back/forward)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        setFilters({
+            searchType: urlSearchType,
+            scope: urlScope,
+            apiSourceId: apiSourceIdParam ? parseInt(apiSourceIdParam) : null,
+            subtype: subtypeParam,
+        })
+    }, [urlSearchType, urlScope, apiSourceIdParam, subtypeParam])
 
     const isModerator = roleLevel === 'Moderator' || roleLevel === 'Administrator'
     const shouldFetch = query.length >= SEARCH_MIN_CHARS
@@ -82,63 +109,49 @@ export default function SearchPage() {
 
     const [findOrCreate] = useFindOrCreateMediaApiRefMutation()
 
-    // Handlers for form controls
+    // Handlers for form controls — these update filter state only (no search triggered)
     const handleApiSourceChange = (id: number) => {
-        setSearchParams(prev => {
-            const params = new URLSearchParams(prev)
-            params.set('api', String(id))
-            params.delete('subtype')
-            params.set('page', '1')
-            return params
-        })
+        setFilters(prev => ({ ...prev, apiSourceId: id, subtype: undefined }))
     }
 
     const handleSubtypeChange = (newSubtype: string) => {
-        setSearchParams(prev => {
-            const params = new URLSearchParams(prev)
-            if (newSubtype) {
-                params.set('subtype', newSubtype)
-            } else {
-                params.delete('subtype')
-            }
-            params.set('page', '1')
-            return params
-        })
+        setFilters(prev => ({ ...prev, subtype: newSubtype || undefined }))
     }
 
     const handleTypeChange = (newType: SearchType) => {
-        setSearchParams(prev => {
-            const params = new URLSearchParams(prev)
-            params.set('type', newType)
-            params.set('page', '1')
-            if (newType !== 'media') {
-                params.delete('api')
-                params.delete('subtype')
-            }
-            return params
-        })
+        setFilters(prev => ({
+            ...prev,
+            searchType: newType,
+            ...(newType !== 'media' && { apiSourceId: null, subtype: undefined })
+        }))
     }
 
     const handleScopeChange = (newScope: SearchScope) => {
-        setSearchParams(prev => {
-            const params = new URLSearchParams(prev)
-            params.set('scope', newScope)
-            params.set('page', '1')
-            return params
-        })
+        setFilters(prev => ({ ...prev, scope: newScope }))
     }
 
     const handleFilterSearch = () => {
         if (query.length < SEARCH_MIN_CHARS) return
-        // Remove showFilters param and auto-close the details element
+        // Apply filter state to URL and trigger search
         setSearchParams(prev => {
             const params = new URLSearchParams(prev)
+            params.set('type', filters.searchType)
+            params.set('scope', filters.scope)
+            params.set('page', '1')
+            if (filters.searchType === 'media' && effectiveLocalApiSourceId !== null) {
+                params.set('api', String(effectiveLocalApiSourceId))
+            } else {
+                params.delete('api')
+            }
+            if (filters.searchType === 'media' && filters.subtype) {
+                params.set('subtype', filters.subtype)
+            } else {
+                params.delete('subtype')
+            }
             params.delete('showFilters')
             return params
         })
-        if (detailsRef.current) {
-            detailsRef.current.open = false
-        }
+        setIsFiltersOpen(false)
     }
 
     // Media results handlers
@@ -163,18 +176,22 @@ export default function SearchPage() {
     }
 
     const handleSearchSubmit = (newQuery: string) => {
-        const effectiveApiSourceId = apiSourceId
+        // Apply filter state to URL when user submits search
         setSearchParams(prev => {
             const params = new URLSearchParams(prev)
             params.set('q', newQuery)
-            params.set('type', searchType)
-            params.set('scope', scope)
+            params.set('type', filters.searchType)
+            params.set('scope', filters.scope)
             params.set('page', '1')
-            if (searchType === 'media' && effectiveApiSourceId) {
-                params.set('api', String(effectiveApiSourceId))
+            if (filters.searchType === 'media' && effectiveLocalApiSourceId !== null) {
+                params.set('api', String(effectiveLocalApiSourceId))
+            } else {
+                params.delete('api')
             }
-            if (searchType === 'media' && activeSubtype) {
-                params.set('subtype', activeSubtype)
+            if (filters.searchType === 'media' && filters.subtype) {
+                params.set('subtype', filters.subtype)
+            } else {
+                params.delete('subtype')
             }
             params.delete('showFilters')
             return params
@@ -198,36 +215,45 @@ export default function SearchPage() {
     const hasNextPage = mediaResults && mediaResults.data.length === PAGE_SIZE
     const hasPrevPage = page > 1
 
-    // Determine if filters should be open by default
-    const shouldShowFilters = showFiltersParam || (!query && query === '')
-
     return (
         <AnimatedPage>
         <div className="page">
             <h1 className="h1-styling">Search</h1>
 
-            {/* Search bar */}
-            <SearchBar
-                mode="on-submit"
-                isTop={false}
-                effectiveMinimized={false}
-                defaultQuery={query}
-                defaultApiSourceId={apiSourceId ?? undefined}
-                onSubmit={handleSearchSubmit}
-                showApiSourcePills={false}
-            />
+            {/* Search bar with filters toggle */}
+            <div className="flex gap-2">
+                <button
+                    onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                    className="flex items-center justify-center rounded-lg border border-border bg-surface hover:bg-surface-hover transition-colors self-start"
+
+                    // Uses CSS because className (aka Tailwind) did not have the exact dimensions
+                    // This is to ensure this button is the exact same height as the SearchBar
+                    style={{ width: '30px', height: '30px' }}
+                    title={isFiltersOpen ? 'Hide filters' : 'Show filters'}
+                    aria-label={isFiltersOpen ? 'Hide filters' : 'Show filters'}
+                >
+                    <span className="text-xs transition-transform" style={{
+                        transform: isFiltersOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        display: 'inline-block'
+                    }}>
+                        ▼
+                    </span>
+                </button>
+                <SearchBar
+                    mode="on-submit"
+                    isTop={false}
+                    effectiveMinimized={false}
+                    defaultQuery={query}
+                    defaultApiSourceId={apiSourceId ?? undefined}
+                    onSubmit={handleSearchSubmit}
+                    showApiSourcePills={false}
+                />
+            </div>
 
             {/* Collapsible Advanced Filters */}
-            <details
-                ref={detailsRef}
-                open={shouldShowFilters}
-                className="mt-4 p-4 border border-border rounded-lg bg-surface cursor-pointer group"
-            >
-                <summary className="text-sm font-semibold text-text cursor-pointer hover:text-primary transition-colors">
-                    Advanced Filters
-                </summary>
-
-                <div className="mt-4 space-y-4">
+                {isFiltersOpen && (
+                <div className="mt-4 p-4 border border-border rounded-lg bg-surface">
+                <div className="space-y-4">
                     {/* Search type selector */}
                     <div>
                         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Type</p>
@@ -237,7 +263,7 @@ export default function SearchPage() {
                                     key={t.id}
                                     onClick={() => handleTypeChange(t.id)}
                                     className={`px-3 py-1 rounded-full border text-sm transition-colors ${
-                                        searchType === t.id
+                                        filters.searchType === t.id
                                             ? 'bg-primary text-white border-primary'
                                             : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
                                     }`}
@@ -249,7 +275,7 @@ export default function SearchPage() {
                     </div>
 
                     {/* API source selector */}
-                    {searchType === 'media' && activeSources && activeSources.length > 0 && (
+                    {filters.searchType === 'media' && activeSources && activeSources.length > 0 && (
                         <div>
                             <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">API</p>
                             <div className="flex flex-wrap gap-2">
@@ -258,7 +284,7 @@ export default function SearchPage() {
                                         key={source.id}
                                         onClick={() => handleApiSourceChange(source.id)}
                                         className={`px-3 py-1 rounded-full border text-sm transition-colors ${
-                                            apiSourceId === source.id
+                                            effectiveLocalApiSourceId === source.id
                                                 ? 'bg-primary text-white border-primary'
                                                 : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
                                         }`}
@@ -271,7 +297,7 @@ export default function SearchPage() {
                     )}
 
                     {/* Subtype selector */}
-                    {searchType === 'media' && availableSubtypes.length > 0 && (
+                    {filters.searchType === 'media' && availableSubtypes.length > 0 && (
                         <div>
                             <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
                                 Search for
@@ -280,9 +306,9 @@ export default function SearchPage() {
                                 {availableSubtypes.map(sub => (
                                     <button
                                         key={sub.value}
-                                        onClick={() => handleSubtypeChange(sub.value === activeSubtype ? '' : sub.value)}
+                                        onClick={() => handleSubtypeChange(sub.value === filters.subtype ? '' : sub.value)}
                                         className={`px-3 py-1 rounded-full border text-sm transition-colors ${
-                                            activeSubtype === sub.value
+                                            filters.subtype === sub.value
                                                 ? 'bg-primary/20 text-primary border-primary/40'
                                                 : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
                                         }`}
@@ -295,7 +321,7 @@ export default function SearchPage() {
                     )}
 
                     {/* Scope selector */}
-                    {searchType !== 'media' && (
+                    {filters.searchType !== 'media' && (
                         <div>
                             <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Scope</p>
                             <div className="flex gap-2">
@@ -304,7 +330,7 @@ export default function SearchPage() {
                                         key={s}
                                         onClick={() => handleScopeChange(s)}
                                         className={`px-3 py-1 rounded-full border text-sm transition-colors capitalize ${
-                                            scope === s
+                                            filters.scope === s
                                                 ? 'bg-primary text-white border-primary'
                                                 : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
                                         }`}
@@ -340,7 +366,8 @@ export default function SearchPage() {
                         Search
                     </button>
                 </div>
-            </details>
+                </div>
+                )}
 
             {/* Results section */}
             <div className="mt-4">
