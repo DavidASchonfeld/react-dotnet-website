@@ -83,6 +83,14 @@ Click "New Static Site"
 Add one environment variable:
 - VITE_API_URL: https://react-dotnet-website.onrender.com
 
+In backend/appsettings.Production.json, make sure to include this:
+(I put in the frontend URL) so my backened knows to recognize/know/accept requests from the frontend side of the website
+{
+    "CorsSettings": {
+        "AllowedOrigin": "https://react-dotnet-website-frontend.onrender.com"
+    }
+}
+
 Now, both my backend and frontend are both deployed successfully.
 
 Note: Since I gave Render permission to look at 1 of my Github repositories, Render has the ability to just pull from my Github.
