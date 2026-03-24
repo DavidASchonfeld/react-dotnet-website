@@ -80,6 +80,7 @@ builder.Services.AddScoped<IMediaApiRefService, MediaApiRefService>();
 builder.Services.AddScoped<ICustomTagService, CustomTagService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IApiUsageService, ApiUsageService>();
 
 // Register IHttpClientFactory — required by ExternalMediaApiAdapterFactory to create managed HttpClients.
 builder.Services.AddHttpClient();
@@ -103,7 +104,11 @@ builder.Services.AddSingleton<ExternalMediaApiAdapterFactory>();
 // Register Controllers
 // Tells app to look for controller classes to handle API requests.
 // Without this, my API endpoints won't be discovered nor routed.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // The following line pulls from this logic from the appsettings.json:
 //   "CorsSettings": {

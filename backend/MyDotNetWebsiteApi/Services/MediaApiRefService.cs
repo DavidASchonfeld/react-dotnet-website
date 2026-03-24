@@ -4,11 +4,13 @@ public class MediaApiRefService : IMediaApiRefService
 {
     private readonly AppDbContext _context;
     private readonly ExternalMediaApiAdapterFactory _adapterFactory;
+    private readonly IApiUsageService _apiUsageService;
 
-    public MediaApiRefService(AppDbContext context, ExternalMediaApiAdapterFactory adapterFactory)
+    public MediaApiRefService(AppDbContext context, ExternalMediaApiAdapterFactory adapterFactory, IApiUsageService apiUsageService)
     {
         _context = context;
         _adapterFactory = adapterFactory;
+        _apiUsageService = apiUsageService;
     }
 
 
@@ -49,6 +51,7 @@ public class MediaApiRefService : IMediaApiRefService
             return ServiceResult<List<ExternalApiSearchResult>>.NotImplemented($"No adapter implemented for API '{activeSource.ApiName}'.");
 
         var results = await adapter.SearchAsync(query, limit, page);
+        await _apiUsageService.TrackRequestAsync(activeSource.ApiName);
         return ServiceResult<List<ExternalApiSearchResult>>.Ok(results);
     }
 

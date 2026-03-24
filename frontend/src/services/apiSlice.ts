@@ -25,6 +25,7 @@ import type {
     MoveMediaApiRefWithinMediaListRequest,
 } from '../types/mediaList'
 import type { MediaTypeSummary, MediaTypeDetail } from '../types/mediaType'
+import type { ApiUsageStats } from '../types/apiUsage'
 
 
 // ---- Base HTTP Query ----
@@ -441,6 +442,14 @@ export const apiSlice = createApi({
         }),
 
 
+        // ---- API Usage Endpoints ----
+
+        // Returns usage stats for all external APIs. Admin-only — backend returns 403 for non-admins.
+        getApiUsageStats: builder.query<ApiUsageStats[], void>({
+            query: () => '/api/apiusage',
+        }),
+
+
         // ---- MediaType Endpoints ----
 
         getAllApprovedMediaTypes: builder.query<MediaTypeSummary[], void>({
@@ -484,6 +493,8 @@ export const {
     useAddTagToMediaApiRefMutation,
     useRemoveTagFromMediaApiRefMutation,
     useGetItemsByTagQuery,
+    // API Usage
+    useGetApiUsageStatsQuery,
     // ExternalApiSource
     useGetActiveApiSourcesQuery,
     // MediaType

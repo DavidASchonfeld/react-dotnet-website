@@ -32,6 +32,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
 
     // AppUser:  we are not listing it, since IdentityDbContext<AppUser> above takes care of AppUser
 
+    public DbSet<ApiUsageRecord> ApiUsageRecords {get; set;}
     public DbSet<ExternalApiSource> ExternalApiSources {get; set;}
     public DbSet<MediaApiRef> MediaApiRefs {get; set;}
     public DbSet<CustomTag> CustomTags {get; set;}

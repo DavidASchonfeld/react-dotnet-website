@@ -21,4 +21,12 @@ public static class AppConstants
     // Home page: https://rawg.io
     public const int RawgMonthlyRequestLimit = 20_000;      // 20,000 requests/month
     public const int RawgMonthlyWarningThreshold = 18_000;  // 90% of monthly limit — stay below this
+
+
+    //// API Usage Tracking — Period Types
+    // Used by ApiUsageService to determine the reset cadence per API.
+    public const string OmdbPeriodType = "Daily";           // resets at UTC midnight
+    public const string RawgPeriodType = "Monthly";         // resets on the 1st of each UTC month
+    public const string TvMazePeriodType = "Daily";         // no official limit — tracked for visibility
+    public const string OpenLibraryPeriodType = "Daily";    // no official limit — tracked for visibility
 }

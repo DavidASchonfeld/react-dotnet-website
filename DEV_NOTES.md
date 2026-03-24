@@ -8,6 +8,14 @@ Once the admin is created, this seeding step will be skipped permanently on all 
 This created admin user lives in the database indefinitely like any other user
 Removing the environment variables does not delete the admin user
 
+Note: To check for existing admin account, in the /backend/MyDotNetWebsiteApi folder in Terminal,
+type "dotnet user-secrets list" to see it
+If it is not there, or you forgot etc., set them with this:
+
+    dotnet user-secrets set "SeedAdmin:UserName" "admin"
+    dotnet user-secrets set "SeedAdmin:Password" "Admin1234!"
+    dotnet user-secrets set "SeedAdmin:Email"    "admin@devWebsite.com"
+Then, restart the backend to implement these changes.
 
 ## Development - use "dotnet user-secrets"
 

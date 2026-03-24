@@ -21,6 +21,7 @@ import LoginOrRegisterPage from './pages/LoginOrRegisterPage'
 import MyMediaListsPage from './pages/MyMediaListsPage'
 import MediaListDetailPage from './pages/MediaListDetailPage'
 import AdminManageAllUsersPage from './pages/AdminManageAllUsersPage'
+import AdminApiUsagePage from './pages/AdminApiUsagePage'
 
 // Other of My Code
 import type { AppDispatch, RootState } from './store/store'
@@ -178,6 +179,12 @@ function App() {
         <Route path = "/admin/users" element = {
           <AdminRoute>
             <AdminManageAllUsersPage />
+          </AdminRoute>
+        } />
+
+        <Route path = "/admin/api-usage" element = {
+          <AdminRoute>
+            <AdminApiUsagePage />
           </AdminRoute>
         } />
 

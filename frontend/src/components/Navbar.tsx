@@ -389,6 +389,13 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                                     <span className="absolute left-4">⚙</span>
                                                     <span className="flex-1 text-center">Manage Users</span>
                                                 </button>
+                                                <button
+                                                    className="relative flex items-center w-full px-4 py-2.5 text-sm text-text hover:bg-surface-raised transition-colors duration-150"
+                                                    onClick={() => navigate("/admin/api-usage")}
+                                                >
+                                                    <span className="absolute left-4">📊</span>
+                                                    <span className="flex-1 text-center">API Usage</span>
+                                                </button>
                                             </>
                                         )}
 
