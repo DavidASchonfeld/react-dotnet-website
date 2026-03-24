@@ -18,13 +18,13 @@ export default function RowItemContent({ firstString, secondString, thirdString,
     return (
         <div className={`flex flex-row items-stretch gap-3 w-full min-w-0${onClick ? ' cursor-pointer' : ''}`} onClick={onClick}>
 
-            {/* Photograph — fixed size; replace placeholder with <img> when URL is available.
-                larger mode: self-stretch + fixed width lets the image fill the card height flush (no fixed height needed).
+            {/* Photograph — fixed size; placeholder shown if no URL.
+                larger mode: self-stretch (height) + w-16 (fixed width) fills the card height flush.
                              Parent must use items-stretch for this to work. */}
             <div className={`shrink-0 bg-border flex items-center justify-center overflow-hidden
                 ${larger
-                    ? 'self-stretch aspect-square'
-                    : 'rounded aspect-square w-10 h-10 p-1'
+                    ? 'self-stretch w-16 rounded'
+                    : 'rounded aspect-square w-10 h-10'
                 }`}>
                 {photographOnLeft && (
                     <img src={photographOnLeft} alt="" className="w-full h-full object-cover" />
