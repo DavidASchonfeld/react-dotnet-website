@@ -10,7 +10,7 @@ import AnimatedPage from '../components/AnimatedPage'
 import SearchBar from '../components/SearchBar'
 import RowItemStyling from '../components/RowItemStyling'
 import RowItemContent from '../components/RowItemContent'
-import { useCacheNotification } from '../hooks/useCacheNotification'
+import { CacheStatusPill } from '../components/CacheStatusPill'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES } from '../constants'
 
@@ -65,8 +65,6 @@ export default function SearchResultsPage() {
             { skip: !shouldFetch || searchType !== 'media' || mediaTypeId === null }
         )
 
-    // Show cache notification for admins
-    useCacheNotification(mediaResults?.cacheMetadata)
 
     // ---- Tags search ----
     const { data: tagResults, isLoading: tagsLoading, isFetching: tagsFetching } =
@@ -229,6 +227,11 @@ export default function SearchResultsPage() {
             {/* Scope indicator for Tags/Lists — reminds user which filter is active */}
             {searchType !== 'media' && scope === 'mine' && (
                 <p className="text-xs text-text/50 mt-1">Showing only your {searchType}</p>
+            )}
+
+            {/* Cache status indicator for media results */}
+            {searchType === 'media' && shouldFetch && !isLoading_ && mediaResults && (
+                <CacheStatusPill cacheMetadata={mediaResults.cacheMetadata} />
             )}
 
             {/* Results area */}
