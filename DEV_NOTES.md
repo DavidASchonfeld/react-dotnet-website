@@ -104,3 +104,24 @@ Now, both my backend and frontend are both deployed successfully.
 Note: Since I gave Render permission to look at 1 of my Github repositories, Render has the ability to just pull from my Github.
 So yes, every time I push my commits to Github, Render automatically re-deploys both my frontend and my backend.
 It makes it really easy to publish and publish changes too.
+
+
+## Frontend: API Response Wrapping (CachedResponse)
+
+### The Pattern
+
+All 3rd-party API search results (from OMDB, RAWR, etc.) are wrapped in a `CachedResponse<T>` object by the backend.
+
+Why? The backend caches search results to avoid hitting external APIs repeatedly. We need to know whether results are fresh or cached.
+More details in cacheMetadata.ts
+### The Structure
+
+Whether cached or fresh, all responses have this structure:
+
+{
+  data: ExternalApiSearchResult[],           // The actual results
+  cacheMetadata: {
+    isFromCache: boolean,                    // Was this from our cache?
+    cachedAt: "2026-03-24T10:30:00Z"        // When cached?
+  }
+}

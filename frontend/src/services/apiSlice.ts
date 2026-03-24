@@ -124,10 +124,25 @@ export const apiSlice = createApi({
             providesTags: (_, __, id) => [{ type: 'MediaApiRef', id }],
         }),
 
-        // Searches the active external API for the given media type.
+        // ---- Searching External APIs ----
+        // Searches the active external API (TMDB, Spotify, etc.) for the given media type.
         // Returns raw ExternalApiSearchResult items (not DB records yet).
         // `page` is 1-based for paginated results (used by SearchResultsPage).
-        // Response includes cache metadata indicating if results are from cache.
+        //
+        // IMPORTANT: All responses are wrapped in CachedResponse, whether cached or fresh.
+        // The backend caches results to avoid repeated external API calls.
+        // Use cacheMetadata.isFromCache to determine if results are stale or fresh.
+        //
+        // Return type structure:
+        //   result.data = CachedResponse<ExternalApiSearchResult[]>
+        //   result.data.data = ExternalApiSearchResult[] (the actual results)
+        //   result.data.cacheMetadata.isFromCache = boolean (cached or fresh?)
+        //
+        // Frontend usage pattern:
+        //   - SearchBar.tsx: Ignores cache status, just shows results in dropdown
+        //   - MediaApiRefDetailPage.tsx: (For Administrators only): Uses CacheStatusPill to show "Cached"/"Fresh" badge with age of cache.
+        //
+        // See types/cacheMetadata.ts for detailed examples.
         searchExternalApi: builder.query<
             CachedResponse<ExternalApiSearchResult[]>,
             { query: string; mediaTypeId: number; limit?: number; page?: number; subtype?: string }
@@ -159,6 +174,9 @@ export const apiSlice = createApi({
             invalidatesTags: ['MediaApiRef'],
         }),
 
+        // This returns a MediaListSummary[], (all MediaLists that the user has access to. Since it is only reading
+        // which lists have a link to the MediaApiRef that this query is asking about, so
+        // this endpoint does NOT call a 3rd party API. )
         getMediaApiRefLists: builder.query<MediaListSummary[], number>({
             query: (mediaApiRefId) => `/api/mediaapiref/${mediaApiRefId}/lists`,
         }),
