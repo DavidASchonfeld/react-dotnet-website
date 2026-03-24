@@ -29,10 +29,11 @@ public class MediaApiRefController : ControllerBase
     public async Task<IActionResult> SearchExternalApi(
         [FromQuery] string q,
         [FromQuery] int mediaTypeId,
-        [FromQuery] int limit = 10)
+        [FromQuery] int limit = 10,
+        [FromQuery] int page = 1)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaApiRefService.SearchExternalApiAsync(q, limit, mediaTypeId, requesterUserId);
+        var result = await _mediaApiRefService.SearchExternalApiAsync(q, limit, mediaTypeId, requesterUserId, page);
         return result.ToActionResult(this);
     }
 

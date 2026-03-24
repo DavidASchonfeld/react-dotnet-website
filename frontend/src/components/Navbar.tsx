@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 // Importing from My Files
 import type { RootState, AppDispatch } from "../store/store";
 import { clearCredentials } from "../store/authSlice";
+import SearchBar from "./SearchBar";
 
 
 
@@ -108,6 +109,10 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
     // Importing ability to Redirect
     const navigate = useNavigate();  // set up useNavigate React.js to use it later (just like with useAuth()  ).
 
+
+    const handleSearchSubmit = (query: string, mediaTypeId: number) => {
+        navigate(`/search?q=${encodeURIComponent(query)}&mediaType=${mediaTypeId}&page=1`)
+    }
 
     const handleLogout = () => {
 
@@ -250,7 +255,15 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                     <span className={labelClass}>About</span>
                 </button>
 
-
+                {/* Search bar — only shown when logged in (search requires auth) */}
+                {userName && (
+                    <SearchBar
+                        mode="typeahead"
+                        isTop={isTop}
+                        effectiveMinimized={effectiveMinimized}
+                        onSubmit={handleSearchSubmit}
+                    />
+                )}
 
 
                 {!userName &&

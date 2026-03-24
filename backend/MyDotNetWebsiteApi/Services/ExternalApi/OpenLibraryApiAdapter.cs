@@ -3,7 +3,7 @@
 //       Open Library is free and does not require an API key.
 public class OpenLibraryApiAdapter : IExternalMediaApiAdapter
 {
-    public Task<List<ExternalApiSearchResult>> SearchAsync(string query, int limit)
+    public Task<List<ExternalApiSearchResult>> SearchAsync(string query, int limit, int page = 1)
     {
         // Stub: returns empty list until real implementation is added
         return Task.FromResult(new List<ExternalApiSearchResult>());

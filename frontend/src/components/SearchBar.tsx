@@ -1,0 +1,247 @@
+import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+    useLazySearchExternalApiQuery,
+    useFindOrCreateMediaApiRefMutation,
+    useGetAllApprovedMediaTypesQuery,
+    useGetActiveApiSourcesQuery,
+} from '../services/apiSlice'
+import type { ExternalApiSearchResult } from '../types/externalApiSearch'
+import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_CHARS } from '../constants'
+import RowItemContent from './RowItemContent'
+
+interface SearchBarProps {
+    // 'typeahead': live dropdown as you type (used in Navbar)
+    // 'on-submit': triggers only on Enter key or Search button click (used in SearchResultsPage)
+    mode: 'typeahead' | 'on-submit'
+    isTop: boolean               // from Navbar — controls horizontal vs vertical layout
+    effectiveMinimized: boolean  // collapse the bar when navbar is minimized
+    defaultQuery?: string        // pre-fill from URL params (on-submit mode)
+    defaultMediaTypeId?: number  // pre-fill from URL params (on-submit mode)
+    onSubmit?: (query: string, mediaTypeId: number) => void
+}
+
+export default function SearchBar({
+    mode,
+    isTop,
+    effectiveMinimized,
+    defaultQuery = '',
+    defaultMediaTypeId,
+    onSubmit,
+}: SearchBarProps) {
+    const navigate = useNavigate()
+
+    const [inputQuery, setInputQuery] = useState(defaultQuery)
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+    const [dropdownResults, setDropdownResults] = useState<ExternalApiSearchResult[]>([])
+
+    const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    const { data: mediaTypes } = useGetAllApprovedMediaTypesQuery()
+    const { data: activeSources } = useGetActiveApiSourcesQuery()
+
+    // Default to first available media type once loaded
+    const [selectedMediaTypeId, setSelectedMediaTypeId] = useState<number | null>(
+        defaultMediaTypeId ?? null
+    )
+
+    // Once media types load, set a default if none is selected yet
+    useEffect(() => {
+        if (selectedMediaTypeId === null && mediaTypes && mediaTypes.length > 0) {
+            setSelectedMediaTypeId(defaultMediaTypeId ?? mediaTypes[0].id)
+        }
+    }, [mediaTypes, selectedMediaTypeId, defaultMediaTypeId])
+
+    // Sync defaultQuery / defaultMediaTypeId changes (when URL params update on SearchResultsPage)
+    useEffect(() => {
+        setInputQuery(defaultQuery)
+    }, [defaultQuery])
+
+    useEffect(() => {
+        if (defaultMediaTypeId !== undefined) {
+            setSelectedMediaTypeId(defaultMediaTypeId)
+        }
+    }, [defaultMediaTypeId])
+
+    const [triggerSearch, { isFetching: isSearching }] = useLazySearchExternalApiQuery()
+    const [findOrCreate] = useFindOrCreateMediaApiRefMutation()
+
+    // ---- Typeahead debounced search ----
+    const handleInputChange = (value: string) => {
+        setInputQuery(value)
+
+        if (mode !== 'typeahead') return
+
+        if (debounceTimer.current) clearTimeout(debounceTimer.current)
+
+        if (value.length < SEARCH_MIN_CHARS || selectedMediaTypeId === null) {
+            setDropdownResults([])
+            setIsDropdownOpen(false)
+            return
+        }
+
+        debounceTimer.current = setTimeout(async () => {
+            const result = await triggerSearch({
+                query: value,
+                mediaTypeId: selectedMediaTypeId,
+                limit: 5,
+            })
+            if (result.data) {
+                setDropdownResults(result.data)
+                setIsDropdownOpen(result.data.length > 0)
+            }
+        }, SEARCH_DEBOUNCE_MS)
+    }
+
+    // ---- On-Submit handler (Enter key or Search button) ----
+    const handleSubmit = () => {
+        if (inputQuery.length < SEARCH_MIN_CHARS || selectedMediaTypeId === null) return
+        onSubmit?.(inputQuery, selectedMediaTypeId)
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') handleSubmit()
+    }
+
+    // ---- Typeahead result click: findOrCreate then navigate to detail page ----
+    const handleResultClick = async (result: ExternalApiSearchResult) => {
+        if (selectedMediaTypeId === null) return
+
+        const activeSource = activeSources?.find(s => s.mediaTypeId === selectedMediaTypeId)
+        if (!activeSource) return
+
+        setIsDropdownOpen(false)
+        setInputQuery(result.name)
+
+        try {
+            const created = await findOrCreate({
+                externalApiSourceId: activeSource.id,
+                externalId: result.externalId,
+                name: result.name,
+                mediaTypeId: selectedMediaTypeId,
+                creatorName: result.creatorName,
+                publishedDate: result.publishedDate,
+            }).unwrap()
+            navigate(`/mediaapiref/${created.id}`)
+        } catch {
+            // Error toast is handled by baseQueryWithErrorHandling
+        }
+    }
+
+    const handleClear = () => {
+        setInputQuery('')
+        setDropdownResults([])
+        setIsDropdownOpen(false)
+    }
+
+    // Cleanup debounce on unmount
+    useEffect(() => {
+        return () => {
+            if (debounceTimer.current) clearTimeout(debounceTimer.current)
+        }
+    }, [])
+
+    // ---- Hide entirely when minimized ----
+    if (effectiveMinimized) return null
+
+    const selectedType = mediaTypes?.find(t => t.id === selectedMediaTypeId)
+
+    return (
+        <div className={`relative flex items-center ${isTop ? 'flex-row gap-1' : 'flex-col gap-1 w-full'}`}>
+
+            {/* Input row */}
+            <div className={`relative flex items-center gap-1 ${isTop ? 'w-32 focus-within:w-52 transition-all duration-300' : 'w-full'}`}>
+                <span className="absolute left-2 text-text/50 pointer-events-none text-sm select-none">🔍</span>
+                <input
+                    type="text"
+                    value={inputQuery}
+                    onChange={e => handleInputChange(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={selectedType ? `${selectedType.icon} ${selectedType.name}…` : 'Search…'}
+                    className="form-input pl-7 pr-7 py-1 text-sm w-full rounded-lg"
+                />
+                {inputQuery.length > 0 && (
+                    <button
+                        onClick={handleClear}
+                        className="absolute right-1.5 text-text/50 hover:text-text transition-colors text-xs leading-none"
+                        title="Clear"
+                        tabIndex={-1}
+                    >
+                        ✕
+                    </button>
+                )}
+            </div>
+
+            {/* Media type pills — hidden in minimized (already guarded above), shown when expanded */}
+            {mediaTypes && mediaTypes.length > 0 && (
+                <div className={`flex flex-wrap gap-1 ${isTop ? '' : 'w-full'}`}>
+                    {mediaTypes.map(type => (
+                        <button
+                            key={type.id}
+                            onClick={() => {
+                                setSelectedMediaTypeId(type.id)
+                                setDropdownResults([])
+                                setIsDropdownOpen(false)
+                            }}
+                            className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                                selectedMediaTypeId === type.id
+                                    ? 'bg-primary text-white border-primary'
+                                    : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
+                            }`}
+                            title={type.name}
+                        >
+                            {type.icon} <span className="hidden sm:inline">{type.name}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* On-submit Search button (only in on-submit mode) */}
+            {mode === 'on-submit' && (
+                <button
+                    onClick={handleSubmit}
+                    disabled={inputQuery.length < SEARCH_MIN_CHARS || selectedMediaTypeId === null}
+                    className="btn text-sm py-1 px-3 shrink-0 disabled:opacity-40"
+                >
+                    Search
+                </button>
+            )}
+
+            {/* Typeahead Dropdown */}
+            {mode === 'typeahead' && isDropdownOpen && (
+                <>
+                    {/* Invisible overlay — clicking outside closes the dropdown */}
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsDropdownOpen(false)}
+                    />
+
+                    {/* Dropdown panel */}
+                    <div className={`absolute z-50 min-w-[260px] bg-surface-raised rounded-xl shadow-2xl border border-border overflow-hidden
+                        ${isTop ? 'top-full left-0 mt-1' : 'top-0 left-full ml-2'}`}
+                    >
+                        {isSearching && (
+                            <div className="px-4 py-3 text-sm text-text/60">Searching…</div>
+                        )}
+                        {!isSearching && dropdownResults.length === 0 && (
+                            <div className="px-4 py-3 text-sm text-text/60">No results</div>
+                        )}
+                        {!isSearching && dropdownResults.map(result => (
+                            <button
+                                key={result.externalId}
+                                className="w-full px-3 py-2 hover:bg-surface transition-colors text-left"
+                                onClick={() => handleResultClick(result)}
+                            >
+                                <RowItemContent
+                                    firstString={result.name}
+                                    secondString={result.creatorName ?? undefined}
+                                    photographOnLeft={result.thumbnailUrl ?? undefined}
+                                />
+                            </button>
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+    )
+}

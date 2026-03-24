@@ -30,6 +30,7 @@ import MediaApiRefDetailPage from './pages/MediaApiRefDetailPage'
 import MyCustomTagsPage from './pages/MyCustomTagsPage'
 import ExploreByTagPage from './pages/ExploreByTagPage'
 import HomePage from './pages/HomePage'
+import SearchResultsPage from './pages/SearchResultsPage'
 import { DAY_NIGHT_MAP, setCurrentTheme, type DayNightTheme, type Theme } from './store/themeSlice'
 import { useState } from 'react'
 
@@ -163,6 +164,12 @@ function App() {
         <Route path = "/tags/:tagId/items" element = {
           <ProtectedRoute>
             <ExploreByTagPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path = "/search" element = {
+          <ProtectedRoute>
+            <SearchResultsPage />
           </ProtectedRoute>
         } />
 

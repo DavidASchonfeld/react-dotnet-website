@@ -6,6 +6,7 @@
 public interface IExternalMediaApiAdapter
 {
     // Search the external API and return up to `limit` results matching `query`.
+    // `page` is 1-based; defaults to 1 for the first page of results.
     // Returns an empty list if the API is unavailable or returns no results.
-    Task<List<ExternalApiSearchResult>> SearchAsync(string query, int limit);
+    Task<List<ExternalApiSearchResult>> SearchAsync(string query, int limit, int page = 1);
 }

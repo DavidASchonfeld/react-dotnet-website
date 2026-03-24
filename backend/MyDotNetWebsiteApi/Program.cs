@@ -81,7 +81,12 @@ builder.Services.AddScoped<ICustomTagService, CustomTagService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
+// Register IHttpClientFactory — required by ExternalMediaApiAdapterFactory to create managed HttpClients.
+builder.Services.AddHttpClient();
+
 // Register ExternalMediaApiAdapterFactory as a singleton (it's stateless)
+// Singleton: This scope will be created/exist for the entire time that the website is active
+//            and it will only have one instance.
 builder.Services.AddSingleton<ExternalMediaApiAdapterFactory>();
 // Every time the backend receives an HTTPRequest the DI Container wakes up a creates a "scope" for this request
 //  -- new AppDbContext()

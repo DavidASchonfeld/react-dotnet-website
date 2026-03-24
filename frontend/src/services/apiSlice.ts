@@ -119,17 +119,27 @@ export const apiSlice = createApi({
 
         // Searches the active external API for the given media type.
         // Returns raw ExternalApiSearchResult items (not DB records yet).
+        // `page` is 1-based for paginated results (used by SearchResultsPage).
         searchExternalApi: builder.query<
             ExternalApiSearchResult[],
-            { query: string; mediaTypeId: number; limit?: number }
+            { query: string; mediaTypeId: number; limit?: number; page?: number }
         >({
-            query: ({ query, mediaTypeId, limit = 10 }) => {
-                const params = new URLSearchParams({ q: query, mediaTypeId: String(mediaTypeId), limit: String(limit) })
+            query: ({ query, mediaTypeId, limit = 10, page = 1 }) => {
+                const params = new URLSearchParams({
+                    q: query,
+                    mediaTypeId: String(mediaTypeId),
+                    limit: String(limit),
+                    page: String(page),
+                })
                 return `/api/mediaapiref/search?${params}`
             },
         }),
 
         // Idempotent: finds existing MediaApiRef by (externalApiSourceId, externalId) or creates it.
+        // Idempotent means calling the operation multiple times produces the same result as calling it once.
+        // For findOrCreateMediaApiRef: whether you call it 1 time or 10 times with the same (externalApiSourceId, externalId),
+        // you end up with exactly one MediaApiRef in the database — no duplicates.
+        // It's safe to call this repeatedly without worrying about creating duplicates.
         // Call this after user picks an item from searchExternalApi results.
         findOrCreateMediaApiRef: builder.mutation<MediaApiRefDetail, FindOrCreateMediaApiRefRequest>({
             query: (body) => ({
@@ -448,6 +458,7 @@ export const apiSlice = createApi({
 export const {
     // MediaApiRef
     useGetMediaApiRefDetailQuery,
+    useSearchExternalApiQuery,
     useLazySearchExternalApiQuery,
     useFindOrCreateMediaApiRefMutation,
     useGetMediaApiRefListsQuery,

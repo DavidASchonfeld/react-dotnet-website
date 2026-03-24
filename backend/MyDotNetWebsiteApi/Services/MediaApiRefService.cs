@@ -27,7 +27,7 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<List<ExternalApiSearchResult>>> SearchExternalApiAsync(string query, int limit, int mediaTypeId, string requesterUserId)
+    public async Task<ServiceResult<List<ExternalApiSearchResult>>> SearchExternalApiAsync(string query, int limit, int mediaTypeId, string requesterUserId, int page = 1)
     {
         if (query.Length < AppConstants.SearchMinQueryLength)
             return ServiceResult<List<ExternalApiSearchResult>>.BadRequest("Search query must be at least 2 characters.");
@@ -48,7 +48,7 @@ public class MediaApiRefService : IMediaApiRefService
         if (adapter == null)
             return ServiceResult<List<ExternalApiSearchResult>>.NotImplemented($"No adapter implemented for API '{activeSource.ApiName}'.");
 
-        var results = await adapter.SearchAsync(query, limit);
+        var results = await adapter.SearchAsync(query, limit, page);
         return ServiceResult<List<ExternalApiSearchResult>>.Ok(results);
     }
 
