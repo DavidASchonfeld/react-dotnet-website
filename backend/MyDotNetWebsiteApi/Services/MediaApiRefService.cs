@@ -19,7 +19,7 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<MediaApiRefDetailDto>> GetMediaApiRefDetailAsync(int mediaApiRefId, string requesterUserId)
+    public async Task<ServiceResult<MediaApiRefDetailDto>> GetMediaApiRefDetailAsync(int mediaApiRefId, string requesterUserId, bool bypassCache = false)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<MediaApiRefDetailDto>.Unauthorized();
@@ -31,9 +31,11 @@ public class MediaApiRefService : IMediaApiRefService
 
         if (mediaApiRef == null) return ServiceResult<MediaApiRefDetailDto>.NotFound();
 
+        var effectiveBypass = bypassCache && PermissionHelper.IsAdministrator(requesterUser);
+
         // Check CacheItem(GetById) for a fresh detail response before calling external API
         var queryParams = BuildGetByIdParams(mediaApiRef.ExternalId, mediaApiRef.ApiSource.ApiName);
-        var cachedItem = await _cacheItemService.GetFreshAsync(
+        var cachedItem = effectiveBypass ? null : await _cacheItemService.GetFreshAsync(
             mediaApiRef.ApiSource.ApiName, "GetById", mediaApiRef.MediaType.Name, queryParams);
 
         if (cachedItem != null)
@@ -72,7 +74,7 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<List<ExternalApiSearchResult>>> SearchExternalApiAsync(string query, int limit, int mediaTypeId, string requesterUserId, int page = 1, string? subtype = null)
+    public async Task<ServiceResult<List<ExternalApiSearchResult>>> SearchExternalApiAsync(string query, int limit, int mediaTypeId, string requesterUserId, int page = 1, string? subtype = null, bool bypassCache = false)
     {
         if (query.Length < AppConstants.SearchMinQueryLength)
             return ServiceResult<List<ExternalApiSearchResult>>.BadRequest("Search query must be at least 2 characters.");
@@ -97,6 +99,8 @@ public class MediaApiRefService : IMediaApiRefService
         if (adapter == null)
             return ServiceResult<List<ExternalApiSearchResult>>.NotImplemented($"No adapter implemented for API '{activeSource.ApiName}'.");
 
+        var effectiveBypass = bypassCache && PermissionHelper.IsAdministrator(requesterUser);
+
         // CacheItem lookup: query_type="Search" with normalized query params
         var normalizedQuery = query.Trim().ToLower();
         var queryParams = new SortedDictionary<string, string?>
@@ -106,7 +110,7 @@ public class MediaApiRefService : IMediaApiRefService
             ["subtype"] = subtype,
         };
 
-        var cachedItem = await _cacheItemService.GetFreshAsync(
+        var cachedItem = effectiveBypass ? null : await _cacheItemService.GetFreshAsync(
             activeSource.ApiName, "Search", activeSource.MediaType.Name, queryParams);
 
         if (cachedItem != null)
@@ -130,7 +134,7 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<ExternalApiSearchResult>> GetExternalApiItemAsync(string externalItemId, int externalApiSourceId, string requesterUserId)
+    public async Task<ServiceResult<ExternalApiSearchResult>> GetExternalApiItemAsync(string externalItemId, int externalApiSourceId, string requesterUserId, bool bypassCache = false)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<ExternalApiSearchResult>.Unauthorized();
@@ -150,11 +154,13 @@ public class MediaApiRefService : IMediaApiRefService
         if (adapter == null)
             return ServiceResult<ExternalApiSearchResult>.NotImplemented($"No adapter implemented for API '{source.ApiName}'.");
 
+        var effectiveBypass = bypassCache && PermissionHelper.IsAdministrator(requesterUser);
+
         // Caching is active only when both the global master switch AND the per-source flag are true.
         var globalSettings = await _context.AppGlobalSettings.FindAsync(1);
         var cachingEnabled = (globalSettings?.UseNonSearchQueryCache ?? true) && source.UseNonSearchQueryCache;
 
-        if (cachingEnabled)
+        if (cachingEnabled && !effectiveBypass)
         {
             // CacheItem lookup: query_type="GetById"
             var queryParams = BuildGetByIdParams(externalItemId, source.ApiName);

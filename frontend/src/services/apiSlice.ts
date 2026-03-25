@@ -145,9 +145,9 @@ export const apiSlice = createApi({
         // See types/cacheMetadata.ts for detailed examples.
         searchExternalApi: builder.query<
             CachedResponse<ExternalApiSearchResult[]>,
-            { query: string; mediaTypeId: number; limit?: number; page?: number; subtype?: string }
+            { query: string; mediaTypeId: number; limit?: number; page?: number; subtype?: string; bypassCache?: boolean }
         >({
-            query: ({ query, mediaTypeId, limit = 10, page = 1, subtype }) => {
+            query: ({ query, mediaTypeId, limit = 10, page = 1, subtype, bypassCache }) => {
                 const params = new URLSearchParams({
                     q: query,
                     mediaTypeId: String(mediaTypeId),
@@ -155,6 +155,7 @@ export const apiSlice = createApi({
                     page: String(page),
                 })
                 if (subtype) params.set('subtype', subtype)
+                if (bypassCache) params.set('bypassCache', 'true')
                 return `/api/mediaapiref/search?${params}`
             },
         }),

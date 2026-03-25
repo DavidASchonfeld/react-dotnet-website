@@ -16,10 +16,10 @@ public class MediaApiRefController : ControllerBase
 
 
     [HttpGet("{mediaApiRefId}")]
-    public async Task<IActionResult> GetMediaApiRefDetail(int mediaApiRefId)
+    public async Task<IActionResult> GetMediaApiRefDetail(int mediaApiRefId, [FromQuery] bool bypassCache = false)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaApiRefService.GetMediaApiRefDetailAsync(mediaApiRefId, requesterUserId);
+        var result = await _mediaApiRefService.GetMediaApiRefDetailAsync(mediaApiRefId, requesterUserId, bypassCache);
         return WrapCachedResponse(result);
     }
 
@@ -31,10 +31,11 @@ public class MediaApiRefController : ControllerBase
         [FromQuery] int mediaTypeId,
         [FromQuery] int limit = 10,
         [FromQuery] int page = 1,
-        [FromQuery] string? subtype = null)
+        [FromQuery] string? subtype = null,
+        [FromQuery] bool bypassCache = false)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaApiRefService.SearchExternalApiAsync(q, limit, mediaTypeId, requesterUserId, page, subtype);
+        var result = await _mediaApiRefService.SearchExternalApiAsync(q, limit, mediaTypeId, requesterUserId, page, subtype, bypassCache);
         return WrapCachedResponse(result);
     }
 
@@ -42,10 +43,11 @@ public class MediaApiRefController : ControllerBase
     [HttpGet("external-detail")]
     public async Task<IActionResult> GetExternalApiItem(
         [FromQuery] string externalItemId,
-        [FromQuery] int sourceId)
+        [FromQuery] int sourceId,
+        [FromQuery] bool bypassCache = false)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaApiRefService.GetExternalApiItemAsync(externalItemId, sourceId, requesterUserId);
+        var result = await _mediaApiRefService.GetExternalApiItemAsync(externalItemId, sourceId, requesterUserId, bypassCache);
         return WrapCachedResponse(result);
     }
 

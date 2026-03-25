@@ -85,13 +85,17 @@ export default function SearchPage() {
         })
     }, [urlSearchType, urlScope, apiSourceIdParam, subtypeParam])
 
+    const isAdmin = roleLevel === 'Administrator'
     const isModerator = roleLevel === 'Moderator' || roleLevel === 'Administrator'
     const shouldFetch = query.length >= SEARCH_MIN_CHARS
+
+    const [bypassCache, setBypassCache] = useState(false)
+    const [activeBypassCache, setActiveBypassCache] = useState(false)
 
     // API queries
     const { data: mediaResults, isLoading: mediaLoading, isFetching: mediaFetching } =
         useSearchExternalApiQuery(
-            { query, mediaTypeId: mediaTypeId!, limit: PAGE_SIZE, page, subtype: activeSubtype },
+            { query, mediaTypeId: mediaTypeId!, limit: PAGE_SIZE, page, subtype: activeSubtype, bypassCache: isAdmin && activeBypassCache },
             { skip: !shouldFetch || searchType !== 'media' || mediaTypeId === null }
         )
 
@@ -132,6 +136,7 @@ export default function SearchPage() {
 
     const handleFilterSearch = () => {
         if (query.length < SEARCH_MIN_CHARS) return
+        setActiveBypassCache(bypassCache)
         // Apply filter state to URL and trigger search
         setSearchParams(prev => {
             const params = new URLSearchParams(prev)
@@ -177,6 +182,7 @@ export default function SearchPage() {
     }
 
     const handleSearchSubmit = (newQuery: string) => {
+        setActiveBypassCache(bypassCache)
         // Apply filter state to URL when user submits search
         setSearchParams(prev => {
             const params = new URLSearchParams(prev)
@@ -352,9 +358,21 @@ export default function SearchPage() {
                                 </span>
                                 <p className="text-sm font-semibold text-text">Moderation Filters</p>
                             </div>
-                            <p className="text-sm text-text/50">
-                                Additional filters for moderators and administrators will appear here.
-                            </p>
+                            {isAdmin ? (
+                                <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={bypassCache}
+                                        onChange={e => setBypassCache(e.target.checked)}
+                                        className="w-4 h-4 accent-amber-500"
+                                    />
+                                    <span className="text-sm text-text">Bypass cache — always fetch fresh from API</span>
+                                </label>
+                            ) : (
+                                <p className="text-sm text-text/50">
+                                    Additional filters for moderators and administrators will appear here.
+                                </p>
+                            )}
                         </div>
                     )}
 
