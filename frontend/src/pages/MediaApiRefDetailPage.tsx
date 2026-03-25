@@ -18,7 +18,7 @@ import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
 import { CacheStatusPill } from '../components/CacheStatusPill';
-import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
+import ItemActionsButton, { type MenuAction } from '../components/ItemActionsButton';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import type { SearchType } from '../components/SearchBarWithFilters';
 import { SEARCH_DEFAULT_LIMIT } from '../constants';
@@ -38,8 +38,6 @@ export default function MediaApiRefDetailPage() {
     const cacheMetadata = cachedResponse?.cacheMetadata;
 
     const [refreshDetails, { isLoading: isRefreshing }] = useRefreshMediaApiRefDetailsMutation();
-    const [settingsOpen, setSettingsOpen] = useState(false);
-
     // Modal state for adding this item to lists/tags
     const [showLinkModal, setShowLinkModal] = useState(false);
     // Tracks which type is active so the modal remounts on switch (fresh linkedIds)
@@ -93,10 +91,37 @@ export default function MediaApiRefDetailPage() {
         <div className="page">
             <div className="flex justify-between items-center">
                 <button className="btn btn-secondary w-fit" onClick={() => navigate(-1)}>⬅︎ Back</button>
-                <button
-                    className="btn btn-secondary w-10 h-10 flex items-center justify-center"
-                    onClick={() => setSettingsOpen(true)}
-                >...</button>
+                <ItemActionsButton
+                    buttonClassName="btn btn-secondary w-10 h-10 flex items-center justify-center"
+                    preview={
+                        <RowItemStyling>
+                            <RowItemContent
+                                firstString={detail.name}
+                                secondString={detail.creatorName ?? undefined}
+                                labelPill={<MediaTypeLabel mediaTypeId={detail.mediaTypeId} faded={true} />}
+                            />
+                        </RowItemStyling>
+                    }
+                    onMenuClick={[
+                        {
+                            icon: "🔗",
+                            label: canNativeShare ? "Share" : "Copy Link",
+                            onClick: () => {
+                                const url = window.location.href;
+                                if (canNativeShare) {
+                                    navigator.share({ title: detail.name, url }).catch(() => {});
+                                } else {
+                                    navigator.clipboard.writeText(url).catch(() => {});
+                                }
+                            },
+                        } satisfies MenuAction,
+                        {
+                            icon: "📋",
+                            label: "Add to List / Tag",
+                            onClick: () => setShowLinkModal(true),
+                        } satisfies MenuAction,
+                    ]}
+                />
             </div>
 
             <h1 className="h1-styling">{detail.name}</h1>
@@ -239,43 +264,6 @@ export default function MediaApiRefDetailPage() {
                 <p className="text-gray-400 text-sm">Not in any lists yet.</p>
             )}
         </div>
-
-        <ItemSettingsDrawerModal
-            open={settingsOpen}
-            onClose={() => setSettingsOpen(false)}
-            preview={
-                <RowItemStyling>
-                    <RowItemContent
-                        firstString={detail.name}
-                        secondString={detail.creatorName ?? undefined}
-                        labelPill={<MediaTypeLabel mediaTypeId={detail.mediaTypeId} faded={true} />}
-                    />
-                </RowItemStyling>
-            }
-        >
-            {(close) => (
-                <>
-                    <SettingsRow
-                        icon="🔗"
-                        label={canNativeShare ? "Share" : "Copy Link"}
-                        onClick={() => {
-                            const url = window.location.href;
-                            if (canNativeShare) {
-                                navigator.share({ title: detail.name, url }).catch(() => {});
-                            } else {
-                                navigator.clipboard.writeText(url).catch(() => {});
-                            }
-                            close();
-                        }}
-                    />
-                    <SettingsRow
-                        icon="📋"
-                        label="Add to List / Tag"
-                        onClick={() => { setShowLinkModal(true); close(); }}
-                    />
-                </>
-            )}
-        </ItemSettingsDrawerModal>
 
         {/* Link modal — search Lists or Tags to associate with this media item */}
         {showLinkModal && (

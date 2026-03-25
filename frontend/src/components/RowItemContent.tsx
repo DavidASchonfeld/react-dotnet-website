@@ -1,5 +1,8 @@
-import type { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { BACKEND_BASE_URL } from '../config';
+import ItemActionsButton, { type MenuAction } from './ItemActionsButton';
+
+export type { MenuAction };
 
 interface Props {
     firstString: string;
@@ -10,12 +13,13 @@ interface Props {
     useDirectUrl?: boolean;     // if true, use photographOnLeft as-is instead of proxying through image cache
     labelPill?: ReactNode;
     onClick?: () => void;
+    onMenuClick?: MenuAction[];
 }
 
 // Generic row content for any named object.
 // Layout: [Photo or placeholder] | [flex-col: [firstString + labelPill] / [secondString] / [thirdString (larger only)]]
 // Used as the children of SwipeReorderRowItem (swipe + drag) and RowItem (visual styling only), and other pages/modals.
-export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, useDirectUrl, labelPill, onClick }: Props) {
+export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, useDirectUrl, labelPill, onClick, onMenuClick }: Props) {
 
     return (
         <div className={`flex flex-row items-stretch gap-3 w-full min-w-0${onClick ? ' cursor-pointer' : ''}`} onClick={onClick}>
@@ -84,6 +88,11 @@ export default function RowItemContent({ firstString, secondString, thirdString,
                 )}
 
             </div>
+
+            {onMenuClick && (
+                // No infinite loops because the RowItem inside ItemSettingsDrawerModal does NOT have an onMenuClick
+                <ItemActionsButton onMenuClick={onMenuClick} />
+            )}
 
         </div>
     );
