@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { BACKEND_BASE_URL } from '../config';
+import { routes } from '../utils/routes';
 
 interface Props {
     id: number;
@@ -17,7 +18,7 @@ export default function FeaturedCollageCard({ id, name, creatorName, thumbnailUr
 
     return (
         <Link
-            to={`/mediaapiref/${id}`}
+            to={routes.mediaApiRef(id)}
             className="block overflow-hidden rounded-lg shadow-lg cursor-pointer
                        bg-card border border-border
                        transition-transform duration-200"

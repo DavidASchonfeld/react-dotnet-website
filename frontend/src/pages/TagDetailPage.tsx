@@ -18,6 +18,7 @@ import MediaTypeLabel from '../components/MediaTypeLabel';
 import PaginationControls from '../components/PaginationControls';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import { SEARCH_DEFAULT_LIMIT } from '../constants';
+import { routes } from '../utils/routes';
 
 export default function TagDetailPage() {
     const { tagId } = useParams<{ tagId: string }>();
@@ -72,7 +73,7 @@ export default function TagDetailPage() {
             {items.length > 0 ? (
                 <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     {items.map(item => (
-                        <RowItemStyling key={item.id} onClick={() => navigate(`/mediaapiref/${item.id}`)}>
+                        <RowItemStyling key={item.id} onClick={() => navigate(routes.mediaApiRef(item.id))}>
                             <RowItemContent
                                 firstString={item.name}
                                 secondString={item.creatorName ?? undefined}

@@ -8,6 +8,7 @@ import {
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_CHARS } from '../constants'
 import RowItemContent from './RowItemContent'
+import { routes } from '../utils/routes'
 
 interface SearchBarProps {
     // 'typeahead': live dropdown as you type (used in Navbar)
@@ -128,7 +129,7 @@ export default function SearchBar({
                 publishedDate: result.publishedDate,
                 thumbnailUrl: result.thumbnailUrl,
             }).unwrap()
-            navigate(`/mediaapiref/${created.id}`)
+            navigate(routes.mediaApiRef(created.id))
         } catch {
             // Error toast is handled by baseQueryWithErrorHandling
         }

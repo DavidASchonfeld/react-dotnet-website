@@ -1,6 +1,8 @@
 import { type ReactNode } from 'react';
 import { BACKEND_BASE_URL } from '../config';
-import ItemActionsButton, { type MenuAction } from './ItemActionsButton';
+import ItemActionsButton from './ItemActionsButton';
+import type { MenuAction } from '../utils/menuActions';
+import RowItemStyling from './RowItemStyling';
 
 export type { MenuAction };
 
@@ -14,12 +16,13 @@ interface Props {
     labelPill?: ReactNode;
     onClick?: () => void;
     onMenuClick?: MenuAction[];
+    preview?: ReactNode;  // overrides the auto-generated drawer preview; only used when onMenuClick is set
 }
 
 // Generic row content for any named object.
 // Layout: [Photo or placeholder] | [flex-col: [firstString + labelPill] / [secondString] / [thirdString (larger only)]]
 // Used as the children of SwipeReorderRowItem (swipe + drag) and RowItem (visual styling only), and other pages/modals.
-export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, useDirectUrl, labelPill, onClick, onMenuClick }: Props) {
+export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, useDirectUrl, labelPill, onClick, onMenuClick, preview }: Props) {
 
     return (
         <div className={`flex flex-row items-stretch gap-3 w-full min-w-0${onClick ? ' cursor-pointer' : ''}`} onClick={onClick}>
@@ -90,8 +93,24 @@ export default function RowItemContent({ firstString, secondString, thirdString,
             </div>
 
             {onMenuClick && (
-                // No infinite loops because the RowItem inside ItemSettingsDrawerModal does NOT have an onMenuClick
-                <ItemActionsButton onMenuClick={onMenuClick} />
+                // No infinite loop: the inner RowItemContent in the auto-preview has no onMenuClick,
+                // so it never renders another ItemActionsButton.
+                <ItemActionsButton
+                    onMenuClick={onMenuClick}
+                    preview={preview ?? (
+                        <RowItemStyling>
+                            <RowItemContent
+                                firstString={firstString}
+                                secondString={secondString}
+                                thirdString={thirdString}
+                                larger={larger}
+                                photographOnLeft={photographOnLeft}
+                                useDirectUrl={useDirectUrl}
+                                labelPill={labelPill}
+                            />
+                        </RowItemStyling>
+                    )}
+                />
             )}
 
         </div>

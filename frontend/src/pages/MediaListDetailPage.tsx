@@ -35,6 +35,7 @@ import ConfirmModal from '../components/modals/ConfirmModal';
 import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
 import AnimatedPage from '../components/AnimatedPage';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
+import { routes } from '../utils/routes';
 
 
 
@@ -154,7 +155,7 @@ export default function MediaListDetailPage() {
                 dragDisabled={dragDisabled}
                 swipeDisabled={swipeDisabled}
                 swipeLeftAction={{ label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }}
-                swipeRightAction={{ label: '📑 Details', onPress: () => navigate(`/mediaapiref/${item.id}`) }}
+                swipeRightAction={{ label: '📑 Details', onPress: () => navigate(routes.mediaApiRef(item.id)) }}
             >
                 <RowItemContent
                     firstString={item.name}
@@ -264,7 +265,7 @@ export default function MediaListDetailPage() {
                                         id={item.id}
                                         isEditMode={isEditMode}
                                         swipeLeftAction={{ label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }}
-                                        swipeRightAction={{ label: '📑 Details', onPress: () => navigate(`/mediaapiref/${item.id}`) }}
+                                        swipeRightAction={{ label: '📑 Details', onPress: () => navigate(routes.mediaApiRef(item.id)) }}
                                         onOptionsPress={() => setSettingsItem(item)}
                                     >
                                         <RowItemContent
@@ -370,7 +371,7 @@ export default function MediaListDetailPage() {
                         icon="🔗"
                         label={canNativeShare ? "Share" : "Copy Link"}
                         onClick={() => {
-                            const url = `${window.location.origin}/mediaapiref/${settingsItem!.id}`;
+                            const url = `${window.location.origin}${routes.mediaApiRef(settingsItem!.id)}`;
                             if (canNativeShare) {
                                 navigator.share({ title: settingsItem!.name, url }).catch(() => {});
                             } else {

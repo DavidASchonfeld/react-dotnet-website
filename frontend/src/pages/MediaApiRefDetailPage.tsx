@@ -18,7 +18,9 @@ import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
 import { CacheStatusPill } from '../components/CacheStatusPill';
-import ItemActionsButton, { type MenuAction } from '../components/ItemActionsButton';
+import ItemActionsButton from '../components/ItemActionsButton';
+import { mediaApiRefActions } from '../utils/menuActions';
+import { routes } from '../utils/routes';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import type { SearchType } from '../components/SearchBarWithFilters';
 import { SEARCH_DEFAULT_LIMIT } from '../constants';
@@ -43,9 +45,6 @@ export default function MediaApiRefDetailPage() {
     // Tracks which type is active so the modal remounts on switch (fresh linkedIds)
     const [activeModalType, setActiveModalType] = useState<SearchType>('lists');
 
-    // navigator.share = the native iOS/Android/desktop share sheet (like Spotify).
-    // When unavailable, the button becomes a "Copy Link" button instead.
-    const canNativeShare = typeof navigator.share === 'function';
 
     const { data: lists } = useGetMediaApiRefListsQuery(
         mediaApiRefId,
@@ -102,25 +101,13 @@ export default function MediaApiRefDetailPage() {
                             />
                         </RowItemStyling>
                     }
-                    onMenuClick={[
-                        {
-                            icon: "🔗",
-                            label: canNativeShare ? "Share" : "Copy Link",
-                            onClick: () => {
-                                const url = window.location.href;
-                                if (canNativeShare) {
-                                    navigator.share({ title: detail.name, url }).catch(() => {});
-                                } else {
-                                    navigator.clipboard.writeText(url).catch(() => {});
-                                }
-                            },
-                        } satisfies MenuAction,
-                        {
-                            icon: "📋",
-                            label: "Add to List / Tag",
-                            onClick: () => setShowLinkModal(true),
-                        } satisfies MenuAction,
-                    ]}
+                    onMenuClick={mediaApiRefActions({
+                        id: detail.id,
+                        name: detail.name,
+                        navigate,
+                        onManageListsTagsOpen: () => setShowLinkModal(true),
+                        includeGoToDetails: false,
+                    })}
                 />
             </div>
 
@@ -255,7 +242,7 @@ export default function MediaApiRefDetailPage() {
             {lists && lists.length > 0 ? (
                 <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     {lists.map(list => (
-                        <RowItemStyling key={list.id} onClick={() => navigate(`/medialist/${list.id}`)}>
+                        <RowItemStyling key={list.id} onClick={() => navigate(routes.mediaList(list.id))}>
                             <RowItemContent firstString={list.name} secondString={list.description ?? undefined} />
                         </RowItemStyling>
                     ))}

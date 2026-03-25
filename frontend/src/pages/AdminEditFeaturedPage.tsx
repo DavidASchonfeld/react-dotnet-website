@@ -7,6 +7,7 @@ import {
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import AnimatedPage from '../components/AnimatedPage';
 import RowItemContent from '../components/RowItemContent';
+import { routes } from '../utils/routes';
 
 
 
@@ -69,7 +70,7 @@ export default function AdminEditFeaturedPage() {
                     <div
                         key={list.id}
                         className="card flex justify-between items-stretch cursor-pointer"
-                        onClick={() => navigate(`/medialist/${list.id}`)}
+                        onClick={() => navigate(routes.mediaList(list.id))}
                     >
                         <RowItemContent
                             firstString={list.name}
@@ -83,7 +84,7 @@ export default function AdminEditFeaturedPage() {
                             </span>
                             <button
                                 className="btn btn-secondary w-fit"
-                                onClick={(e) => { e.stopPropagation(); navigate(`/medialist/${list.id}`); }}
+                                onClick={(e) => { e.stopPropagation(); navigate(routes.mediaList(list.id)); }}
                             >
                                 Edit
                             </button>

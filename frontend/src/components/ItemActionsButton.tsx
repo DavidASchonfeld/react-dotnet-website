@@ -1,11 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import ItemSettingsDrawerModal, { SettingsRow } from './modals/ItemSettingsDrawerModal';
-
-export interface MenuAction {
-    icon: string;
-    label: string;
-    onClick: () => void;
-}
+import type { MenuAction } from '../utils/menuActions';
 
 interface Props {
     preview?: ReactNode;

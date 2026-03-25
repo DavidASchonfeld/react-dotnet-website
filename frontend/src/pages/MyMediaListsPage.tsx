@@ -17,6 +17,7 @@ import ConfirmModal from '../components/modals/ConfirmModal';
 import RowItemContent from '../components/RowItemContent';
 import AnimatedPage from '../components/AnimatedPage';
 import PaginationControls from '../components/PaginationControls';
+import { routes } from '../utils/routes';
 
 
 
@@ -107,7 +108,7 @@ export default function MyMediaListsPage() {
                 {mediaLists.map(mediaList => (
                     <div key={mediaList.id}
                         className="card flex justify-between items-stretch cursor-pointer"
-                        onClick={() => navigate(`/medialist/${mediaList.id}`)}
+                        onClick={() => navigate(routes.mediaList(mediaList.id))}
                     >
                         <RowItemContent
                             firstString={mediaList.name}

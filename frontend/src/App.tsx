@@ -25,6 +25,7 @@ import AdminApiUsagePage from './pages/AdminApiUsagePage'
 import AdminEditFeaturedPage from './pages/AdminEditFeaturedPage'
 
 // Other of My Code
+import { routePaths } from './utils/routes'
 import type { AppDispatch, RootState } from './store/store'
 import { useGetAllApprovedMediaTypesQuery } from './services/apiSlice'
 import AdminRoute from './components/AdminRoute'
@@ -146,11 +147,11 @@ function App() {
 
         {/* The ":id means that you can pass any variable there,
         and React will catch the value into the variable "id". */}
-        <Route path = "/medialist/:id" element = {<MediaListDetailPage />} />
+        <Route path={routePaths.mediaList} element={<MediaListDetailPage />} />
 
 
 
-        <Route path = "/mediaapiref/:id" element = {<MediaApiRefDetailPage />} />
+        <Route path={routePaths.mediaApiRef} element={<MediaApiRefDetailPage />} />
 
         <Route path = "/my-tags" element = {
           <ProtectedRoute>
@@ -158,8 +159,8 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path = "/tags/:tagId/items" element = {<ExploreByTagPage />} />
-        <Route path = "/tags/:tagId" element = {<TagDetailPage />} />
+        <Route path={routePaths.tagItems} element={<ExploreByTagPage />} />
+        <Route path={routePaths.tag} element={<TagDetailPage />} />
 
         <Route path = "/search" element = {<SearchPage />} />
 

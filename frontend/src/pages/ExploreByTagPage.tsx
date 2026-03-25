@@ -6,6 +6,7 @@ import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
 import PaginationControls from '../components/PaginationControls';
+import { routes } from '../utils/routes';
 
 
 export default function ExploreByTagPage() {
@@ -42,7 +43,7 @@ export default function ExploreByTagPage() {
             {items.length > 0 ? (
                 <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     {items.map(item => (
-                        <RowItemStyling key={item.id} onClick={() => navigate(`/mediaapiref/${item.id}`)}>
+                        <RowItemStyling key={item.id} onClick={() => navigate(routes.mediaApiRef(item.id))}>
                             <RowItemContent
                                 firstString={item.name}
                                 secondString={item.creatorName ?? undefined}

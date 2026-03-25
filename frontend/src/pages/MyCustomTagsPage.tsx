@@ -12,6 +12,7 @@ import ConfirmModal from '../components/modals/ConfirmModal';
 import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
 import PaginationControls from '../components/PaginationControls';
+import { routes } from '../utils/routes';
 
 
 export default function MyCustomTagsPage() {
@@ -98,7 +99,7 @@ export default function MyCustomTagsPage() {
                                     <RowItemContent
                                         firstString={tag.name}
                                         secondString={tag.visibilityStatus === VisibilityStatus.Public ? 'Public' : 'Private'}
-                                        onClick={() => navigate(`/tags/${tag.id}/items`, { state: { tagName: tag.name } })}
+                                        onClick={() => navigate(routes.tagItems(tag.id), { state: { tagName: tag.name } })}
                                     />
                                     <div className="flex gap-2 shrink-0 ml-2">
                                         <button className="btn btn-secondary btn-sm" onClick={() => setEditingTag({ id: tag.id, name: tag.name })}>Edit</button>

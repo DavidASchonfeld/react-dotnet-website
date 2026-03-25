@@ -24,6 +24,7 @@ import { CacheStatusPill } from '../components/CacheStatusPill'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES } from '../constants'
 import ManageLinkModal from '../components/modals/ManageLinkModal'
+import { routes } from '../utils/routes'
 
 const PAGE_SIZE = SEARCH_DEFAULT_LIMIT
 
@@ -137,7 +138,7 @@ export default function SearchPage() {
                 publishedDate: result.publishedDate,
                 thumbnailUrl: result.thumbnailUrl,
             }).unwrap()
-            navigate(`/mediaapiref/${created.id}`)
+            navigate(routes.mediaApiRef(created.id))
         } catch {
             // Error toast is handled by baseQueryWithErrorHandling
         }
@@ -269,7 +270,7 @@ export default function SearchPage() {
                                 {tagResults.map(tag => (
                                     <RowItemStyling
                                         key={tag.id}
-                                        onClick={() => navigate(`/tags/${tag.id}/items`)}
+                                        onClick={() => navigate(routes.tagItems(tag.id))}
                                     >
                                         <RowItemContent
                                             firstString={tag.name}
@@ -293,7 +294,7 @@ export default function SearchPage() {
                                 {listResults.map(list => (
                                     <RowItemStyling
                                         key={list.id}
-                                        onClick={() => navigate(`/medialist/${list.id}`)}
+                                        onClick={() => navigate(routes.mediaList(list.id))}
                                     >
                                         <RowItemContent firstString={list.name} />
                                     </RowItemStyling>
