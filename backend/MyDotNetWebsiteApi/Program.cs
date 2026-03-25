@@ -76,14 +76,18 @@ builder.Services.AddAuthentication(options =>
 //  (They are in the backend/MyDotNetWebsiteApi/Services folder)
 builder.Services.AddScoped<IMediaTypeService, MediaTypeService>();
 builder.Services.AddScoped<IMediaListService, MediaListService>();
+builder.Services.AddScoped<ICacheItemService, CacheItemService>(); // Unified cache: discriminator pattern for all query types
 builder.Services.AddScoped<IMediaApiRefService, MediaApiRefService>();
 builder.Services.AddScoped<ICustomTagService, CustomTagService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IApiUsageService, ApiUsageService>();
+builder.Services.AddScoped<IImageCacheService, ImageCacheService>(); // Shared image blob storage prevents duplication
+builder.Services.AddHostedService<CacheEvictionService>(); // Background eviction runs nightly: TTL + LRU for CacheItem and ImageCache
 
-// Register IHttpClientFactory — required by ExternalMediaApiAdapterFactory to create managed HttpClients.
+// Register IHttpClientFactory — required by ExternalMediaApiAdapterFactory and ImageCacheService.
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient<ImageCacheService>(); // Named client for fetching external image URLs
 
 // Register ExternalMediaApiAdapterFactory as a singleton (it's stateless)
 // Singleton: This scope will be created/exist for the entire time that the website is active

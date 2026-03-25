@@ -186,6 +186,15 @@ export const apiSlice = createApi({
             providesTags: (_, __, mediaApiRefId) => [{ type: 'CustomTag', id: `ref-${mediaApiRefId}` }],
         }),
 
+        // Force-refresh: bypasses CacheItem, fetches fresh data from external API, and clears staleness.
+        refreshMediaApiRefDetails: builder.mutation<CachedResponse<MediaApiRefDetail>, number>({
+            query: (mediaApiRefId) => ({
+                url: `/api/mediaapiref/${mediaApiRefId}/refresh`,
+                method: 'POST',
+            }),
+            invalidatesTags: (_, __, mediaApiRefId) => [{ type: 'MediaApiRef', id: mediaApiRefId }],
+        }),
+
 
         // ---- MediaList Endpoints ----
 
@@ -572,6 +581,7 @@ export const {
     useFindOrCreateMediaApiRefMutation,
     useGetMediaApiRefListsQuery,
     useGetMediaApiRefTagsQuery,
+    useRefreshMediaApiRefDetailsMutation,
     // MediaList
     useGetMyMediaListsQuery,
     useLazyGetMyMediaListsQuery,

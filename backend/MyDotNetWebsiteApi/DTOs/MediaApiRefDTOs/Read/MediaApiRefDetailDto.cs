@@ -11,7 +11,13 @@ public class MediaApiRefDetailDto
     public DateTime DateAdded {get; set;}
     public string? ApiHomepageUrl {get; set;}
 
-    // Detailed metadata from external API (cached)
+    // Staleness detection: when details were last refreshed from the external API
+    public DateTime? DetailsFetchedAt {get; set;}
+
+    // True when details are older than AppConstants.DetailsStaleDays — triggers UI refresh hint
+    public bool IsStale {get; set;}
+
+    // Detail fields sourced from CacheItem.ResponseJson, not MediaApiRef columns
     public string? Poster {get; set;}
     public string? Plot {get; set;}
     public string? Runtime {get; set;}

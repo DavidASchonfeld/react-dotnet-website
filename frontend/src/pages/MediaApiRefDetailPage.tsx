@@ -2,11 +2,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     useGetMediaApiRefDetailQuery,
     useGetMediaApiRefListsQuery,
+    useRefreshMediaApiRefDetailsMutation,
     // useGetMediaApiRefTagsQuery,
     // useAddTagToMediaApiRefMutation,
     // useRemoveTagFromMediaApiRefMutation,
     // useGetMyCustomTagsQuery,
 } from '../services/apiSlice';
+import { BACKEND_BASE_URL } from '../config';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/RowItemStyling';
@@ -27,10 +29,17 @@ export default function MediaApiRefDetailPage() {
     const detail = cachedResponse?.data;
     const cacheMetadata = cachedResponse?.cacheMetadata;
 
+    const [refreshDetails, { isLoading: isRefreshing }] = useRefreshMediaApiRefDetailsMutation();
+
     const { data: lists } = useGetMediaApiRefListsQuery(
         mediaApiRefId,
         { skip: isNaN(mediaApiRefId) }
     );
+
+    // Route poster through backend ImageCache instead of direct external URL
+    const posterSrc = detail?.poster
+        ? `${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(detail.poster)}`
+        : undefined;
 
     // const { data: appliedTags } = useGetMediaApiRefTagsQuery(
     //     mediaApiRefId,
@@ -57,10 +66,25 @@ export default function MediaApiRefDetailPage() {
             <CacheStatusPill cacheMetadata={cacheMetadata} />
             <MediaTypeLabel mediaTypeId={detail.mediaTypeId} />
 
-            {detail.poster && (
+            {/* Staleness hint: show when details are older than the backend's staleness threshold */}
+            {detail.isStale && (
+                <div className="my-2 text-sm text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
+                    <span>This data may be outdated.</span>
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => refreshDetails(detail.id)}
+                        disabled={isRefreshing}
+                    >
+                        {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                    </button>
+                </div>
+            )}
+
+            {/* Images served via backend ImageCache instead of direct external URL */}
+            {posterSrc && (
                 <div className="my-4">
                     <img
-                        src={detail.poster}
+                        src={posterSrc}
                         alt={detail.name}
                         className="max-w-xs rounded-lg shadow-md"
                     />

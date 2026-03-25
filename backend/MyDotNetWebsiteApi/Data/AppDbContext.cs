@@ -32,8 +32,8 @@ public class AppDbContext : IdentityDbContext<AppUser>
 
     // AppUser:  we are not listing it, since IdentityDbContext<AppUser> above takes care of AppUser
 
-    public DbSet<SearchQueryCache> SearchQueryCaches {get; set;}
-    public DbSet<NonSearchQueryCache> NonSearchQueryCaches {get; set;}
+    public DbSet<CacheItem> CacheItems {get; set;} // Unified cache: discriminator pattern for flexibility
+    public DbSet<ImageCache> ImageCaches {get; set;} // Shared image storage prevents duplication
     public DbSet<AppGlobalSettings> AppGlobalSettings {get; set;}
     public DbSet<ApiUsageRecord> ApiUsageRecords {get; set;}
     public DbSet<ExternalApiSource> ExternalApiSources {get; set;}
@@ -130,30 +130,30 @@ public class AppDbContext : IdentityDbContext<AppUser>
             .HasIndex(r => new { r.ExternalApiSourceId, r.ExternalId })
             .IsUnique();
 
-        // Block: SearchQueryCache -> ExternalApiSource
-        modelBuilder.Entity<SearchQueryCache>()
-            .HasOne(c => c.ExternalApiSource)
-            .WithMany()
-            .HasForeignKey(c => c.ExternalApiSourceId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Unique index: one cache entry per (query, api source, page, subtype) combination
-        modelBuilder.Entity<SearchQueryCache>()
-            .HasIndex(c => new { c.NormalizedQuery, c.ExternalApiSourceId, c.Page, c.Subtype })
+        // CacheItem configuration: flexible discriminator pattern for all query types
+        modelBuilder.Entity<CacheItem>()
+            .HasIndex(c => new { c.ApiSource, c.QueryType, c.MediaType, c.QueryParametersHash })
             .IsUnique();
 
-        // Block: NonSearchQueryCache -> ExternalApiSource
-        modelBuilder.Entity<NonSearchQueryCache>()
-            .HasOne(c => c.ExternalApiSource)
-            .WithMany()
-            .HasForeignKey(c => c.ExternalApiSourceId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // Index for TTL-based eviction (TTL stands for "Time to Live" aka each cache item expires after a certain amount of time)
+        modelBuilder.Entity<CacheItem>()
+            .HasIndex(c => c.ExpiresAt);
 
-        // Unique index: one cache entry per (externalItemId, api source) combination
-        modelBuilder.Entity<NonSearchQueryCache>()
-            .HasIndex(c => new { c.ExternalApiSourceId, c.ExternalItemId })
-            .IsUnique();
+        // Index for LRU eviction (LRU stands for "Least Recently Used")
+        modelBuilder.Entity<CacheItem>()
+            .HasIndex(c => c.LastAccessedAt);
 
+        // ImageCache configuration: URL is the natural key for deduplication
+        modelBuilder.Entity<ImageCache>()
+            .HasKey(i => i.ImageUrl);
+
+        // Index for TTL-based eviction
+        modelBuilder.Entity<ImageCache>()
+            .HasIndex(i => i.ExpiresAt);
+
+        // Index for LRU eviction fallback
+        modelBuilder.Entity<ImageCache>()
+            .HasIndex(i => i.AccessedAt);
 
         // Cascade Deletions
         //// Means: If that item is deleted, if it has a foreign key in another table rows, those rows are automatically deleted

@@ -20,6 +20,11 @@ export interface MediaApiRefDetail {
     externalId: string;
     dateAdded: string;
     apiHomepageUrl?: string;
+    // Staleness detection: when details were last refreshed from the external API
+    detailsFetchedAt: string | null;
+    // True when details are older than the backend's DetailsStaleDays threshold
+    isStale: boolean;
+    // Detail fields sourced from CacheItem.ResponseJson, not MediaApiRef columns
     poster?: string | null;
     plot?: string | null;
     runtime?: string | null;

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { BACKEND_BASE_URL } from '../config';
 
 interface Props {
     firstString: string;
@@ -27,7 +28,12 @@ export default function RowItemContent({ firstString, secondString, thirdString,
                     : 'rounded aspect-square w-10 h-10'
                 }`}>
                 {photographOnLeft && (
-                    <img src={photographOnLeft} alt="" className="w-full h-full object-cover" />
+                    // Images served via backend ImageCache instead of direct external URL
+                    <img
+                        src={`${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(photographOnLeft)}`}
+                        alt=""
+                        className="w-full h-full object-cover"
+                    />
                 )}
             </div>
 

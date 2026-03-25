@@ -79,11 +79,11 @@ export default function MediaListDetailPage() {
         handleSearchChange,
         clearResults: clearSearchResults,
     } = useSearch<ExternalApiSearchResult>(
-        async (query) => await triggerSearchExternalApi({
+        async (query) => (await triggerSearchExternalApi({
             query,
             mediaTypeId: searchMediaTypeId,
             limit: SEARCH_DEFAULT_LIMIT,
-        }).unwrap()
+        }).unwrap()).data
     );
 
     // This is about showing/not showing the modal

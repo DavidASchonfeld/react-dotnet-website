@@ -16,4 +16,7 @@ public interface IMediaApiRefService
     Task<ServiceResult<List<MediaListSummaryDto>>> GetListsContainingRefAsync(int mediaApiRefId, string requesterUserId);
 
     Task<ServiceResult<List<CustomTagSummaryDto>>> GetTagsForRefAsync(int mediaApiRefId, string requesterUserId);
+
+    // Force-refresh: bypasses cache, fetches fresh data from external API, overwrites CacheItem entry.
+    Task<ServiceResult<MediaApiRefDetailDto>> FetchAndCacheDetailsAsync(int mediaApiRefId, string requesterUserId);
 }

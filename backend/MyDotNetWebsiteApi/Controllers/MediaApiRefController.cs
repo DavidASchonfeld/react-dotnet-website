@@ -75,6 +75,15 @@ public class MediaApiRefController : ControllerBase
         return result.ToActionResult(this);
     }
 
+    // Force-refresh: bypasses CacheItem, fetches fresh data from external API, and updates DetailsFetchedAt.
+    [HttpPost("{mediaApiRefId}/refresh")]
+    public async Task<IActionResult> RefreshDetails(int mediaApiRefId)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaApiRefService.FetchAndCacheDetailsAsync(mediaApiRefId, requesterUserId);
+        return WrapCachedResponse(result);
+    }
+
     private IActionResult WrapCachedResponse<T>(ServiceResult<T> result)
     {
         if (result.IsSuccess)
