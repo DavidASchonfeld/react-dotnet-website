@@ -7,6 +7,7 @@ interface Props {
     thirdString?: string;
     larger?: boolean;
     photographOnLeft?: string;  // image URL; placeholder shown if omitted
+    useDirectUrl?: boolean;     // if true, use photographOnLeft as-is instead of proxying through image cache
     labelPill?: ReactNode;
     onClick?: () => void;
 }
@@ -14,7 +15,7 @@ interface Props {
 // Generic row content for any named object.
 // Layout: [Photo or placeholder] | [flex-col: [firstString + labelPill] / [secondString] / [thirdString (larger only)]]
 // Used as the children of SwipeReorderRowItem (swipe + drag) and RowItem (visual styling only), and other pages/modals.
-export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, labelPill, onClick }: Props) {
+export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, useDirectUrl, labelPill, onClick }: Props) {
 
     return (
         <div className={`flex flex-row items-stretch gap-3 w-full min-w-0${onClick ? ' cursor-pointer' : ''}`} onClick={onClick}>
@@ -28,9 +29,10 @@ export default function RowItemContent({ firstString, secondString, thirdString,
                     : 'rounded aspect-square w-10 h-10'
                 }`}>
                 {photographOnLeft && (
-                    // Images served via backend ImageCache instead of direct external URL
                     <img
-                        src={`${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(photographOnLeft)}`}
+                        src={useDirectUrl
+                            ? photographOnLeft
+                            : `${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(photographOnLeft)}`}
                         alt=""
                         className="w-full h-full object-cover"
                     />

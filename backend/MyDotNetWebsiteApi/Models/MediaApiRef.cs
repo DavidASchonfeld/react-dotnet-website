@@ -21,8 +21,9 @@ public class MediaApiRef
 
     public DateTime DateAdded { get; set; } = DateTime.UtcNow;
 
-    // Poster image URL only (blob storage deferred to ImageCache)
-    public string? Poster { get; set; }
+    // Image URLs (blob storage deferred to ImageCache)
+    public string? ThumbnailUrl { get; set; }  // small image from search results
+    public string? Poster { get; set; }        // full-size image from detail fetch
 
     // Optional location/origin info
     public string? Country { get; set; }

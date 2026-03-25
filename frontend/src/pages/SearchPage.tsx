@@ -168,6 +168,7 @@ export default function SearchPage() {
                 mediaTypeId,
                 creatorName: result.creatorName,
                 publishedDate: result.publishedDate,
+                thumbnailUrl: result.thumbnailUrl,
             }).unwrap()
             navigate(`/mediaapiref/${created.id}`)
         } catch {
@@ -412,6 +413,7 @@ export default function SearchPage() {
                                                         : undefined
                                                 }
                                                 larger
+                                                useDirectUrl
                                             />
                                         </RowItemStyling>
                                     ))}

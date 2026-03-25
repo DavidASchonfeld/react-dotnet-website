@@ -125,6 +125,7 @@ export default function SearchBar({
                 mediaTypeId: activeSource.mediaTypeId,
                 creatorName: result.creatorName,
                 publishedDate: result.publishedDate,
+                thumbnailUrl: result.thumbnailUrl,
             }).unwrap()
             navigate(`/mediaapiref/${created.id}`)
         } catch {

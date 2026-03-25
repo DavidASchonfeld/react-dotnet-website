@@ -17,8 +17,10 @@ public class MediaApiRefDetailDto
     // True when details are older than AppConstants.DetailsStaleDays — triggers UI refresh hint
     public bool IsStale {get; set;}
 
+    // Image URLs stored on MediaApiRef entity
+    public string? ThumbnailUrl {get; set;}    // small image from search results
     // Detail fields sourced from CacheItem.ResponseJson, not MediaApiRef columns
-    public string? Poster {get; set;}
+    public string? Poster {get; set;}          // full-size image from detail fetch
     public string? Plot {get; set;}
     public string? Runtime {get; set;}
     public string? Country {get; set;}

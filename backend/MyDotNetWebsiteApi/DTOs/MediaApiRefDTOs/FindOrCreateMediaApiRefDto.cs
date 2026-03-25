@@ -8,4 +8,5 @@ public class FindOrCreateMediaApiRefDto
     public int MediaTypeId {get; set;}
     public string? CreatorName {get; set;}
     public DateTime? PublishedDate {get; set;}
+    public string? ThumbnailUrl {get; set;}
 }

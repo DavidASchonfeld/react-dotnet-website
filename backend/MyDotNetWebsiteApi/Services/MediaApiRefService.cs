@@ -7,13 +7,15 @@ public class MediaApiRefService : IMediaApiRefService
     private readonly ExternalMediaApiAdapterFactory _adapterFactory;
     private readonly IApiUsageService _apiUsageService;
     private readonly ICacheItemService _cacheItemService;
+    private readonly IImageCacheService _imageCacheService;
 
-    public MediaApiRefService(AppDbContext context, ExternalMediaApiAdapterFactory adapterFactory, IApiUsageService apiUsageService, ICacheItemService cacheItemService)
+    public MediaApiRefService(AppDbContext context, ExternalMediaApiAdapterFactory adapterFactory, IApiUsageService apiUsageService, ICacheItemService cacheItemService, IImageCacheService imageCacheService)
     {
         _context = context;
         _adapterFactory = adapterFactory;
         _apiUsageService = apiUsageService;
         _cacheItemService = cacheItemService;
+        _imageCacheService = imageCacheService;
     }
 
 
@@ -38,6 +40,7 @@ public class MediaApiRefService : IMediaApiRefService
         {
             // Detail fields sourced from CacheItem.ResponseJson, not MediaApiRef columns
             var cachedDetails = JsonSerializer.Deserialize<ExternalApiSearchResult>(cachedItem.ResponseJson);
+            if (cachedDetails?.Poster != null) PrewarmPoster(cachedDetails.Poster);
             return ServiceResult<MediaApiRefDetailDto>.OkFromCache(
                 ToDetailDto(mediaApiRef, cachedDetails), cachedItem.LastAccessedAt);
         }
@@ -49,15 +52,17 @@ public class MediaApiRefService : IMediaApiRefService
             var detailedResult = await adapter.GetByExternalIdAsync(mediaApiRef.ExternalId);
             if (detailedResult != null)
             {
-                // Store raw API response in CacheItem; update staleness timestamp on MediaApiRef
+                // Store raw API response in CacheItem; update staleness timestamp and Poster on MediaApiRef
                 var responseJson = JsonSerializer.Serialize(detailedResult);
                 await _cacheItemService.UpsertAsync(
                     mediaApiRef.ApiSource.ApiName, "GetById", mediaApiRef.MediaType.Name,
                     queryParams, responseJson, AppConstants.CacheItemGetByIdTtlDays);
 
                 mediaApiRef.DetailsFetchedAt = DateTime.UtcNow;
+                if (detailedResult.Poster != null) mediaApiRef.Poster = detailedResult.Poster;
                 await _context.SaveChangesAsync();
                 await _apiUsageService.TrackRequestAsync(mediaApiRef.ApiSource.ApiName);
+                if (detailedResult.Poster != null) PrewarmPoster(detailedResult.Poster);
 
                 return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(mediaApiRef, detailedResult));
             }
@@ -107,6 +112,7 @@ public class MediaApiRefService : IMediaApiRefService
         if (cachedItem != null)
         {
             var cachedResults = JsonSerializer.Deserialize<List<ExternalApiSearchResult>>(cachedItem.ResponseJson)!;
+            PrewarmThumbnails(cachedResults);
             return ServiceResult<List<ExternalApiSearchResult>>.OkFromCache(cachedResults, cachedItem.LastAccessedAt);
         }
 
@@ -119,6 +125,7 @@ public class MediaApiRefService : IMediaApiRefService
             activeSource.ApiName, "Search", activeSource.MediaType.Name,
             queryParams, responseJson, AppConstants.CacheItemSearchTtlDays);
 
+        PrewarmThumbnails(results);
         return ServiceResult<List<ExternalApiSearchResult>>.Ok(results);
     }
 
@@ -199,7 +206,15 @@ public class MediaApiRefService : IMediaApiRefService
                 r.ExternalId == dto.ExternalId);
 
         if (existing != null)
+        {
+            // Update ThumbnailUrl if not yet stored (e.g. record was created before this field existed)
+            if (existing.ThumbnailUrl == null && dto.ThumbnailUrl != null)
+            {
+                existing.ThumbnailUrl = dto.ThumbnailUrl;
+                await _context.SaveChangesAsync();
+            }
             return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(existing, null));
+        }
 
         var newRef = new MediaApiRef
         {
@@ -209,6 +224,7 @@ public class MediaApiRefService : IMediaApiRefService
             PublishedDate = dto.PublishedDate,
             ExternalApiSourceId = dto.ExternalApiSourceId,
             ExternalId = dto.ExternalId,
+            ThumbnailUrl = dto.ThumbnailUrl,
             DateAdded = DateTime.UtcNow
         };
 
@@ -297,7 +313,7 @@ public class MediaApiRefService : IMediaApiRefService
 
         if (detailedResult != null)
         {
-            // Overwrite CacheItem entry with fresh data; update staleness timestamp on MediaApiRef
+            // Overwrite CacheItem entry with fresh data; update staleness timestamp and Poster on MediaApiRef
             var queryParams = BuildGetByIdParams(mediaApiRef.ExternalId, mediaApiRef.ApiSource.ApiName);
             var responseJson = JsonSerializer.Serialize(detailedResult);
             await _cacheItemService.UpsertAsync(
@@ -305,12 +321,36 @@ public class MediaApiRefService : IMediaApiRefService
                 queryParams, responseJson, AppConstants.CacheItemGetByIdTtlDays);
 
             mediaApiRef.DetailsFetchedAt = DateTime.UtcNow;
+            if (detailedResult.Poster != null) mediaApiRef.Poster = detailedResult.Poster;
             await _context.SaveChangesAsync();
             await _apiUsageService.TrackRequestAsync(mediaApiRef.ApiSource.ApiName);
+            if (detailedResult.Poster != null) PrewarmPoster(detailedResult.Poster);
         }
 
         return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(mediaApiRef, detailedResult));
     }
+
+
+    // Fire-and-forget: pre-warm ImageCache for all thumbnail URLs in search results.
+    // Called in both cache-hit and fresh-fetch paths since image TTL is independent of query cache TTL.
+    private void PrewarmThumbnails(IEnumerable<ExternalApiSearchResult> results)
+    {
+        var urls = results.Select(r => r.ThumbnailUrl).Where(u => u != null).ToList();
+        if (urls.Count == 0) return;
+        _ = Task.WhenAll(urls.Select(url => Task.Run(async () =>
+        {
+            try { await _imageCacheService.GetOrFetchImageAsync(url!); }
+            catch { /* best-effort; don't fail the search if an image fetch fails */ }
+        })));
+    }
+
+    // Fire-and-forget: pre-warm ImageCache for a single full-size poster URL from a detail fetch.
+    private void PrewarmPoster(string posterUrl) =>
+        _ = Task.Run(async () =>
+        {
+            try { await _imageCacheService.GetOrFetchImageAsync(posterUrl); }
+            catch { /* best-effort */ }
+        });
 
 
     // Shared query params builder for GetById lookups — used across search, detail, and refresh flows
@@ -337,6 +377,7 @@ public class MediaApiRefService : IMediaApiRefService
         DetailsFetchedAt = r.DetailsFetchedAt,
         IsStale = r.DetailsFetchedAt.HasValue &&
                   (DateTime.UtcNow - r.DetailsFetchedAt.Value).TotalDays > AppConstants.DetailsStaleDays,
+        ThumbnailUrl = r.ThumbnailUrl,
         Poster = details?.Poster ?? r.Poster,
         Plot = details?.Plot,
         Runtime = details?.Runtime,
