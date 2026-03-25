@@ -4,6 +4,9 @@ import RowItemContent from "../RowItemContent";
 import RowItemStyling from "../RowItemStyling";
 import ConfirmModal from "./ConfirmModal";
 import AnimatedPage from '../AnimatedPage';
+import SearchBarWithFilters from '../SearchBarWithFilters';
+import type { FilterState, SearchType } from '../SearchBarWithFilters';
+import type { ExternalApiSourceSummary } from '../../types/externalApiSource';
 
 interface LinkRowItem {
     id: string;
@@ -24,9 +27,16 @@ interface ModalTab {
 
 interface ManageLinkModalProps {
     modalTitle: string;
-    searchPlaceholder?: string;
-    // Called on every keystroke so the parent can drive server-side search
-    onSearchChange?: (query: string) => void;
+
+    // SearchBarWithFilters integration — replaces the old plain input
+    allowedSearchTypes?: SearchType[];  // restrict type pills; undefined = show all 3
+    activeApiSources?: ExternalApiSourceSummary[];
+    defaultApiSourceId?: number | null;
+    isModerator?: boolean;
+    isAdmin?: boolean;
+    roleLevel?: string | null;
+    // Called on search submit so the parent can drive server-side search
+    onSearch?: (query: string, filters: FilterState, bypassCache: boolean) => void;
 
     // Two display modes — provide exactly one:
     // -- Tabbed mode: pass `tabs` — the parent controls which candidates appear in each tab.
@@ -62,8 +72,13 @@ interface ManageLinkModalProps {
 
 export default function ManageLinkModal({
     modalTitle,
-    searchPlaceholder,
-    onSearchChange,
+    allowedSearchTypes,
+    activeApiSources,
+    defaultApiSourceId,
+    isModerator,
+    isAdmin,
+    roleLevel,
+    onSearch,
     tabs,
     candidates,
     candidatesLoading,
@@ -84,8 +99,23 @@ export default function ManageLinkModal({
 
     const [pendingAddIds, setPendingAddIds] = useState<Set<string>>(new Set());  // in-flight adds (the request was already sent, now I am waiting to get confirmation from the backend that it worked)
     const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);  // waiting for confirm for removing a link
+    // last submitted query — used for client-side candidate filtering
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTabIndex, setActiveTabIndex] = useState(0);  // only used in tabbed mode
+
+    // last submitted filters — passed back as urlFilters to SearchBarWithFilters (no URL in a modal)
+    const defaultType = allowedSearchTypes?.[0] ?? 'media'
+    const [committedFilters, setCommittedFilters] = useState<FilterState>({
+        searchType: defaultType,
+        apiSourceId: defaultApiSourceId ?? null,
+        subtype: defaultType === 'media' ? undefined : 'all',
+    })
+
+    function handleSearch(query: string, filters: FilterState, bypassCache: boolean) {
+        setSearchQuery(query)
+        setCommittedFilters(filters)
+        onSearch?.(query, filters, bypassCache)
+    }
 
     // Resolve the active candidate list:
     // -- Tabbed mode: use the active tab's candidates
@@ -147,13 +177,18 @@ export default function ManageLinkModal({
                     <button className="btn btn-secondary w-fit" onClick={() => onClose(linkedIds)}>✕</button>
                 </div>
 
-                {/* Search bar */}
+                {/* Search bar with type/API filters */}
                 <div className="px-4 py-2 border-b border-border">
-                    <input
-                        placeholder={searchPlaceholder ?? 'Search...'}
-                        value={searchQuery}
-                        onChange={e => { setSearchQuery(e.target.value); onSearchChange?.(e.target.value); }}
-                        className="form-input w-full"
+                    <SearchBarWithFilters
+                        query={searchQuery}
+                        defaultApiSourceId={defaultApiSourceId ?? null}
+                        urlFilters={committedFilters}
+                        activeApiSources={activeApiSources}
+                        allowedSearchTypes={allowedSearchTypes}
+                        isModerator={isModerator ?? false}
+                        isAdmin={isAdmin ?? false}
+                        roleLevel={roleLevel ?? null}
+                        onSearch={handleSearch}
                     />
                 </div>
 

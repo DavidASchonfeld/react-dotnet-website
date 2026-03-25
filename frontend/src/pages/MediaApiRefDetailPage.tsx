@@ -3,11 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     useGetMediaApiRefDetailQuery,
     useGetMediaApiRefListsQuery,
+    useGetMediaApiRefTagsQuery,
     useRefreshMediaApiRefDetailsMutation,
-    // useGetMediaApiRefTagsQuery,
-    // useAddTagToMediaApiRefMutation,
-    // useRemoveTagFromMediaApiRefMutation,
-    // useGetMyCustomTagsQuery,
+    useLazySearchMediaListsQuery,
+    useLazySearchCustomTagsQuery,
+    useAddMediaApiRefToListMutation,
+    useRemoveMediaApiRefFromListMutation,
+    useAddTagToMediaApiRefMutation,
+    useRemoveTagFromMediaApiRefMutation,
 } from '../services/apiSlice';
 import { BACKEND_BASE_URL } from '../config';
 import MediaTypeLabel from '../components/MediaTypeLabel';
@@ -16,6 +19,9 @@ import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
 import { CacheStatusPill } from '../components/CacheStatusPill';
 import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
+import ManageLinkModal from '../components/modals/ManageLinkModal';
+import type { SearchType } from '../components/SearchBarWithFilters';
+import { SEARCH_DEFAULT_LIMIT } from '../constants';
 
 
 export default function MediaApiRefDetailPage() {
@@ -34,6 +40,11 @@ export default function MediaApiRefDetailPage() {
     const [refreshDetails, { isLoading: isRefreshing }] = useRefreshMediaApiRefDetailsMutation();
     const [settingsOpen, setSettingsOpen] = useState(false);
 
+    // Modal state for adding this item to lists/tags
+    const [showLinkModal, setShowLinkModal] = useState(false);
+    // Tracks which type is active so the modal remounts on switch (fresh linkedIds)
+    const [activeModalType, setActiveModalType] = useState<SearchType>('lists');
+
     // navigator.share = the native iOS/Android/desktop share sheet (like Spotify).
     // When unavailable, the button becomes a "Copy Link" button instead.
     const canNativeShare = typeof navigator.share === 'function';
@@ -42,6 +53,19 @@ export default function MediaApiRefDetailPage() {
         mediaApiRefId,
         { skip: isNaN(mediaApiRefId) }
     );
+    const { data: appliedTags } = useGetMediaApiRefTagsQuery(
+        mediaApiRefId,
+        { skip: isNaN(mediaApiRefId) }
+    );
+
+    // Lazy search queries for the link modal
+    const [triggerSearchLists, { data: listSearchData, isFetching: isSearchingLists }] = useLazySearchMediaListsQuery();
+    const [triggerSearchTags, { data: tagSearchData, isFetching: isSearchingTags }] = useLazySearchCustomTagsQuery();
+
+    const [addToList] = useAddMediaApiRefToListMutation();
+    const [removeFromList] = useRemoveMediaApiRefFromListMutation();
+    const [addTag] = useAddTagToMediaApiRefMutation();
+    const [removeTag] = useRemoveTagFromMediaApiRefMutation();
 
     // Route poster through backend ImageCache instead of direct external URL
     const posterSrc = detail?.poster
@@ -244,9 +268,53 @@ export default function MediaApiRefDetailPage() {
                             close();
                         }}
                     />
+                    <SettingsRow
+                        icon="📋"
+                        label="Add to List / Tag"
+                        onClick={() => { setShowLinkModal(true); close(); }}
+                    />
                 </>
             )}
         </ItemSettingsDrawerModal>
+
+        {/* Link modal — search Lists or Tags to associate with this media item */}
+        {showLinkModal && (
+            <ManageLinkModal
+                key={activeModalType}  // remount on type switch so linkedIds reset for the new type
+                modalTitle={activeModalType === 'lists' ? 'Add to Lists' : 'Tag this Item'}
+                allowedSearchTypes={['lists', 'tags']}
+                onSearch={(query, filters) => {
+                    // Update active type first so candidates/initialLinkedIds stay in sync
+                    if (filters.searchType !== activeModalType) setActiveModalType(filters.searchType)
+                    if (filters.searchType === 'lists') triggerSearchLists({ query, limit: SEARCH_DEFAULT_LIMIT });
+                    else triggerSearchTags({ query, limit: SEARCH_DEFAULT_LIMIT });
+                }}
+                candidates={activeModalType === 'lists'
+                    ? (listSearchData ?? []).map(l => ({ id: String(l.id), primaryLabel: l.name, secondaryLabel: l.description ?? undefined }))
+                    : (tagSearchData ?? []).map(t => ({ id: String(t.id), primaryLabel: t.name }))}
+                candidatesLoading={isSearchingLists || isSearchingTags}
+                initialLinkedIds={activeModalType === 'lists'
+                    ? (lists ?? []).map(l => String(l.id))
+                    : (appliedTags ?? []).map(t => String(t.id))}
+                onAdd={async (id) => {
+                    if (activeModalType === 'lists') {
+                        await addToList({ listId: parseInt(id), mediaApiRefId }).unwrap();
+                    } else {
+                        await addTag({ tagId: parseInt(id), mediaApiRefId }).unwrap();
+                    }
+                }}
+                onRemove={async (id) => {
+                    if (activeModalType === 'lists') {
+                        await removeFromList({ listId: parseInt(id), mediaApiRefId }).unwrap();
+                    } else {
+                        await removeTag({ tagId: parseInt(id), mediaApiRefId }).unwrap();
+                    }
+                }}
+                removeConfirmTitle={activeModalType === 'lists' ? 'Remove from list?' : 'Remove tag?'}
+                getRemoveConfirmMessage={(item) => `Remove "${item.primaryLabel}"?`}
+                onClose={() => setShowLinkModal(false)}
+            />
+        )}
 
         </AnimatedPage>
     );

@@ -22,7 +22,6 @@ import {
     useGetActiveApiSourcesQuery,
 } from '../services/apiSlice';
 import type { MediaApiRefSummary } from '../types/mediaApiRef';
-import type { ExternalApiSearchResult } from '../types/externalApiSearch';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import SwipeReorderRowItem from '../components/SwipeReorderRowItem';
 import RowItemStyling from '../components/RowItemStyling';
@@ -30,7 +29,7 @@ import RowItemContent from '../components/RowItemContent';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 import { SEARCH_DEFAULT_LIMIT } from '../constants';
-import { useSearch } from '../hooks/useSearch';
+import type { ExternalApiSourceSummary } from '../types/externalApiSource';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
@@ -58,7 +57,6 @@ export default function MediaListDetailPage() {
     const [removeItemMutation] = useRemoveMediaApiRefFromListMutation();
     const [patchListMutation] = usePatchListBasicInfoMutation();
     const [reorderMutation] = useReorderMediaListItemsMutation();
-    const [triggerSearchExternalApi] = useLazySearchExternalApiQuery();
     const [findOrCreate] = useFindOrCreateMediaApiRefMutation();
 
     // Active API sources tell us which ExternalApiSourceId to use per media type
@@ -69,22 +67,10 @@ export default function MediaListDetailPage() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [showAddBrowsePanel, setShowAddBrowsePanel] = useState(false);
 
-    // Which media type to search in when adding items (default: Movie = 1)
-    const [searchMediaTypeId, setSearchMediaTypeId] = useState<number>(1);
-
-    // Server-side search state for the Add Item modal (searches external APIs)
-    const {
-        results: searchResults,
-        isSearching,
-        handleSearchChange,
-        clearResults: clearSearchResults,
-    } = useSearch<ExternalApiSearchResult>(
-        async (query) => (await triggerSearchExternalApi({
-            query,
-            mediaTypeId: searchMediaTypeId,
-            limit: SEARCH_DEFAULT_LIMIT,
-        }).unwrap()).data
-    );
+    // Tracks the API source chosen in the last search (needed by onAdd to find-or-create)
+    const [currentApiSource, setCurrentApiSource] = useState<ExternalApiSourceSummary | null>(null);
+    // Lazy external API search — triggered on SearchBarWithFilters submit
+    const [triggerSearch, { data: searchData, isFetching: isSearching }] = useLazySearchExternalApiQuery();
 
     // This is about showing/not showing the modal
     // for confirming if a user wants to remove the selected item in the <ConfirmModal> section
@@ -298,77 +284,60 @@ export default function MediaListDetailPage() {
             {isEditMode && !showAddBrowsePanel && (
                 <button
                 className = "btn btn-secondary w-fit"
-                onClick={() => {
-                    clearSearchResults();
-                    setShowAddBrowsePanel(true);
-                }}>+ Add Item</button>
+                onClick={() => setShowAddBrowsePanel(true)}>+ Add Item</button>
             )}
 
-            {/* -- Add Item Modal — searches external APIs; find-or-creates MediaApiRef on selection -- */}
+            {/* -- Add Item Modal — SearchBarWithFilters drives API source/type; find-or-creates MediaApiRef on selection -- */}
             {isEditMode && showAddBrowsePanel && (
-                <div className="flex flex-col gap-2">
-                    {/* Media type selector — controls which external API to search */}
-                    <div className="flex flex-wrap gap-2">
-                        {activeApiSources?.map(source => (
-                            <button
-                                key={source.id}
-                                className={`btn ${searchMediaTypeId === source.mediaTypeId ? 'btn-primary' : 'btn-secondary'} w-fit`}
-                                onClick={() => {
-                                    setSearchMediaTypeId(source.mediaTypeId);
-                                    clearSearchResults();
-                                }}
-                            >
-                                <MediaTypeLabel mediaTypeId={source.mediaTypeId} />
-                            </button>
-                        ))}
-                    </div>
+                <ManageLinkModal
+                    modalTitle="Add Items to List"
+                    allowedSearchTypes={['media']}
+                    activeApiSources={activeApiSources}
+                    defaultApiSourceId={activeApiSources?.[0]?.id ?? null}
+                    onSearch={(query, filters) => {
+                        const source = activeApiSources?.find(s => s.id === filters.apiSourceId)
+                            ?? activeApiSources?.[0];
+                        if (!source) return;
+                        setCurrentApiSource(source);
+                        triggerSearch({ query, mediaTypeId: source.mediaTypeId, limit: SEARCH_DEFAULT_LIMIT });
+                    }}
+                    candidates={(searchData?.data ?? []).map(item => ({
+                        id: item.externalId,
+                        primaryLabel: item.name,
+                        secondaryLabel: item.creatorName ?? undefined,
+                        labelComponent: <MediaTypeLabel mediaTypeId={currentApiSource?.mediaTypeId ?? 1} />,
+                    }))}
+                    candidatesLoading={isSearching}
+                    initialLinkedIds={[...existingIds].map(String)}
+                    onAdd={async (externalId) => {
+                        const item = searchData?.data.find(r => r.externalId === externalId);
+                        if (!currentApiSource || !item) return;
 
-                    <ManageLinkModal
-                        modalTitle="Add Items to List"
-                        searchPlaceholder="Search by name (min. 2 characters)..."
-                        onSearchChange={handleSearchChange}
+                        // Upsert: find existing or create new MediaApiRef from this external API result
+                        const ref = await findOrCreate({
+                            externalApiSourceId: currentApiSource.id,
+                            externalId: item.externalId,
+                            name: item.name,
+                            mediaTypeId: currentApiSource.mediaTypeId,
+                            creatorName: item.creatorName,
+                            publishedDate: item.publishedDate,
+                        }).unwrap();
 
-                        // searchResults are raw ExternalApiSearchResult items from the external API
-                        candidates={searchResults
-                            .map(item => ({
-                                id: item.externalId,
-                                primaryLabel: item.name,
-                                secondaryLabel: item.creatorName ?? undefined,
-                                labelComponent: <MediaTypeLabel mediaTypeId={searchMediaTypeId} />,
-                            }))}
-                        candidatesLoading={isSearching}
-                        initialLinkedIds={[...existingIds].map(String)}
-                        onAdd={async (externalId) => {
-                            const item = searchResults.find(r => r.externalId === externalId)!;
-                            const activeSource = activeApiSources?.find(s => s.mediaTypeId === searchMediaTypeId);
-                            if (!activeSource) return;
-
-                            // Upsert: find existing or create new MediaApiRef from this external API result
-                            const ref = await findOrCreate({
-                                externalApiSourceId: activeSource.id,
-                                externalId: item.externalId,
-                                name: item.name,
-                                mediaTypeId: searchMediaTypeId,
-                                creatorName: item.creatorName,
-                                publishedDate: item.publishedDate,
-                            }).unwrap();
-
-                            await addItemMutation({ listId: mediaListId, mediaApiRefId: ref.id }).unwrap();
-                        }}
-                        onRemove={async (externalId) => {
-                            // Find the MediaApiRef in the list by matching externalId
-                            const listItem = selectedMediaListDetail.listContent.find(
-                                i => i.externalId === externalId
-                            );
-                            if (listItem) {
-                                await removeItemMutation({ listId: mediaListId, mediaApiRefId: listItem.id }).unwrap();
-                            }
-                        }}
-                        removeConfirmTitle="Remove item from list?"
-                        getRemoveConfirmMessage={(item) => `Remove "${item.primaryLabel}" from this list?`}
-                        onClose={() => setShowAddBrowsePanel(false)}
-                    />
-                </div>
+                        await addItemMutation({ listId: mediaListId, mediaApiRefId: ref.id }).unwrap();
+                    }}
+                    onRemove={async (externalId) => {
+                        // Find the MediaApiRef in the list by matching externalId
+                        const listItem = selectedMediaListDetail.listContent.find(
+                            i => i.externalId === externalId
+                        );
+                        if (listItem) {
+                            await removeItemMutation({ listId: mediaListId, mediaApiRefId: listItem.id }).unwrap();
+                        }
+                    }}
+                    removeConfirmTitle="Remove item from list?"
+                    getRemoveConfirmMessage={(item) => `Remove "${item.primaryLabel}" from this list?`}
+                    onClose={() => setShowAddBrowsePanel(false)}
+                />
             )}
 
             {/* Edit MediaList's Basic Info Modal */}

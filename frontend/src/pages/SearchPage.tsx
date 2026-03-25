@@ -8,6 +8,12 @@ import {
     useGetActiveApiSourcesQuery,
     useSearchCustomTagsQuery,
     useSearchMediaListsQuery,
+    useLazySearchMediaListsQuery,
+    useLazySearchCustomTagsQuery,
+    useAddMediaApiRefToListMutation,
+    useAddTagToMediaApiRefMutation,
+    useRemoveMediaApiRefFromListMutation,
+    useRemoveTagFromMediaApiRefMutation,
 } from '../services/apiSlice'
 import AnimatedPage from '../components/AnimatedPage'
 import SearchBarWithFilters from '../components/SearchBarWithFilters'
@@ -17,6 +23,7 @@ import RowItemContent from '../components/RowItemContent'
 import { CacheStatusPill } from '../components/CacheStatusPill'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES } from '../constants'
+import ManageLinkModal from '../components/modals/ManageLinkModal'
 
 const PAGE_SIZE = SEARCH_DEFAULT_LIMIT
 
@@ -56,6 +63,19 @@ export default function SearchPage() {
     const shouldFetch = query.length >= SEARCH_MIN_CHARS
 
     const [activeBypassCache, setActiveBypassCache] = useState(false)
+
+    // Link modal state — opened by clicking "+" on a media result
+    const [selectedResult, setSelectedResult] = useState<ExternalApiSearchResult | null>(null)
+    // Tracks which type is active so the modal remounts on switch (fresh linkedIds)
+    const [activeModalType, setActiveModalType] = useState<SearchType>('lists')
+
+    // Lazy queries + mutations for the link modal
+    const [triggerSearchLists, { data: listSearchData, isFetching: isSearchingLists }] = useLazySearchMediaListsQuery()
+    const [triggerSearchTags, { data: tagSearchData, isFetching: isSearchingTags }] = useLazySearchCustomTagsQuery()
+    const [addToList] = useAddMediaApiRefToListMutation()
+    const [addTag] = useAddTagToMediaApiRefMutation()
+    const [removeFromList] = useRemoveMediaApiRefFromListMutation()
+    const [removeTag] = useRemoveTagFromMediaApiRefMutation()
 
     // API queries
     const { data: mediaResults, isLoading: mediaLoading, isFetching: mediaFetching } =
@@ -149,7 +169,7 @@ export default function SearchPage() {
                 query={query}
                 defaultApiSourceId={apiSourceId ?? null}
                 urlFilters={{ searchType: urlSearchType, apiSourceId: parsedApiSourceId, subtype: urlSearchType === 'media' ? subtypeParam : subtypeForNonMedia }}
-                activeSources={activeSources}
+                activeApiSources={activeSources}
                 isModerator={isModerator}
                 isAdmin={isAdmin}
                 roleLevel={roleLevel}
@@ -190,23 +210,30 @@ export default function SearchPage() {
                                 </p>
                                 <div className="rounded-lg border border-border overflow-hidden">
                                     {mediaResults.data.map(result => (
-                                        <RowItemStyling
-                                            key={result.externalId}
-                                            onClick={() => handleMediaResultClick(result)}
-                                        >
-                                            <RowItemContent
-                                                firstString={result.name}
-                                                secondString={result.creatorName ?? undefined}
-                                                photographOnLeft={result.thumbnailUrl ?? undefined}
-                                                thirdString={
-                                                    result.publishedDate
-                                                        ? new Date(result.publishedDate).getFullYear().toString()
-                                                        : undefined
-                                                }
-                                                larger
-                                                useDirectUrl
-                                            />
-                                        </RowItemStyling>
+                                        // Each result: clickable row + "+" button to open link modal
+                                        <div key={result.externalId} className="flex items-center gap-2">
+                                            <div className="flex-1 min-w-0">
+                                            <RowItemStyling onClick={() => handleMediaResultClick(result)}>
+                                                <RowItemContent
+                                                    firstString={result.name}
+                                                    secondString={result.creatorName ?? undefined}
+                                                    photographOnLeft={result.thumbnailUrl ?? undefined}
+                                                    thirdString={
+                                                        result.publishedDate
+                                                            ? new Date(result.publishedDate).getFullYear().toString()
+                                                            : undefined
+                                                    }
+                                                    larger
+                                                    useDirectUrl
+                                                />
+                                            </RowItemStyling>
+                                            </div>
+                                            <button
+                                                className="btn btn-secondary w-fit shrink-0 mr-2"
+                                                onClick={() => { setSelectedResult(result); setActiveModalType('lists'); }}
+                                                title="Add to List / Tag"
+                                            >+</button>
+                                        </div>
                                     ))}
                                 </div>
                                 <div className="flex items-center gap-3 mt-4">
@@ -277,6 +304,66 @@ export default function SearchPage() {
                 )}
             </div>
         </div>
+
+        {/* Link modal — add selected media result to a list or tag it */}
+        {selectedResult && (
+            <ManageLinkModal
+                key={activeModalType}  // remount on type switch so linkedIds reset
+                modalTitle={activeModalType === 'lists' ? 'Add to Lists' : 'Tag this Item'}
+                allowedSearchTypes={['lists', 'tags']}
+                onSearch={(query, filters) => {
+                    if (filters.searchType !== activeModalType) setActiveModalType(filters.searchType)
+                    if (filters.searchType === 'lists') triggerSearchLists({ query, limit: SEARCH_DEFAULT_LIMIT });
+                    else triggerSearchTags({ query, limit: SEARCH_DEFAULT_LIMIT });
+                }}
+                candidates={activeModalType === 'lists'
+                    ? (listSearchData ?? []).map(l => ({ id: String(l.id), primaryLabel: l.name, secondaryLabel: l.description ?? undefined }))
+                    : (tagSearchData ?? []).map(t => ({ id: String(t.id), primaryLabel: t.name }))}
+                candidatesLoading={isSearchingLists || isSearchingTags}
+                initialLinkedIds={[]}  // unknown without findOrCreate; empty is safe
+                onAdd={async (id) => {
+                    // Ensure the MediaApiRef exists in our DB before linking
+                    const source = activeSources?.find(s => s.mediaTypeId === mediaTypeId)
+                    if (!source) return
+                    const ref = await findOrCreate({
+                        externalApiSourceId: source.id,
+                        externalId: selectedResult.externalId,
+                        name: selectedResult.name,
+                        mediaTypeId: mediaTypeId!,
+                        creatorName: selectedResult.creatorName,
+                        publishedDate: selectedResult.publishedDate,
+                        thumbnailUrl: selectedResult.thumbnailUrl,
+                    }).unwrap()
+                    if (activeModalType === 'lists') {
+                        await addToList({ listId: parseInt(id), mediaApiRefId: ref.id }).unwrap()
+                    } else {
+                        await addTag({ tagId: parseInt(id), mediaApiRefId: ref.id }).unwrap()
+                    }
+                }}
+                onRemove={async (id) => {
+                    const source = activeSources?.find(s => s.mediaTypeId === mediaTypeId)
+                    if (!source) return
+                    const ref = await findOrCreate({
+                        externalApiSourceId: source.id,
+                        externalId: selectedResult.externalId,
+                        name: selectedResult.name,
+                        mediaTypeId: mediaTypeId!,
+                        creatorName: selectedResult.creatorName,
+                        publishedDate: selectedResult.publishedDate,
+                        thumbnailUrl: selectedResult.thumbnailUrl,
+                    }).unwrap()
+                    if (activeModalType === 'lists') {
+                        await removeFromList({ listId: parseInt(id), mediaApiRefId: ref.id }).unwrap()
+                    } else {
+                        await removeTag({ tagId: parseInt(id), mediaApiRefId: ref.id }).unwrap()
+                    }
+                }}
+                removeConfirmTitle={activeModalType === 'lists' ? 'Remove from list?' : 'Remove tag?'}
+                getRemoveConfirmMessage={(item) => `Remove "${item.primaryLabel}"?`}
+                onClose={() => setSelectedResult(null)}
+            />
+        )}
+
         </AnimatedPage>
     )
 }

@@ -31,6 +31,7 @@ import AdminRoute from './components/AdminRoute'
 import MediaApiRefDetailPage from './pages/MediaApiRefDetailPage'
 import MyCustomTagsPage from './pages/MyCustomTagsPage'
 import ExploreByTagPage from './pages/ExploreByTagPage'
+import TagDetailPage from './pages/TagDetailPage'
 import HomePage from './pages/HomePage'
 import SearchPage from './pages/SearchPage'
 import MySettingsPage from './pages/MySettingsPage'
@@ -158,6 +159,7 @@ function App() {
         } />
 
         <Route path = "/tags/:tagId/items" element = {<ExploreByTagPage />} />
+        <Route path = "/tags/:tagId" element = {<TagDetailPage />} />
 
         <Route path = "/search" element = {<SearchPage />} />
 

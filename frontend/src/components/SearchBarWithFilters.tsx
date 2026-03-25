@@ -29,6 +29,7 @@ interface SearchBarWithFiltersProps {
     isAdmin: boolean
     roleLevel: string | null
     shouldShowFilters?: boolean
+    allowedSearchTypes?: SearchType[]  // restrict visible type pills; undefined = show all
     onSearch: (query: string, filters: FilterState, bypassCache: boolean) => void
 }
 
@@ -41,11 +42,17 @@ export default function SearchBarWithFilters({
     isAdmin,
     roleLevel,
     shouldShowFilters = false,
+    allowedSearchTypes,
     onSearch,
 }: SearchBarWithFiltersProps) {
     const [isFiltersOpen, setIsFiltersOpen] = useState(shouldShowFilters)
     const [filters, setFilters] = useState<FilterState>(urlFilters)
     const [bypassCache, setBypassCache] = useState(false)
+
+    // Visible type pills — filtered to allowedSearchTypes when provided
+    const visibleTypes = allowedSearchTypes
+        ? SEARCH_TYPES.filter(t => allowedSearchTypes.includes(t.id))
+        : SEARCH_TYPES
 
     // urlFilters (prop) = committed filters from the last submitted search — reflects URL/active results
     // filters (state)   = pending/dirty filters the user is editing but hasn't submitted yet
@@ -54,6 +61,15 @@ export default function SearchBarWithFilters({
     useEffect(() => {
         setFilters(urlFilters)
     }, [urlFilters])
+
+    // If current searchType is not in allowedSearchTypes, reset to first allowed type
+    useEffect(() => {
+        if (!allowedSearchTypes) return
+        if (!allowedSearchTypes.includes(filters.searchType)) {
+            handleTypeChange(allowedSearchTypes[0])
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [allowedSearchTypes])
 
     const selectedFilterThirdPartyApiId = filters.apiSourceId ?? activeApiSources?.[0]?.id ?? null
     const selectedFilterThirdPartyApiDetails = activeApiSources?.find(s => s.id === selectedFilterThirdPartyApiId)
@@ -165,11 +181,12 @@ export default function SearchBarWithFilters({
             {isFiltersOpen && (
                 <div className="mt-4 p-4 border border-border rounded-lg bg-surface">
                     <div className="space-y-4">
-                        {/* Search type selector */}
+                        {/* Search type selector — hidden when only 1 type is allowed */}
+                        {visibleTypes.length > 1 && (
                         <div>
                             <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Type</p>
                             <div className="flex flex-wrap gap-2">
-                                {SEARCH_TYPES.map(t => (
+                                {visibleTypes.map(t => (
                                     <button
                                         key={t.id}
                                         onClick={() => handleTypeChange(t.id)}
@@ -184,6 +201,7 @@ export default function SearchBarWithFilters({
                                 ))}
                             </div>
                         </div>
+                        )}
 
                         {/* API source selector */}
                         {filters.searchType === 'media' && activeApiSources && activeApiSources.length > 0 && (
