@@ -95,6 +95,26 @@ const baseQueryWithErrorHandling: BaseQueryFn<
 }
 
 
+// ---- Placeholder Image Defaults ----
+// Applied in transformResponse for any endpoint that returns image fields.
+// Ensures image fields are never null/undefined in the Redux cache — components
+// receive a guaranteed URL and don't need their own placeholder logic.
+const PLACEHOLDER_THUMBNAIL = '/placeholder-thumbnail.svg'
+const PLACEHOLDER_POSTER = '/placeholder-poster.svg'
+
+function fillSummaryImages(item: MediaApiRefSummary): MediaApiRefSummary {
+    return { ...item, thumbnailUrl: item.thumbnailUrl ?? PLACEHOLDER_THUMBNAIL }
+}
+
+function fillDetailImages(detail: MediaApiRefDetail): MediaApiRefDetail {
+    return {
+        ...detail,
+        thumbnailUrl: detail.thumbnailUrl ?? PLACEHOLDER_THUMBNAIL,
+        poster: detail.poster ?? PLACEHOLDER_POSTER,
+    }
+}
+
+
 // ---- API Slice ----
 // One file replaces: apiClient.ts, mediaApiRefService.ts, mediaListService.ts, mediaTypeService.ts, etc.
 // RTK Query auto-generates hooks for each endpoint.
@@ -121,6 +141,10 @@ export const apiSlice = createApi({
 
         getMediaApiRefDetail: builder.query<CachedResponse<MediaApiRefDetail>, number>({
             query: (id) => `/api/mediaapiref/${id}`,
+            transformResponse: (response: CachedResponse<MediaApiRefDetail>) => ({
+                ...response,
+                data: fillDetailImages(response.data),
+            }),
             providesTags: (_, __, id) => [{ type: 'MediaApiRef', id }],
         }),
 
@@ -158,6 +182,10 @@ export const apiSlice = createApi({
                 if (bypassCache) params.set('bypassCache', 'true')
                 return `/api/mediaapiref/search?${params}`
             },
+            transformResponse: (response: CachedResponse<ExternalApiSearchResult[]>) => ({
+                ...response,
+                data: response.data.map(r => ({ ...r, thumbnailUrl: r.thumbnailUrl ?? PLACEHOLDER_THUMBNAIL })),
+            }),
         }),
 
         // Idempotent: finds existing MediaApiRef by (externalApiSourceId, externalId) or creates it.
@@ -172,6 +200,7 @@ export const apiSlice = createApi({
                 method: 'POST',
                 body,
             }),
+            transformResponse: (response: MediaApiRefDetail) => fillDetailImages(response),
             invalidatesTags: ['MediaApiRef'],
         }),
 
@@ -193,6 +222,10 @@ export const apiSlice = createApi({
                 url: `/api/mediaapiref/${mediaApiRefId}/refresh`,
                 method: 'POST',
             }),
+            transformResponse: (response: CachedResponse<MediaApiRefDetail>) => ({
+                ...response,
+                data: fillDetailImages(response.data),
+            }),
             invalidatesTags: (_, __, mediaApiRefId) => [{ type: 'MediaApiRef', id: mediaApiRefId }],
         }),
 
@@ -209,6 +242,10 @@ export const apiSlice = createApi({
 
         getMediaListDetail: builder.query<MediaListDetail, number>({
             query: (id) => `/api/medialist/${id}`,
+            transformResponse: (response: MediaListDetail) => ({
+                ...response,
+                listContent: response.listContent.map(fillSummaryImages),
+            }),
             providesTags: (_, __, id) => [{ type: 'MediaList', id }],
             // -- > this specific cached entry can be targeted for invalidation
             // by the tag (Example:) {type: 'MediaList', id: 5}
@@ -365,6 +402,11 @@ export const apiSlice = createApi({
 
         getFeaturedLists: builder.query<MediaListDetail[], void>({
             query: () => '/api/medialist/featured',
+            transformResponse: (response: MediaListDetail[]) =>
+                response.map(list => ({
+                    ...list,
+                    listContent: list.listContent.map(fillSummaryImages),
+                })),
             providesTags: ['MediaList'],
         }),
 

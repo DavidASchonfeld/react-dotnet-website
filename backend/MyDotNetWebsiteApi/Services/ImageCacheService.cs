@@ -67,4 +67,29 @@ public class ImageCacheService : IImageCacheService
         await _context.SaveChangesAsync();
         return (blob, contentType);
     }
+
+    public async Task<bool> IsImageReachableAsync(string url)
+    {
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            // ResponseHeadersRead stops after headers — no body is downloaded
+            var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+
+            if (!response.IsSuccessStatusCode) return false;
+
+            // Reject if Content-Length is explicitly 0 (empty body)
+            if (response.Content.Headers.ContentLength == 0) return false;
+
+            // Reject if Content-Type is present but is not an image (e.g. an HTML error page)
+            var contentType = response.Content.Headers.ContentType?.MediaType;
+            if (contentType != null && !contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)) return false;
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }

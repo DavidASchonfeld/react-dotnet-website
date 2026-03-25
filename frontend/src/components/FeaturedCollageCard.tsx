@@ -27,14 +27,13 @@ export default function FeaturedCollageCard({ id, name, creatorName, thumbnailUr
         >
             {/* Poster image area — 2:3 aspect ratio */}
             <div className="aspect-[2/3] bg-border flex items-center justify-center overflow-hidden">
-                {proxiedUrl ? (
+                {proxiedUrl && (
                     <img
                         src={proxiedUrl}
                         alt={name}
                         className="w-full h-full object-cover"
+                        onError={e => { (e.currentTarget as HTMLImageElement).src = '/placeholder-poster.svg'; }}
                     />
-                ) : (
-                    <span className="text-text/30 text-3xl select-none">?</span>
                 )}
             </div>
 

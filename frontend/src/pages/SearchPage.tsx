@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../store/store'
@@ -10,7 +10,8 @@ import {
     useSearchMediaListsQuery,
 } from '../services/apiSlice'
 import AnimatedPage from '../components/AnimatedPage'
-import SearchBar from '../components/SearchBar'
+import SearchBarWithFilters from '../components/SearchBarWithFilters'
+import type { FilterState, SearchType } from '../components/SearchBarWithFilters'
 import RowItemStyling from '../components/RowItemStyling'
 import RowItemContent from '../components/RowItemContent'
 import { CacheStatusPill } from '../components/CacheStatusPill'
@@ -18,15 +19,6 @@ import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES } from '../constants'
 
 const PAGE_SIZE = SEARCH_DEFAULT_LIMIT
-
-const SEARCH_TYPES = [
-    { id: 'media', label: 'Media' },
-    { id: 'tags',  label: 'Tags'  },
-    { id: 'lists', label: 'Lists' },
-] as const
-
-type SearchType = 'media' | 'tags' | 'lists'
-type SearchScope = 'all' | 'mine'
 
 export default function SearchPage() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -41,29 +33,14 @@ export default function SearchPage() {
     const showFiltersParam = searchParams.get('showFilters') === 'true'
     const page = Math.max(1, parseInt(pageParam ?? '1') || 1)
 
-    // Determine if filters should be open by default
     const shouldShowFilters = showFiltersParam || !query
-    const [isFiltersOpen, setIsFiltersOpen] = useState(shouldShowFilters)
 
     const urlSearchType = (searchParams.get('type') ?? 'media') as SearchType
-    const urlScope = (searchParams.get('scope') ?? 'all') as SearchScope
-
-    // Local state for filters — these don't trigger searches when changed
-    const [filters, setFilters] = useState({
-        searchType: urlSearchType,
-        scope: urlScope,
-        apiSourceId: apiSourceIdParam ? parseInt(apiSourceIdParam) : null,
-        subtype: subtypeParam,
-    })
+    // For media: API-specific subtype. For tags/lists: scope ('all' | 'mine'), defaulting to 'all'.
+    const subtypeForNonMedia = subtypeParam ?? 'all'
 
     const { data: activeSources } = useGetActiveApiSourcesQuery()
 
-    // Derive apiSourceId from filter state, falling back to first available source
-    const effectiveLocalApiSourceId = filters.apiSourceId ?? activeSources?.[0]?.id ?? null
-
-    // Use URL-based filters for actual search queries (these are set when user submits)
-    const searchType = urlSearchType
-    const scope = urlScope
     const parsedApiSourceId = apiSourceIdParam ? parseInt(apiSourceIdParam) : null
     const apiSourceId = (parsedApiSourceId && !isNaN(parsedApiSourceId))
         ? parsedApiSourceId
@@ -74,92 +51,57 @@ export default function SearchPage() {
     const availableSubtypes = selectedSource ? (API_SUBTYPES[selectedSource.apiName] ?? []) : []
     const activeSubtype = availableSubtypes.find(s => s.value === subtypeParam)?.value ?? undefined
 
-    // Sync filter state when URL params change (e.g., browser back/forward)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => {
-        setFilters({
-            searchType: urlSearchType,
-            scope: urlScope,
-            apiSourceId: apiSourceIdParam ? parseInt(apiSourceIdParam) : null,
-            subtype: subtypeParam,
-        })
-    }, [urlSearchType, urlScope, apiSourceIdParam, subtypeParam])
-
     const isAdmin = roleLevel === 'Administrator'
     const isModerator = roleLevel === 'Moderator' || roleLevel === 'Administrator'
     const shouldFetch = query.length >= SEARCH_MIN_CHARS
 
-    const [bypassCache, setBypassCache] = useState(false)
     const [activeBypassCache, setActiveBypassCache] = useState(false)
 
     // API queries
     const { data: mediaResults, isLoading: mediaLoading, isFetching: mediaFetching } =
         useSearchExternalApiQuery(
             { query, mediaTypeId: mediaTypeId!, limit: PAGE_SIZE, page, subtype: activeSubtype, bypassCache: isAdmin && activeBypassCache },
-            { skip: !shouldFetch || searchType !== 'media' || mediaTypeId === null }
+            { skip: !shouldFetch || urlSearchType !== 'media' || mediaTypeId === null }
         )
 
     const { data: tagResults, isLoading: tagsLoading, isFetching: tagsFetching } =
         useSearchCustomTagsQuery(
-            { query, limit: PAGE_SIZE, mineOnly: scope === 'mine' },
-            { skip: !shouldFetch || searchType !== 'tags' }
+            { query, limit: PAGE_SIZE, mineOnly: subtypeForNonMedia === 'mine' },
+            { skip: !shouldFetch || urlSearchType !== 'tags' }
         )
 
     const { data: listResults, isLoading: listsLoading, isFetching: listsFetching } =
         useSearchMediaListsQuery(
-            { query, limit: PAGE_SIZE, mineOnly: scope === 'mine' },
-            { skip: !shouldFetch || searchType !== 'lists' }
+            { query, limit: PAGE_SIZE, mineOnly: subtypeForNonMedia === 'mine' },
+            { skip: !shouldFetch || urlSearchType !== 'lists' }
         )
 
     const [findOrCreate] = useFindOrCreateMediaApiRefMutation()
 
-    // Handlers for form controls — these update filter state only (no search triggered)
-    const handleApiSourceChange = (id: number) => {
-        setFilters(prev => ({ ...prev, apiSourceId: id, subtype: undefined }))
-    }
-
-    const handleSubtypeChange = (newSubtype: string) => {
-        setFilters(prev => ({ ...prev, subtype: newSubtype || undefined }))
-    }
-
-    const handleTypeChange = (newType: SearchType) => {
-        setFilters(prev => ({
-            ...prev,
-            searchType: newType,
-            ...(newType !== 'media' && { apiSourceId: null, subtype: undefined })
-        }))
-    }
-
-    const handleScopeChange = (newScope: SearchScope) => {
-        setFilters(prev => ({ ...prev, scope: newScope }))
-    }
-
-    const handleFilterSearch = () => {
-        if (query.length < SEARCH_MIN_CHARS) return
+    const handleSearch = (newQuery: string, filters: FilterState, bypassCache: boolean) => {
         setActiveBypassCache(bypassCache)
-        // Apply filter state to URL and trigger search
         setSearchParams(prev => {
             const params = new URLSearchParams(prev)
+            params.set('q', newQuery)
             params.set('type', filters.searchType)
-            params.set('scope', filters.scope)
             params.set('page', '1')
-            if (filters.searchType === 'media' && effectiveLocalApiSourceId !== null) {
-                params.set('api', String(effectiveLocalApiSourceId))
+            if (filters.searchType === 'media' && filters.apiSourceId !== null) {
+                params.set('api', String(filters.apiSourceId))
             } else {
                 params.delete('api')
             }
-            if (filters.searchType === 'media' && filters.subtype) {
+            // For media: store API subtype. For tags/lists: store scope — omit 'all' (it's the default).
+            if (filters.subtype && filters.subtype !== 'all') {
                 params.set('subtype', filters.subtype)
             } else {
                 params.delete('subtype')
             }
+            params.delete('scope')
             params.delete('showFilters')
             return params
         })
-        setIsFiltersOpen(false)
     }
 
-    // Media results handlers
     const handleMediaResultClick = async (result: ExternalApiSearchResult) => {
         if (mediaTypeId === null || apiSourceId === null) return
         const source = activeSources?.find(s => s.id === apiSourceId)
@@ -179,30 +121,6 @@ export default function SearchPage() {
         } catch {
             // Error toast is handled by baseQueryWithErrorHandling
         }
-    }
-
-    const handleSearchSubmit = (newQuery: string) => {
-        setActiveBypassCache(bypassCache)
-        // Apply filter state to URL when user submits search
-        setSearchParams(prev => {
-            const params = new URLSearchParams(prev)
-            params.set('q', newQuery)
-            params.set('type', filters.searchType)
-            params.set('scope', filters.scope)
-            params.set('page', '1')
-            if (filters.searchType === 'media' && effectiveLocalApiSourceId !== null) {
-                params.set('api', String(effectiveLocalApiSourceId))
-            } else {
-                params.delete('api')
-            }
-            if (filters.searchType === 'media' && filters.subtype) {
-                params.set('subtype', filters.subtype)
-            } else {
-                params.delete('subtype')
-            }
-            params.delete('showFilters')
-            return params
-        })
     }
 
     const handlePageChange = (newPage: number) => {
@@ -227,175 +145,26 @@ export default function SearchPage() {
         <div className="page">
             <h1 className="h1-styling">Search</h1>
 
-            {/* Search bar with filters toggle */}
-            <div className="flex gap-2">
-                <button
-                    onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                    className="flex items-center justify-center rounded-lg border border-border bg-surface hover:bg-surface-hover transition-colors self-start"
-
-                    // Uses CSS because className (aka Tailwind) did not have the exact dimensions
-                    // This is to ensure this button is the exact same height as the SearchBar
-                    style={{ width: '30px', height: '30px' }}
-                    title={isFiltersOpen ? 'Hide filters' : 'Show filters'}
-                    aria-label={isFiltersOpen ? 'Hide filters' : 'Show filters'}
-                >
-                    <span className="text-xs transition-transform" style={{
-                        transform: isFiltersOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                        display: 'inline-block'
-                    }}>
-                        ▼
-                    </span>
-                </button>
-                <SearchBar
-                    mode="on-submit"
-                    isTop={false}
-                    effectiveMinimized={false}
-                    defaultQuery={query}
-                    defaultApiSourceId={apiSourceId ?? undefined}
-                    onSubmit={handleSearchSubmit}
-                    showApiSourcePills={false}
-                />
-            </div>
-
-            {/* Collapsible Advanced Filters */}
-                {isFiltersOpen && (
-                <div className="mt-4 p-4 border border-border rounded-lg bg-surface">
-                <div className="space-y-4">
-                    {/* Search type selector */}
-                    <div>
-                        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Type</p>
-                        <div className="flex flex-wrap gap-2">
-                            {SEARCH_TYPES.map(t => (
-                                <button
-                                    key={t.id}
-                                    onClick={() => handleTypeChange(t.id)}
-                                    className={`px-3 py-1 rounded-full border text-sm transition-colors ${
-                                        filters.searchType === t.id
-                                            ? 'bg-primary text-white border-primary'
-                                            : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
-                                    }`}
-                                >
-                                    {t.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* API source selector */}
-                    {filters.searchType === 'media' && activeSources && activeSources.length > 0 && (
-                        <div>
-                            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">API</p>
-                            <div className="flex flex-wrap gap-2">
-                                {activeSources.map(source => (
-                                    <button
-                                        key={source.id}
-                                        onClick={() => handleApiSourceChange(source.id)}
-                                        className={`px-3 py-1 rounded-full border text-sm transition-colors ${
-                                            effectiveLocalApiSourceId === source.id
-                                                ? 'bg-primary text-white border-primary'
-                                                : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
-                                        }`}
-                                    >
-                                        {source.apiName}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Subtype selector */}
-                    {filters.searchType === 'media' && availableSubtypes.length > 0 && (
-                        <div>
-                            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                                Search for
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                                {availableSubtypes.map(sub => (
-                                    <button
-                                        key={sub.value}
-                                        onClick={() => handleSubtypeChange(sub.value === filters.subtype ? '' : sub.value)}
-                                        className={`px-3 py-1 rounded-full border text-sm transition-colors ${
-                                            filters.subtype === sub.value
-                                                ? 'bg-primary/20 text-primary border-primary/40'
-                                                : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
-                                        }`}
-                                    >
-                                        {sub.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Scope selector */}
-                    {filters.searchType !== 'media' && (
-                        <div>
-                            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Scope</p>
-                            <div className="flex gap-2">
-                                {(['all', 'mine'] as const).map(s => (
-                                    <button
-                                        key={s}
-                                        onClick={() => handleScopeChange(s)}
-                                        className={`px-3 py-1 rounded-full border text-sm transition-colors capitalize ${
-                                            filters.scope === s
-                                                ? 'bg-primary text-white border-primary'
-                                                : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
-                                        }`}
-                                    >
-                                        {s}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Admin/Moderator section */}
-                    {isModerator && (
-                        <div className="mt-6 rounded-xl border border-border p-4 bg-surface">
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded font-semibold">
-                                    {roleLevel === 'Administrator' ? 'ADMIN' : 'MOD'}
-                                </span>
-                                <p className="text-sm font-semibold text-text">Moderation Filters</p>
-                            </div>
-                            {isAdmin ? (
-                                <label className="flex items-center gap-2 cursor-pointer select-none">
-                                    <input
-                                        type="checkbox"
-                                        checked={bypassCache}
-                                        onChange={e => setBypassCache(e.target.checked)}
-                                        className="w-4 h-4 accent-amber-500"
-                                    />
-                                    <span className="text-sm text-text">Bypass cache — always fetch fresh from API</span>
-                                </label>
-                            ) : (
-                                <p className="text-sm text-text/50">
-                                    Additional filters for moderators and administrators will appear here.
-                                </p>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Search button */}
-                    <button
-                        onClick={handleFilterSearch}
-                        disabled={query.length < SEARCH_MIN_CHARS}
-                        className="btn btn-primary w-full py-2 disabled:opacity-40"
-                    >
-                        Search
-                    </button>
-                </div>
-                </div>
-                )}
+            <SearchBarWithFilters
+                query={query}
+                defaultApiSourceId={apiSourceId ?? null}
+                urlFilters={{ searchType: urlSearchType, apiSourceId: parsedApiSourceId, subtype: urlSearchType === 'media' ? subtypeParam : subtypeForNonMedia }}
+                activeSources={activeSources}
+                isModerator={isModerator}
+                isAdmin={isAdmin}
+                roleLevel={roleLevel}
+                shouldShowFilters={shouldShowFilters}
+                onSearch={handleSearch}
+            />
 
             {/* Results section */}
             <div className="mt-4">
                 {/* No query entered */}
                 {!shouldFetch && (
                     <p className="text-text/50 text-sm">
-                        {searchType === 'media'
+                        {urlSearchType === 'media'
                             ? 'Search for movies, games, books, and more'
-                            : `Search for ${searchType}.`}
+                            : `Search for ${urlSearchType}.`}
                     </p>
                 )}
 
@@ -405,14 +174,11 @@ export default function SearchPage() {
                 )}
 
                 {/* Media results */}
-                
-                {searchType === 'media' && shouldFetch && !isLoading && (
+                {urlSearchType === 'media' && shouldFetch && !isLoading && (
                     <>
-                        {/* Cache status for media */}
-                        {searchType === 'media' && shouldFetch && !isLoading && mediaResults && (
+                        {mediaResults && (
                             <CacheStatusPill cacheMetadata={mediaResults.cacheMetadata} />
                         )}
-
 
                         {mediaResults && mediaResults.data.length === 0 && (
                             <p className="text-text/50 text-sm">No results for "{query}".</p>
@@ -465,9 +231,8 @@ export default function SearchPage() {
                     </>
                 )}
 
-
                 {/* Tags results */}
-                {searchType === 'tags' && shouldFetch && !isLoading && (
+                {urlSearchType === 'tags' && shouldFetch && !isLoading && (
                     <>
                         {tagResults && tagResults.length === 0 && (
                             <p className="text-text/50 text-sm">No tags found for "{query}".</p>
@@ -491,7 +256,7 @@ export default function SearchPage() {
                 )}
 
                 {/* Lists results */}
-                {searchType === 'lists' && shouldFetch && !isLoading && (
+                {urlSearchType === 'lists' && shouldFetch && !isLoading && (
                     <>
                         {listResults && listResults.length === 0 && (
                             <p className="text-text/50 text-sm">No lists found for "{query}".</p>

@@ -44,11 +44,6 @@ export default function About(){
                     onClick={() => goToExternalWebsite("https://github.com/DavidASchonfeld/react-dotnet-website")}
                 >This Website's Code</button>
             </div>
-
-            <div>
-                <h2 className="text-lg font-semibold text-text mb-2">Color Theme Picker</h2>
-                <ThemePicker />
-            </div>
         </div>
         </AnimatedPage>
     )

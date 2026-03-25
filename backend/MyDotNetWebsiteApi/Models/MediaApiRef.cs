@@ -23,7 +23,7 @@ public class MediaApiRef
 
     // Image URLs (blob storage deferred to ImageCache)
     public string? ThumbnailUrl { get; set; }  // small image from search results
-    public string? Poster { get; set; }        // full-size image from detail fetch
+    public string? PosterUrl { get; set; }     // full-size image from detail fetch
 
     // Optional location/origin info
     public string? Country { get; set; }

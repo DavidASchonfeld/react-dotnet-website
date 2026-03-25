@@ -35,6 +35,7 @@ export default function RowItemContent({ firstString, secondString, thirdString,
                             : `${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(photographOnLeft)}`}
                         alt=""
                         className="w-full h-full object-cover"
+                        onError={e => { (e.currentTarget as HTMLImageElement).src = '/placeholder-thumbnail.svg'; }}
                     />
                 )}
             </div>

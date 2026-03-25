@@ -54,6 +54,17 @@ public class MediaApiRefService : IMediaApiRefService
             var detailedResult = await adapter.GetByExternalIdAsync(mediaApiRef.ExternalId);
             if (detailedResult != null)
             {
+                // Validate image URLs before caching or persisting — null out any that are unreachable
+                var thumbnailTask = detailedResult.ThumbnailUrl != null
+                    ? _imageCacheService.IsImageReachableAsync(detailedResult.ThumbnailUrl)
+                    : Task.FromResult(true);
+                var posterTask = detailedResult.Poster != null
+                    ? _imageCacheService.IsImageReachableAsync(detailedResult.Poster)
+                    : Task.FromResult(true);
+                await Task.WhenAll(thumbnailTask, posterTask);
+                if (!thumbnailTask.Result) detailedResult.ThumbnailUrl = null;
+                if (!posterTask.Result) detailedResult.Poster = null;
+
                 // Store raw API response in CacheItem; update staleness timestamp and Poster on MediaApiRef
                 var responseJson = JsonSerializer.Serialize(detailedResult);
                 await _cacheItemService.UpsertAsync(
@@ -61,7 +72,7 @@ public class MediaApiRefService : IMediaApiRefService
                     queryParams, responseJson, AppConstants.CacheItemGetByIdTtlDays);
 
                 mediaApiRef.DetailsFetchedAt = DateTime.UtcNow;
-                if (detailedResult.Poster != null) mediaApiRef.Poster = detailedResult.Poster;
+                if (detailedResult.Poster != null) mediaApiRef.PosterUrl = detailedResult.Poster;
                 await _context.SaveChangesAsync();
                 await _apiUsageService.TrackRequestAsync(mediaApiRef.ApiSource.ApiName);
                 if (detailedResult.Poster != null) PrewarmPoster(detailedResult.Poster);
@@ -123,6 +134,13 @@ public class MediaApiRefService : IMediaApiRefService
         // Cache miss — call external API and store result
         var results = await adapter.SearchAsync(query, limit, page, subtype);
         await _apiUsageService.TrackRequestAsync(activeSource.ApiName);
+
+        // Validate thumbnail URLs before caching — null out any that are unreachable
+        await Task.WhenAll(results.Select(async r =>
+        {
+            if (r.ThumbnailUrl != null && !await _imageCacheService.IsImageReachableAsync(r.ThumbnailUrl))
+                r.ThumbnailUrl = null;
+        }));
 
         var responseJson = JsonSerializer.Serialize(results);
         await _cacheItemService.UpsertAsync(
@@ -319,6 +337,17 @@ public class MediaApiRefService : IMediaApiRefService
 
         if (detailedResult != null)
         {
+            // Validate image URLs before caching or persisting — null out any that are unreachable
+            var thumbnailTask = detailedResult.ThumbnailUrl != null
+                ? _imageCacheService.IsImageReachableAsync(detailedResult.ThumbnailUrl)
+                : Task.FromResult(true);
+            var posterTask = detailedResult.Poster != null
+                ? _imageCacheService.IsImageReachableAsync(detailedResult.Poster)
+                : Task.FromResult(true);
+            await Task.WhenAll(thumbnailTask, posterTask);
+            if (!thumbnailTask.Result) detailedResult.ThumbnailUrl = null;
+            if (!posterTask.Result) detailedResult.Poster = null;
+
             // Overwrite CacheItem entry with fresh data; update staleness timestamp and Poster on MediaApiRef
             var queryParams = BuildGetByIdParams(mediaApiRef.ExternalId, mediaApiRef.ApiSource.ApiName);
             var responseJson = JsonSerializer.Serialize(detailedResult);
@@ -327,7 +356,7 @@ public class MediaApiRefService : IMediaApiRefService
                 queryParams, responseJson, AppConstants.CacheItemGetByIdTtlDays);
 
             mediaApiRef.DetailsFetchedAt = DateTime.UtcNow;
-            if (detailedResult.Poster != null) mediaApiRef.Poster = detailedResult.Poster;
+            if (detailedResult.Poster != null) mediaApiRef.PosterUrl = detailedResult.Poster;
             await _context.SaveChangesAsync();
             await _apiUsageService.TrackRequestAsync(mediaApiRef.ApiSource.ApiName);
             if (detailedResult.Poster != null) PrewarmPoster(detailedResult.Poster);
@@ -384,7 +413,7 @@ public class MediaApiRefService : IMediaApiRefService
         IsStale = r.DetailsFetchedAt.HasValue &&
                   (DateTime.UtcNow - r.DetailsFetchedAt.Value).TotalDays > AppConstants.DetailsStaleDays,
         ThumbnailUrl = r.ThumbnailUrl,
-        Poster = details?.Poster ?? r.Poster,
+        Poster = details?.Poster ?? r.PosterUrl,
         Plot = details?.Plot,
         Runtime = details?.Runtime,
         Country = details?.Country ?? r.Country,

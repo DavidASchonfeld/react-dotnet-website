@@ -23,3 +23,6 @@ Pre-Warming a Cache:
 -- In MediaApiRefService.cs
 ---- for searching for a list of media items, my backend's API endpoint for returning searh results from the 3rd party will prewarm the thumbnail images for each search result so when my front end shows the search results (each search result row (frontend/src/components/RowItemContent.tsx) asks for the backend's image cache instead of retrieving the image from the search results). So, by prewarming the cache with the thumbnail images that, originally I would just return/pass into the components directly, now I pre-warm thumbnails, the return the search results, then the front end requests the now-cached thumbnail images. So that way, when loading the searchResult list, it will still just be 1 3rd-party API request.
 ---- for searching for 1 specific media item, my script will prewarm its poster (aka full-sized image)
+
+
+Before saving an imageUrl to the imageCache, the backend will test the imageUrl to ensure it does not receive an error. If it does, it does not save/use the imageUrl (though, if the imageUrl is attached to other non-error data, it still uses that other data.)

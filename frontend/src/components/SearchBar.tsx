@@ -40,6 +40,7 @@ export default function SearchBar({
     const [inputQuery, setInputQuery] = useState(defaultQuery)
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const [dropdownResults, setDropdownResults] = useState<ExternalApiSearchResult[]>([])
+    const [searchLabelExpanded, setSearchLabelExpanded] = useState(false)
 
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -162,25 +163,37 @@ export default function SearchBar({
 
             {/* Input row */}
             <div className={`relative flex items-center gap-1 ${isTop ? 'w-32 focus-within:w-52 transition-all duration-300' : 'w-full'}`}>
-                <span className="absolute left-2 text-text/50 pointer-events-none text-sm select-none">🔍</span>
                 <input
                     type="text"
                     value={inputQuery}
                     onChange={e => handleInputChange(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={selectedSource ? `${selectedSource.apiName}…` : 'Search…'}
-                    className="form-input pl-7 pr-7 py-1 text-sm w-full rounded-lg"
+                    className="form-input pl-3 pr-8 py-1 text-sm w-full rounded-lg"
                 />
-                {inputQuery.length > 0 && (
-                    <button
-                        onClick={handleClear}
-                        className="absolute right-1.5 text-text/50 hover:text-text transition-colors text-xs leading-none"
-                        title="Clear"
-                        tabIndex={-1}
-                    >
-                        ✕
-                    </button>
-                )}
+                <span className="absolute right-2 flex items-center text-text/50 hover:text-text/70 transition-colors duration-200 cursor-pointer"
+                    onClick={handleSubmit}
+                    onMouseLeave={() => setSearchLabelExpanded(false)}>
+                    {inputQuery.length > 0 && (
+                        <button
+                            onClick={e => { e.stopPropagation(); handleClear() }}
+                            className="text-xs leading-none px-2 py-1 hover:text-text"
+                            title="Clear"
+                            tabIndex={-1}
+                        >
+                            ✕
+                        </button>
+                    )}
+                    <span
+                        className="text-sm select-none"
+                        onMouseEnter={() => setSearchLabelExpanded(true)}>
+                            🔍
+                    </span>
+                    <span
+                        className={`${searchLabelExpanded ? 'max-w-[3rem]' : 'max-w-0'} overflow-hidden transition-all duration-300 text-xs whitespace-nowrap select-none pl-1`}>
+                        Search
+                    </span>
+                </span>
             </div>
 
             {/* API source pills — hidden when showApiSourcePills=false (Navbar uses SearchFilterDropdown instead) */}

@@ -17,6 +17,19 @@ export const SEARCH_DEBOUNCE_MS = 300;
 export const SEARCH_MIN_CHARS = 2;      // Matches AppConstants.SearchMinQueryLength
 export const SEARCH_DEFAULT_LIMIT = 10; // Per-keystroke result cap sent to the backend (backend also enforces its own cap)
 
+// Options for non-media (aka non-3rd-Party-API) Search Types (Lists, Tags).
+// Keys match SearchType values; mirrors the API_SUBTYPES pattern below.
+export const SITE_TYPE_SUBTYPES: Record<string, { value: string; label: string }[]> = {
+        lists: [
+        { value: 'all',  label: 'All'  },
+        { value: 'mine', label: 'Mine' }
+    ],
+    tags:  [
+        { value: 'all',  label: 'All'  },
+        { value: 'mine', label: 'Mine' }
+    ],
+}
+
 // API-specific search sub-types shown in AdvancedSearch and SearchResultsPage.
 // Keys match the ExternalApiSource.apiName values from the backend.
 export const API_SUBTYPES: Record<string, { value: string; label: string }[]> = {

@@ -100,6 +100,7 @@ export default function MediaApiRefDetailPage() {
                         src={posterSrc}
                         alt={detail.name}
                         className="max-w-xs rounded-lg shadow-md"
+                        onError={e => { (e.currentTarget as HTMLImageElement).src = '/placeholder-poster.svg'; }}
                     />
                 </div>
             )}
