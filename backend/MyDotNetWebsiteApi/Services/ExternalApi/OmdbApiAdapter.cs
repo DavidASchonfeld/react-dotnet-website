@@ -50,7 +50,7 @@ public class OmdbApiAdapter : IExternalMediaApiAdapter
     public async Task<ExternalApiSearchResult?> GetByExternalIdAsync(string externalId)
     {
         // OMDB detail endpoint: ?i= fetches a single item by IMDB ID.
-        var url = $"http://www.omdbapi.com/?i={Uri.EscapeDataString(externalId)}&apikey={_apiKey}";
+        var url = $"http://www.omdbapi.com/?i={Uri.EscapeDataString(externalId)}&apikey={_apiKey}&plot=full"; // plot=full returns a longer plot summary than the default short version
 
         OmdbDetailResponse? response;
         try
