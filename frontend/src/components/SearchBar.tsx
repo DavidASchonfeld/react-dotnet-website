@@ -99,9 +99,9 @@ export default function SearchBar({
 
     // ---- On-Submit handler (Enter key or Search button) ----
     const handleSubmit = useCallback(() => {
-        if (inputQuery.length < SEARCH_MIN_CHARS || selectedApiSourceId === null) return
-        onSubmit?.(inputQuery, selectedApiSourceId)
-    }, [inputQuery, selectedApiSourceId, onSubmit])
+        if (inputQuery.length < SEARCH_MIN_CHARS || effectiveSelectedApiSourceId === null) return
+        onSubmit?.(inputQuery, effectiveSelectedApiSourceId)
+    }, [inputQuery, effectiveSelectedApiSourceId, onSubmit])
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') handleSubmit()
@@ -206,7 +206,7 @@ export default function SearchBar({
             {mode === 'on-submit' && showSearchButton && (
                 <button
                     onClick={handleSubmit}
-                    disabled={inputQuery.length < SEARCH_MIN_CHARS || selectedApiSourceId === null}
+                    disabled={inputQuery.length < SEARCH_MIN_CHARS || effectiveSelectedApiSourceId === null}
                     className="btn text-sm py-1 px-3 shrink-0 disabled:opacity-40"
                 >
                     Search

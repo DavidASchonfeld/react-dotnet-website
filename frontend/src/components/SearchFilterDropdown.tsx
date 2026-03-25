@@ -2,15 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useGetActiveApiSourcesQuery } from '../services/apiSlice'
 
-// Search types the user can switch between
-type SearchType = 'media' | 'tags' | 'lists'
-type SearchScope = 'all' | 'mine'
-
 interface SearchFilterDropdownProps {
-    searchType: SearchType
-    scope: SearchScope
-    onSearchTypeChange: (type: SearchType) => void
-    onScopeChange: (scope: SearchScope) => void
     selectedApiSourceId?: number | null
     onApiSourceChange?: (id: number) => void
     // Controls dropdown panel direction: top nav opens downward, left nav opens rightward
@@ -42,10 +34,6 @@ const OptionButton = ({
 )
 
 export default function SearchFilterDropdown({
-    searchType,
-    scope,
-    onSearchTypeChange,
-    onScopeChange,
     selectedApiSourceId,
     onApiSourceChange,
     isTop,
@@ -81,60 +69,20 @@ export default function SearchFilterDropdown({
                         onClick={e => e.stopPropagation()} // keep open when clicking inside
                     >
 
-                        {/* Search type section */}
+                        {/* Source section */}
                         <div className="px-3 pt-3 pb-1">
                             <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">
-                                Type
+                                Source
                             </p>
-                            <OptionButton
-                                label="Media"
-                                active={searchType === 'media'}
-                                onClick={() => onSearchTypeChange('media')}
-                            />
-                            {/* API source sub-options — shown when Media is selected */}
-                            {searchType === 'media' && activeSources && activeSources.length > 0 && (
-                                <div className="pl-4 flex flex-col">
-                                    {activeSources.map(source => (
-                                        <OptionButton
-                                            key={source.id}
-                                            label={source.apiName}
-                                            active={selectedApiSourceId === source.id}
-                                            onClick={() => onApiSourceChange?.(source.id)}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                            <OptionButton
-                                label="Tags"
-                                active={searchType === 'tags'}
-                                onClick={() => onSearchTypeChange('tags')}
-                            />
-                            <OptionButton
-                                label="Lists"
-                                active={searchType === 'lists'}
-                                onClick={() => onSearchTypeChange('lists')}
-                            />
+                            {activeSources && activeSources.length > 0 && activeSources.map(source => (
+                                <OptionButton
+                                    key={source.id}
+                                    label={source.apiName}
+                                    active={selectedApiSourceId === source.id}
+                                    onClick={() => onApiSourceChange?.(source.id)}
+                                />
+                            ))}
                         </div>
-
-                        {/* Scope section — hidden for Media because external APIs have no "mine" concept */}
-                        {searchType !== 'media' && (
-                            <div className="px-3 py-1">
-                                <div className="h-px bg-border my-1" />
-                                <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">
-                                    Scope
-                                </p>
-                                <OptionButton
-                                    label="All"
-                                    active={scope === 'all'}
-                                    onClick={() => onScopeChange('all')}
-                                />
-                                <OptionButton
-                                    label="Mine"
-                                    active={scope === 'mine'}
-                                    onClick={() => onScopeChange('mine')}
-                                />
-                            </div>
-                        )}
 
                         {/* Advanced Search link — divides basic filters from complex/role-gated options */}
                         <div className="border-t border-border mt-1">

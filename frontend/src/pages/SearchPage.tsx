@@ -405,8 +405,15 @@ export default function SearchPage() {
                 )}
 
                 {/* Media results */}
+                
                 {searchType === 'media' && shouldFetch && !isLoading && (
                     <>
+                        {/* Cache status for media */}
+                        {searchType === 'media' && shouldFetch && !isLoading && mediaResults && (
+                            <CacheStatusPill cacheMetadata={mediaResults.cacheMetadata} />
+                        )}
+
+
                         {mediaResults && mediaResults.data.length === 0 && (
                             <p className="text-text/50 text-sm">No results for "{query}".</p>
                         )}
@@ -458,10 +465,6 @@ export default function SearchPage() {
                     </>
                 )}
 
-                {/* Cache status for media */}
-                {searchType === 'media' && shouldFetch && !isLoading && mediaResults && (
-                    <CacheStatusPill cacheMetadata={mediaResults.cacheMetadata} />
-                )}
 
                 {/* Tags results */}
                 {searchType === 'tags' && shouldFetch && !isLoading && (

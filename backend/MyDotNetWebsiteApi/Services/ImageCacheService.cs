@@ -17,7 +17,7 @@ public class ImageCacheService : IImageCacheService
         // Cache hit: update LRU tracking and return stored blob
         // LRU stands for "Least Recently Ued"
         var cached = await _context.ImageCaches.FindAsync(imageUrl);
-        if (cached != null && cached.ExpiresAt > DateTime.UtcNow && cached.ImageBlob != null)
+        if (cached != null && DateTime.SpecifyKind(cached.ExpiresAt, DateTimeKind.Utc) > DateTime.UtcNow && cached.ImageBlob != null)
         {
             cached.AccessedAt = DateTime.UtcNow;
             cached.HitCount++;

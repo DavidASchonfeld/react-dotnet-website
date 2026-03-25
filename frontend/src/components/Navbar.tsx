@@ -97,9 +97,6 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-    // Search filter state — kept in Navbar so both SearchBar and SearchFilterDropdown share it
-    const [searchType, setSearchType] = useState<'media' | 'tags' | 'lists'>('media')
-    const [searchScope, setSearchScope] = useState<'all' | 'mine'>('all')
     const { data: activeSources } = useGetActiveApiSourcesQuery()
 
     // Initialize selectedApiSourceId to first available source, matching SearchPage behavior
@@ -135,14 +132,11 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
 
     const handleSearchSubmit = (query: string) => {
-        // Build URL with type, scope, and selected API source from filter dropdown
         const params = new URLSearchParams({
             q: encodeURIComponent(query),
-            type: searchType,
-            scope: searchScope,
             page: '1',
         })
-        if (searchType === 'media' && effectiveSelectedApiSourceId !== null)
+        if (effectiveSelectedApiSourceId !== null)
             params.set('api', String(effectiveSelectedApiSourceId))
         navigate(`/search?${params}`)
     }
@@ -240,13 +234,9 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                             defaultApiSourceId={selectedApiSourceId ?? undefined}
                             onSubmit={handleSearchSubmit}
                         />
-                        {/* Filter dropdown: type (Media/Tags/Lists) and scope (All/Mine) */}
+                        {/* Filter dropdown: API source selection (OMDB, RAWG, etc.) */}
                         {!effectiveMinimized && (
                             <SearchFilterDropdown
-                                searchType={searchType}
-                                scope={searchScope}
-                                onSearchTypeChange={setSearchType}
-                                onScopeChange={setSearchScope}
                                 selectedApiSourceId={selectedApiSourceId}
                                 onApiSourceChange={setSelectedApiSourceId}
                                 isTop={isTop}

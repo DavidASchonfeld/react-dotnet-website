@@ -25,7 +25,10 @@ public class ServiceResult<T>
             CacheMetadata = new CacheMetadataDto
             {
                 IsFromCache = true,
-                CachedAt = cachedAt
+
+                // Saving the Cache's Time zone as UTC. (The frontend will convert it to the user's local time)
+                // Note: Before this, I had issues because I had not specified a timezone.
+                CachedAt = DateTime.SpecifyKind(cachedAt, DateTimeKind.Utc)
             }
         };
 

@@ -144,19 +144,11 @@ function App() {
 
         {/* The ":id means that you can pass any variable there,
         and React will catch the value into the variable "id". */}
-        <Route path = "/medialist/:id" element = {
-          <ProtectedRoute>
-              <MediaListDetailPage />
-          </ProtectedRoute>
-        } />
+        <Route path = "/medialist/:id" element = {<MediaListDetailPage />} />
 
 
 
-        <Route path = "/mediaapiref/:id" element = {
-          <ProtectedRoute>
-            <MediaApiRefDetailPage />
-          </ProtectedRoute>
-        } />
+        <Route path = "/mediaapiref/:id" element = {<MediaApiRefDetailPage />} />
 
         <Route path = "/my-tags" element = {
           <ProtectedRoute>
@@ -164,17 +156,9 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path = "/tags/:tagId/items" element = {
-          <ProtectedRoute>
-            <ExploreByTagPage />
-          </ProtectedRoute>
-        } />
+        <Route path = "/tags/:tagId/items" element = {<ExploreByTagPage />} />
 
-        <Route path = "/search" element = {
-          <ProtectedRoute>
-            <SearchPage />
-          </ProtectedRoute>
-        } />
+        <Route path = "/search" element = {<SearchPage />} />
 
 
         <Route path="/my-settings" element={

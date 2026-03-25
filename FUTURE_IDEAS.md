@@ -98,3 +98,9 @@ For example, if someone has "Hide Explicit" Or "Hide PG-13 and Over", anything i
 Implement this (And this page is referenced (and commented out) on
 frontend/src/components/Modals/MediaItemsSettingsModal.tsx)
 navigate(`/mediaitem/${currentMediaItem.id}/creators`);
+
+
+
+For high-definition images for MediaItem deatils page, use the OMDB Poster API (which I get access to because I pay $5/month).
+The different URL than the standard OMDB API:
+http://img.omdbapi.com/?apikey=[yourkey]&

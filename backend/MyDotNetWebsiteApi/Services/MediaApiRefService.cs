@@ -44,7 +44,7 @@ public class MediaApiRefService : IMediaApiRefService
             var cachedDetails = JsonSerializer.Deserialize<ExternalApiSearchResult>(cachedItem.ResponseJson);
             if (cachedDetails?.Poster != null) PrewarmPoster(cachedDetails.Poster);
             return ServiceResult<MediaApiRefDetailDto>.OkFromCache(
-                ToDetailDto(mediaApiRef, cachedDetails), cachedItem.LastAccessedAt);
+                ToDetailDto(mediaApiRef, cachedDetails), cachedItem.CreatedAt);
         }
 
         // Cache miss — fetch from external API and store in CacheItem
@@ -117,7 +117,7 @@ public class MediaApiRefService : IMediaApiRefService
         {
             var cachedResults = JsonSerializer.Deserialize<List<ExternalApiSearchResult>>(cachedItem.ResponseJson)!;
             PrewarmThumbnails(cachedResults);
-            return ServiceResult<List<ExternalApiSearchResult>>.OkFromCache(cachedResults, cachedItem.LastAccessedAt);
+            return ServiceResult<List<ExternalApiSearchResult>>.OkFromCache(cachedResults, cachedItem.CreatedAt);
         }
 
         // Cache miss — call external API and store result
@@ -170,7 +170,7 @@ public class MediaApiRefService : IMediaApiRefService
             if (cachedItem != null)
             {
                 var cachedResult = JsonSerializer.Deserialize<ExternalApiSearchResult>(cachedItem.ResponseJson)!;
-                return ServiceResult<ExternalApiSearchResult>.OkFromCache(cachedResult, cachedItem.LastAccessedAt);
+                return ServiceResult<ExternalApiSearchResult>.OkFromCache(cachedResult, cachedItem.CreatedAt);
             }
         }
 
