@@ -363,6 +363,27 @@ export const apiSlice = createApi({
             },
         }),
 
+        getFeaturedLists: builder.query<MediaListDetail[], void>({
+            query: () => '/api/medialist/featured',
+            providesTags: ['MediaList'],
+        }),
+
+        createFeaturedList: builder.mutation<MediaListSummary, CreateMediaListRequest>({
+            query: (body) => ({
+                url: '/api/medialist/create-featured-list',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['MediaList'],
+            onQueryStarted: async (_, { queryFulfilled }) => {
+                await safeToast.promise(queryFulfilled, {
+                    loading: 'Creating featured list...',
+                    success: 'Featured list created!',
+                    error: '',
+                })
+            },
+        }),
+
 
         // ---- CustomTag Endpoints ----
 
@@ -596,6 +617,8 @@ export const {
     useMoveMediaApiRefWithinMediaListMutation,
     useSearchMediaListsQuery,
     useLazySearchMediaListsQuery,
+    useGetFeaturedListsQuery,
+    useCreateFeaturedListMutation,
     // CustomTag
     useGetMyCustomTagsQuery,
     useCreateCustomTagMutation,

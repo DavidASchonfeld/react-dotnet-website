@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 public class MediaListService : IMediaListService
 
 {
+    private static readonly HashSet<string> _mutuallyExclusiveListNames =
+        new() { "Want to Read", "Currently Reading", "Read", "Did Not Finish" };
+
     private readonly AppDbContext _context;
 
     public MediaListService(AppDbContext context)
@@ -73,7 +76,8 @@ public class MediaListService : IMediaListService
         VisibilityStatus = mediaListObject.VisibilityStatus,
         ItemCount = itemCount,
         CanEdit = canEdit,
-        IsDefault = mediaListObject.IsDefault
+        IsDefault = mediaListObject.IsDefault,
+        IsFeatured = mediaListObject.IsFeatured
     };
 
 
@@ -102,7 +106,8 @@ public class MediaListService : IMediaListService
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
                 CanEdit = true,  // GetMyLists only returns lists the user submitted, so they always own them
-                IsDefault = l.IsDefault
+                IsDefault = l.IsDefault,
+                IsFeatured = l.IsFeatured
             })
             .ToListAsync();
 
@@ -144,6 +149,7 @@ public class MediaListService : IMediaListService
             VisibilityStatus = mediaList_withIncludes.VisibilityStatus,
             CanEdit = PermissionHelper.CanModifyOrDeleteList(requesterUser, targetMediaList),
             IsDefault = mediaList_withIncludes.IsDefault,
+            IsFeatured = mediaList_withIncludes.IsFeatured,
             ListContent = mediaList_withIncludes.ItemLinks
                 .OrderBy(link => link.Position)  // Sorts Ascending by Default, which is what I want
                 .Select(link => new MediaApiRefSummaryDto
@@ -153,7 +159,8 @@ public class MediaListService : IMediaListService
                     MediaTypeId = link.MediaApiRef.MediaTypeId,
                     CreatorName = link.MediaApiRef.CreatorName,
                     PublishedDate = link.MediaApiRef.PublishedDate,
-                    ExternalId = link.MediaApiRef.ExternalId
+                    ExternalId = link.MediaApiRef.ExternalId,
+                    ThumbnailUrl = link.MediaApiRef.ThumbnailUrl
                 })
                 .ToList()
         });
@@ -206,6 +213,7 @@ public class MediaListService : IMediaListService
         if (requesterUser == null) return ServiceResult<bool>.Unauthorized();
         if (forbidden) return ServiceResult<bool>.Forbidden();
         if (mediaList.IsDefault) return ServiceResult<bool>.Forbidden();
+        if (mediaList.IsFeatured) return ServiceResult<bool>.Forbidden();
 
         // Implement the Change:
         _context.MediaLists.Remove(mediaList);
@@ -263,6 +271,29 @@ public class MediaListService : IMediaListService
 
         if (alreadyInList)
             return ServiceResult<MediaListSummaryDto>.Conflict("This item is already inside this list.");
+
+
+        //// If target is a status list, auto-remove the item from any other status list the owner has
+        if (mediaList.IsDefault && _mutuallyExclusiveListNames.Contains(mediaList.Name))
+        {
+            var otherStatusListIds = await _context.MediaLists
+                .Where(l => l.SubmittedById == mediaList.SubmittedById
+                         && l.IsDefault
+                         && l.Id != mediaListId
+                         && _mutuallyExclusiveListNames.Contains(l.Name))
+                .Select(l => l.Id)
+                .ToListAsync();
+
+            var staleLinks = await _context.LinkMediaApiRefToMediaListTable
+                .Where(l => otherStatusListIds.Contains(l.HostListId) && l.MediaApiRefId == mediaApiRefId)
+                .ToListAsync();
+
+            foreach (var staleLink in staleLinks)
+            {
+                await ShiftPositionsAsync(staleLink.Position + 1, staleLink.HostListId, isAdding: false);
+                _context.LinkMediaApiRefToMediaListTable.Remove(staleLink);
+            }
+        }
 
 
         //// Move existing items in the list to make room for the to-be-added MediaApiRef
@@ -478,11 +509,73 @@ public class MediaListService : IMediaListService
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
                 CanEdit = l.SubmittedById == requesterUserId || canModify,
-                IsDefault = l.IsDefault
+                IsDefault = l.IsDefault,
+                IsFeatured = l.IsFeatured
             })
             .ToListAsync();
 
         return ServiceResult<List<MediaListSummaryDto>>.Ok(results);
+    }
+
+
+    public async Task<ServiceResult<List<MediaListDetailDto>>> GetFeaturedListsAsync()
+    {
+        var lists = await _context.MediaLists
+            .Where(l => l.IsFeatured)
+            .OrderBy(l => l.Id)
+            .Include(l => l.ItemLinks)
+                .ThenInclude(link => link.MediaApiRef)
+            .ToListAsync();
+
+        var dtos = lists.Select(l => new MediaListDetailDto
+        {
+            Id = l.Id,
+            Name = l.Name,
+            SubmittedById = l.SubmittedById,
+            Description = l.Description,
+            VisibilityStatus = l.VisibilityStatus,
+            CanEdit = false,
+            IsDefault = l.IsDefault,
+            IsFeatured = true,
+            ListContent = l.ItemLinks
+                .OrderBy(link => link.Position)
+                .Select(link => new MediaApiRefSummaryDto
+                {
+                    Id = link.MediaApiRef.Id,
+                    Name = link.MediaApiRef.Name,
+                    MediaTypeId = link.MediaApiRef.MediaTypeId,
+                    CreatorName = link.MediaApiRef.CreatorName,
+                    PublishedDate = link.MediaApiRef.PublishedDate,
+                    ExternalId = link.MediaApiRef.ExternalId,
+                    ThumbnailUrl = link.MediaApiRef.ThumbnailUrl
+                })
+                .ToList()
+        }).ToList();
+
+        return ServiceResult<List<MediaListDetailDto>>.Ok(dtos);
+    }
+
+
+    public async Task<ServiceResult<MediaListSummaryDto>> CreateFeaturedListAsync(CreateMediaListDto dto, string requesterUserId)
+    {
+        var requester = await _context.Users.FindAsync(requesterUserId);
+        if (requester == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
+        if (!PermissionHelper.IsAdministrator(requester)) return ServiceResult<MediaListSummaryDto>.Forbidden();
+
+        var list = new MediaList
+        {
+            Name = dto.Name,
+            Description = dto.Description,
+            IsFeatured = true,
+            SubmittedById = null,
+            VisibilityStatus = VisibilityStatus.Public,
+            DateSubmitted = DateTime.UtcNow
+        };
+
+        _context.MediaLists.Add(list);
+        await _context.SaveChangesAsync();
+
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(list, 0));
     }
 
 

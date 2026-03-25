@@ -275,6 +275,9 @@ using (var scope = app.Services.CreateScope())
     // Ensure every user has their 4 default non-deleteable MediaLists.
     await DefaultMediaListSeederService.SeedDefaultListsForAllUsersAsync(db, logger);
 
+    // Ensure global Featured MediaLists (e.g. "Home Page") exist.
+    await FeaturedMediaListSeederService.SeedFeaturedListsAsync(db, logger);
+
 }
 
 

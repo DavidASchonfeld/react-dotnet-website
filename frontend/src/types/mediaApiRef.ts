@@ -7,6 +7,7 @@ export interface MediaApiRefSummary {
     creatorName: string | null;
     publishedDate: string | null;
     externalId: string;
+    thumbnailUrl?: string | null;
 }
 
 export interface MediaApiRefDetail {

@@ -358,6 +358,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                                 <div className="h-px bg-border mx-3 my-1" />
                                                 <p className="px-4 py-1 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">Admin</p>
                                                 <DropdownMenuButton icon="⚙" label="Manage Users" title="Manage Users" onClick={() => navigate("/admin/users")} />
+                                                <DropdownMenuButton icon="★" label="Edit Featured" title="Edit Featured" onClick={() => navigate("/admin/edit-featured")} />
                                                 <DropdownMenuButton icon="📊" label="API Usage" title="API Usage" onClick={() => navigate("/admin/api-usage")} />
                                             </>
                                         )}

@@ -110,4 +110,20 @@ public class MediaListController : ControllerBase
         var result = await _mediaListService.ReorderItemsAsync(mediaListId, dto.OrderedItemIds, requesterUserId);
         return result.ToActionResult(this);
     }
+
+    [HttpGet("featured")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetFeaturedLists()
+    {
+        var result = await _mediaListService.GetFeaturedListsAsync();
+        return result.ToActionResult(this);
+    }
+
+    [HttpPost("create-featured-list")]
+    public async Task<IActionResult> CreateFeaturedList([FromBody] CreateMediaListDto dto)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaListService.CreateFeaturedListAsync(dto, requesterUserId);
+        return result.ToActionResult(this);
+    }
 }

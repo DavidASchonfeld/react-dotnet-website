@@ -8,4 +8,5 @@ public class MediaListSummaryDto
     public int ItemCount {get; set;}
     public bool CanEdit {get; set;}
     public bool IsDefault {get; set;}
+    public bool IsFeatured {get; set;}
 }

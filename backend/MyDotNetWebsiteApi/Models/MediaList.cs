@@ -11,6 +11,7 @@ public class MediaList
 
     public VisibilityStatus VisibilityStatus {get; set;}
     public bool IsDefault {get; set;} = false;
+    public bool IsFeatured {get; set;} = false;
     
 
 

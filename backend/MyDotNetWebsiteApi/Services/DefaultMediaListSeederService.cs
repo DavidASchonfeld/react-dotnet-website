@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 public static class DefaultMediaListSeederService
 {
     private static readonly string[] DefaultListNames =
-        ["Want to Read", "Currently Reading", "Read", "Did Not Finish"];
+        ["Want to Read", "Currently Reading", "Read", "Did Not Finish", "My Library"];
 
     // Called at startup to ensure all existing users have their default lists
     public static async Task SeedDefaultListsForAllUsersAsync(AppDbContext db, ILogger logger)

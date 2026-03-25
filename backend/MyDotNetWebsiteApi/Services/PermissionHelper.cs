@@ -25,10 +25,11 @@ public static class PermissionHelper
         || IsAdministrator(requester)
         || listObject.VisibilityStatus == VisibilityStatus.Public;
 
-    //// Owner and/or mod/admin can modify or delete a MediaList object
+    //// Featured lists require admin; regular lists require ownership or mod/admin
     public static bool CanModifyOrDeleteList(AppUser requester, MediaList listObject) =>
-        listObject.SubmittedById == requester.Id
-        || IsModeratorOrAdmin(requester);
+        listObject.IsFeatured
+            ? IsAdministrator(requester)
+            : listObject.SubmittedById == requester.Id || IsModeratorOrAdmin(requester);
     
 
     

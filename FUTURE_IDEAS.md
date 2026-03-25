@@ -104,3 +104,6 @@ navigate(`/mediaitem/${currentMediaItem.id}/creators`);
 For high-definition images for MediaItem deatils page, use the OMDB Poster API (which I get access to because I pay $5/month).
 The different URL than the standard OMDB API:
 http://img.omdbapi.com/?apikey=[yourkey]&
+
+
+add a "color" theme that gives each MEdiaITem a frame like the user is looking at a stage with red curtains open and the MediaItem's cover on a dark (or lit) stage

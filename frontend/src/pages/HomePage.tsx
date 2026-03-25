@@ -1,26 +1,57 @@
-import { useNavigate } from "react-router-dom";
 import AnimatedPage from "../components/AnimatedPage";
+import FeaturedCollageCard from "../components/FeaturedCollageCard";
+import { useGetFeaturedListsQuery } from "../services/apiSlice";
 
-
+const COLLAGE_ROTATIONS = [-4, 2, -6, 3, 5, -2, 7, -3];
 
 export default function HomePage() {
 
-    // Import ability to navigate within this website
-    const navigate = useNavigate();
+    const { data: featuredLists, isLoading, isError } = useGetFeaturedListsQuery();
+
+    const homepageList = featuredLists?.find(l => l.name === "Home Page") ?? featuredLists?.[0];
+    const featuredItems = homepageList?.listContent.slice(0, 8) ?? [];
 
     return (
         <AnimatedPage>
-        <div className="page flex-col">
-            <h1 className = "h1-styling">Media Favorites Website</h1>
+        <div className="page flex-col gap-8">
 
-            <p>This website is a place where you can browse submitted descriptions on Movies, Books and more, and create lists and favorites.</p>
-
-            <div className="flex justify-center">
-                <button
-                    className="btn btn-secondary w-fit"
-                    onClick={() => navigate("/about")}
-                >About Page</button>
+            <div className="text-center">
+                <h1 className="h1-styling">Media Favorites</h1>
+                <p className="text-text/70 mt-1">Browse movies, books, music, and more — then build your own lists.</p>
             </div>
+
+            {isError && (
+                <p className="text-center text-text/50">Couldn't load featured content.</p>
+            )}
+
+            {!isError && !isLoading && featuredItems.length === 0 && (
+                <p className="text-center text-text/50">Check back soon — featured picks coming!</p>
+            )}
+
+            {(isLoading || featuredItems.length > 0) && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 px-4 max-w-3xl mx-auto w-full">
+                    {isLoading
+                        ? COLLAGE_ROTATIONS.map((_, i) => (
+                            <div
+                                key={i}
+                                className="aspect-[2/3] rounded-lg bg-border animate-pulse"
+                                style={{ transform: `rotate(${COLLAGE_ROTATIONS[i]}deg)` }}
+                            />
+                        ))
+                        : featuredItems.map((item, i) => (
+                            <FeaturedCollageCard
+                                key={item.id}
+                                id={item.id}
+                                name={item.name}
+                                creatorName={item.creatorName}
+                                thumbnailUrl={item.thumbnailUrl}
+                                rotation={COLLAGE_ROTATIONS[i] ?? 0}
+                            />
+                        ))
+                    }
+                </div>
+            )}
+
         </div>
         </AnimatedPage>
     );

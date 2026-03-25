@@ -26,6 +26,7 @@ export interface MediaListSummary
     itemCount: number;
     canEdit: boolean;
     isDefault: boolean;
+    isFeatured: boolean;
 }
 
 export interface MediaListDetail
@@ -37,6 +38,7 @@ export interface MediaListDetail
     visibilityStatus: VisibilityStatus;
     canEdit: boolean;
     isDefault: boolean;
+    isFeatured: boolean;
 
     listContent: MediaApiRefSummary[];
 }

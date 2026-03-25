@@ -22,6 +22,7 @@ import MyMediaListsPage from './pages/MyMediaListsPage'
 import MediaListDetailPage from './pages/MediaListDetailPage'
 import AdminManageAllUsersPage from './pages/AdminManageAllUsersPage'
 import AdminApiUsagePage from './pages/AdminApiUsagePage'
+import AdminEditFeaturedPage from './pages/AdminEditFeaturedPage'
 
 // Other of My Code
 import type { AppDispatch, RootState } from './store/store'
@@ -183,6 +184,12 @@ function App() {
         <Route path = "/admin/api-usage" element = {
           <AdminRoute>
             <AdminApiUsagePage />
+          </AdminRoute>
+        } />
+
+        <Route path = "/admin/edit-featured" element = {
+          <AdminRoute>
+            <AdminEditFeaturedPage />
           </AdminRoute>
         } />
 

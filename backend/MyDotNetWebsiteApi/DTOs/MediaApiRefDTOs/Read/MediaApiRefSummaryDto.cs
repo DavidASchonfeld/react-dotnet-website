@@ -6,4 +6,5 @@ public class MediaApiRefSummaryDto
     public string? CreatorName {get; set;}
     public DateTime? PublishedDate {get; set;}
     public string ExternalId {get; set;} = string.Empty;
+    public string? ThumbnailUrl {get; set;}
 }
