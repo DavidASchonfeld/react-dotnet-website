@@ -106,4 +106,4 @@ The different URL than the standard OMDB API:
 http://img.omdbapi.com/?apikey=[yourkey]&
 
 
-add a "color" theme that gives each MEdiaITem a frame like the user is looking at a stage with red curtains open and the MediaItem's cover on a dark (or lit) stage
+add a "color" theme that gives each MediaITem a frame like the user is looking at a stage with red curtains open and the MediaItem's cover on a dark (or lit) stage

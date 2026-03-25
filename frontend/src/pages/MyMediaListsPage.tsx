@@ -44,22 +44,6 @@ export default function MyMediaListsPage() {
     const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
 
 
-    // Runs after Page Loads, adds EventListener for scroll tracking
-    useEffect(() => {
-        let lastScrollY = 0;
-        function handleScroll() {
-            const currentScrollY = window.scrollY;
-            if (currentScrollY === 0 && lastScrollY > 0){
-                setPage(1);
-                refetch();
-            }
-            lastScrollY = currentScrollY;
-        }
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [refetch]);
-
-
     async function confirmDelete() {
         if (mediaListToDelete === null) return;
         try {
