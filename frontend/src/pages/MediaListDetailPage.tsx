@@ -230,6 +230,11 @@ export default function MediaListDetailPage() {
 
             {/* -- List Info -- */}
             <h1 className="h1-styling">{selectedMediaListDetail.name}</h1>
+            {selectedMediaListDetail.isDefault && (
+                <span className="text-xs px-2 py-1 rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] select-none">
+                    Default List
+                </span>
+            )}
             <br />
             <p>{selectedMediaListDetail.description}</p>
             <br/>

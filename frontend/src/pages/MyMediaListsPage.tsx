@@ -133,14 +133,22 @@ export default function MyMediaListsPage() {
                             thirdString={mediaList.description ?? undefined}
                         />
 
-
-                        <button
-                        className="btn btn-secondary w-fit"
-                        onClick={
-                            // e.stopPropagation() prevents this button's click event from bubbling up
-                            // to the parent div's onClick, which would otherwise also trigger navigation.
-                            (e) => { e.stopPropagation(); setMediaListToDelete(mediaList.id); }
-                        }>Delete</button>
+                        <div className="flex items-center gap-2">
+                            {mediaList.isDefault && (
+                                <span className="text-xs px-2 py-1 rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] select-none">
+                                    Default
+                                </span>
+                            )}
+                            {!mediaList.isDefault && (
+                                <button
+                                className="btn btn-secondary w-fit"
+                                onClick={
+                                    // e.stopPropagation() prevents this button's click event from bubbling up
+                                    // to the parent div's onClick, which would otherwise also trigger navigation.
+                                    (e) => { e.stopPropagation(); setMediaListToDelete(mediaList.id); }
+                                }>Delete</button>
+                            )}
+                        </div>
                     </div>
                 ))}
 

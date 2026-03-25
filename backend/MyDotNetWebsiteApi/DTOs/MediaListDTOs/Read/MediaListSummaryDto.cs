@@ -7,4 +7,5 @@ public class MediaListSummaryDto
     public VisibilityStatus VisibilityStatus {get; set;}
     public int ItemCount {get; set;}
     public bool CanEdit {get; set;}
+    public bool IsDefault {get; set;}
 }

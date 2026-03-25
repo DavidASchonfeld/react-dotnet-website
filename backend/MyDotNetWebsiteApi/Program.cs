@@ -272,6 +272,9 @@ using (var scope = app.Services.CreateScope())
     // Definition for this method is below, in this same Program.cs file.
     await SeedInitialAdminAsync(userManager, config, logger);
 
+    // Ensure every user has their 4 default non-deleteable MediaLists.
+    await DefaultMediaListSeederService.SeedDefaultListsForAllUsersAsync(db, logger);
+
 }
 
 

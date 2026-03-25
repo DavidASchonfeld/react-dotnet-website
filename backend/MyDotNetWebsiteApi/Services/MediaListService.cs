@@ -72,7 +72,8 @@ public class MediaListService : IMediaListService
         Description = mediaListObject.Description,
         VisibilityStatus = mediaListObject.VisibilityStatus,
         ItemCount = itemCount,
-        CanEdit = canEdit
+        CanEdit = canEdit,
+        IsDefault = mediaListObject.IsDefault
     };
 
 
@@ -100,7 +101,8 @@ public class MediaListService : IMediaListService
                 Description = l.Description,
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
-                CanEdit = true  // GetMyLists only returns lists the user submitted, so they always own them
+                CanEdit = true,  // GetMyLists only returns lists the user submitted, so they always own them
+                IsDefault = l.IsDefault
             })
             .ToListAsync();
 
@@ -141,6 +143,7 @@ public class MediaListService : IMediaListService
             SubmittedById = mediaList_withIncludes.SubmittedById,
             VisibilityStatus = mediaList_withIncludes.VisibilityStatus,
             CanEdit = PermissionHelper.CanModifyOrDeleteList(requesterUser, targetMediaList),
+            IsDefault = mediaList_withIncludes.IsDefault,
             ListContent = mediaList_withIncludes.ItemLinks
                 .OrderBy(link => link.Position)  // Sorts Ascending by Default, which is what I want
                 .Select(link => new MediaApiRefSummaryDto
@@ -202,6 +205,7 @@ public class MediaListService : IMediaListService
         if (mediaList == null) return ServiceResult<bool>.NotFound();
         if (requesterUser == null) return ServiceResult<bool>.Unauthorized();
         if (forbidden) return ServiceResult<bool>.Forbidden();
+        if (mediaList.IsDefault) return ServiceResult<bool>.Forbidden();
 
         // Implement the Change:
         _context.MediaLists.Remove(mediaList);
@@ -473,7 +477,8 @@ public class MediaListService : IMediaListService
                 Description = l.Description,
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
-                CanEdit = l.SubmittedById == requesterUserId || canModify
+                CanEdit = l.SubmittedById == requesterUserId || canModify,
+                IsDefault = l.IsDefault
             })
             .ToListAsync();
 

@@ -14,13 +14,15 @@ public class AuthController : ControllerBase
     private readonly UserManager<AppUser> _userManager;
     private readonly SignInManager<AppUser> _signInManager;
     private readonly ITokenService _tokenService;  // Old version has IConfiguration, but now the ITokenService has the IConfiguration instead.
+    private readonly AppDbContext _context;
 
     // Constructor. This receives the injected depencies and stores them
-    public AuthController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService)
+    public AuthController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, AppDbContext context)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _tokenService = tokenService;
+        _context = context;
     }
 
 
@@ -47,6 +49,9 @@ public class AuthController : ControllerBase
         if (!result.Succeeded)
             return BadRequest(result.Errors);
 
+        // Create the 4 default non-deleteable lists for the new user
+        await DefaultMediaListSeederService.SeedDefaultListsForUserAsync(_context, user);
+        await _context.SaveChangesAsync();
 
         // Now, log in the user that was just created, by providing a login token to the user
 

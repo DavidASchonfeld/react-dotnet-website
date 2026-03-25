@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     useGetMediaApiRefDetailQuery,
@@ -14,6 +15,7 @@ import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
 import { CacheStatusPill } from '../components/CacheStatusPill';
+import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
 
 
 export default function MediaApiRefDetailPage() {
@@ -30,6 +32,11 @@ export default function MediaApiRefDetailPage() {
     const cacheMetadata = cachedResponse?.cacheMetadata;
 
     const [refreshDetails, { isLoading: isRefreshing }] = useRefreshMediaApiRefDetailsMutation();
+    const [settingsOpen, setSettingsOpen] = useState(false);
+
+    // navigator.share = the native iOS/Android/desktop share sheet (like Spotify).
+    // When unavailable, the button becomes a "Copy Link" button instead.
+    const canNativeShare = typeof navigator.share === 'function';
 
     const { data: lists } = useGetMediaApiRefListsQuery(
         mediaApiRefId,
@@ -60,7 +67,13 @@ export default function MediaApiRefDetailPage() {
     return (
         <AnimatedPage>
         <div className="page">
-            <button className="btn btn-secondary w-fit" onClick={() => navigate(-1)}>⬅︎ Back</button>
+            <div className="flex justify-between items-center">
+                <button className="btn btn-secondary w-fit" onClick={() => navigate(-1)}>⬅︎ Back</button>
+                <button
+                    className="btn btn-secondary w-10 h-10 flex items-center justify-center"
+                    onClick={() => setSettingsOpen(true)}
+                >...</button>
+            </div>
 
             <h1 className="h1-styling">{detail.name}</h1>
             <CacheStatusPill cacheMetadata={cacheMetadata} />
@@ -201,6 +214,39 @@ export default function MediaApiRefDetailPage() {
                 <p className="text-gray-400 text-sm">Not in any lists yet.</p>
             )}
         </div>
+
+        <ItemSettingsDrawerModal
+            open={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            preview={
+                <RowItemStyling>
+                    <RowItemContent
+                        firstString={detail.name}
+                        secondString={detail.creatorName ?? undefined}
+                        labelPill={<MediaTypeLabel mediaTypeId={detail.mediaTypeId} faded={true} />}
+                    />
+                </RowItemStyling>
+            }
+        >
+            {(close) => (
+                <>
+                    <SettingsRow
+                        icon="🔗"
+                        label={canNativeShare ? "Share" : "Copy Link"}
+                        onClick={() => {
+                            const url = window.location.href;
+                            if (canNativeShare) {
+                                navigator.share({ title: detail.name, url }).catch(() => {});
+                            } else {
+                                navigator.clipboard.writeText(url).catch(() => {});
+                            }
+                            close();
+                        }}
+                    />
+                </>
+            )}
+        </ItemSettingsDrawerModal>
+
         </AnimatedPage>
     );
 }

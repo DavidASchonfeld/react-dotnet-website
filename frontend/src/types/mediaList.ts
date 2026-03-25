@@ -25,6 +25,7 @@ export interface MediaListSummary
     visibilityStatus: VisibilityStatus;
     itemCount: number;
     canEdit: boolean;
+    isDefault: boolean;
 }
 
 export interface MediaListDetail
@@ -35,6 +36,7 @@ export interface MediaListDetail
     description: string | null;
     visibilityStatus: VisibilityStatus;
     canEdit: boolean;
+    isDefault: boolean;
 
     listContent: MediaApiRefSummary[];
 }
