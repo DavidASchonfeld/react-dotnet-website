@@ -8,21 +8,27 @@ public class MediaApiRefService : IMediaApiRefService
     private readonly IApiUsageService _apiUsageService;
     private readonly ICacheItemService _cacheItemService;
     private readonly IImageCacheService _imageCacheService;
+    private readonly ILogger<MediaApiRefService> _logger;
 
-    public MediaApiRefService(AppDbContext context, ExternalMediaApiAdapterFactory adapterFactory, IApiUsageService apiUsageService, ICacheItemService cacheItemService, IImageCacheService imageCacheService)
+    public MediaApiRefService(AppDbContext context, ExternalMediaApiAdapterFactory adapterFactory, IApiUsageService apiUsageService, ICacheItemService cacheItemService, IImageCacheService imageCacheService, ILogger<MediaApiRefService> logger)
     {
         _context = context;
         _adapterFactory = adapterFactory;
         _apiUsageService = apiUsageService;
         _cacheItemService = cacheItemService;
         _imageCacheService = imageCacheService;
+        _logger = logger;
     }
 
 
     public async Task<ServiceResult<MediaApiRefDetailDto>> GetDetailByDbIdAsync(int mediaApiRefId, string requesterUserId, bool bypassCache = false)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<MediaApiRefDetailDto>.Unauthorized();
+        if (requesterUser == null)
+        {
+            _logger.LogWarning("MediaApiRef.GetDetail: User not found for id '{RequesterUserId}' — returning 401", requesterUserId);
+            return ServiceResult<MediaApiRefDetailDto>.Unauthorized();
+        }
 
         var mediaApiRef = await _context.MediaApiRefs
             .Include(r => r.ApiSource)
@@ -37,10 +43,18 @@ public class MediaApiRefService : IMediaApiRefService
         var globalSettings = await _context.AppGlobalSettings.FindAsync(1);
         var cachingEnabled = globalSettings?.UseNonSearchQueryCache ?? true;
 
+        if (globalSettings == null)
+            _logger.LogWarning("MediaApiRef.GetDetail: AppGlobalSettings row (id=1) not found — defaulting UseNonSearchQueryCache=true");
+        else
+            _logger.LogDebug("MediaApiRef.GetDetail: UseNonSearchQueryCache={Value} (bypassCache={Bypass}, effectiveBypass={Effective})",
+                cachingEnabled, bypassCache, effectiveBypass);
+
         // Check CacheItem(GetById) for a fresh detail response before calling external API
         var queryParams = BuildGetByIdParams(mediaApiRef.ExternalId, mediaApiRef.ApiSource.ApiName);
         var cachedItem = (cachingEnabled && !effectiveBypass) ? await _cacheItemService.GetFreshAsync(
             mediaApiRef.ApiSource.ApiName, "GetById", mediaApiRef.MediaType.Name, queryParams) : null;
+
+        _logger.LogDebug("MediaApiRef.GetDetail: cacheHit={Hit} for mediaApiRefId={Id}", cachedItem != null, mediaApiRefId);
 
         if (cachedItem != null)
         {
@@ -132,6 +146,11 @@ public class MediaApiRefService : IMediaApiRefService
         var globalSettings = await _context.AppGlobalSettings.FindAsync(1);
         var cachingEnabled = globalSettings?.UseSearchQueryCache ?? true;
 
+        if (globalSettings == null)
+            _logger.LogWarning("MediaApiRef.Search: AppGlobalSettings row (id=1) not found — defaulting UseSearchQueryCache=true");
+        else
+            _logger.LogDebug("MediaApiRef.Search: UseSearchQueryCache={Value}", cachingEnabled);
+
         // CacheItem lookup: query_type="Search" with normalized query params
         var normalizedQuery = query.Trim().ToLower();
         var queryParams = new SortedDictionary<string, string?>
@@ -178,7 +197,11 @@ public class MediaApiRefService : IMediaApiRefService
     public async Task<ServiceResult<ExternalApiSearchResult>> FetchRawItemFromExternalApiAsync(string externalItemId, int externalApiSourceId, string requesterUserId, bool bypassCache = false)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<ExternalApiSearchResult>.Unauthorized();
+        if (requesterUser == null)
+        {
+            _logger.LogWarning("MediaApiRef.FetchRaw: User not found for id '{RequesterUserId}' — returning 401", requesterUserId);
+            return ServiceResult<ExternalApiSearchResult>.Unauthorized();
+        }
 
         var source = await _context.ExternalApiSources
             .Include(s => s.MediaType)
@@ -201,6 +224,12 @@ public class MediaApiRefService : IMediaApiRefService
         var globalSettings = await _context.AppGlobalSettings.FindAsync(1);
         var cachingEnabled = globalSettings?.UseNonSearchQueryCache ?? true;
 
+        if (globalSettings == null)
+            _logger.LogWarning("MediaApiRef.FetchRaw: AppGlobalSettings row (id=1) not found — defaulting UseNonSearchQueryCache=true");
+        else
+            _logger.LogDebug("MediaApiRef.FetchRaw: UseNonSearchQueryCache={Value} (externalItemId={ExternalId})",
+                cachingEnabled, externalItemId);
+
         if (cachingEnabled && !effectiveBypass)
         {
             // CacheItem lookup: query_type="GetById"
@@ -214,6 +243,8 @@ public class MediaApiRefService : IMediaApiRefService
                 return ServiceResult<ExternalApiSearchResult>.OkFromCache(cachedResult, cachedItem.CreatedAt);
             }
         }
+
+        _logger.LogDebug("MediaApiRef.FetchRaw: cacheMiss for externalItemId={ExternalId} — calling external API", externalItemId);
 
         // Cache miss (or caching disabled) — call the external API
         var result = await adapter.GetByExternalIdAsync(externalItemId);

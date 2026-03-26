@@ -8,10 +8,12 @@ using Microsoft.AspNetCore.Mvc;
 public class AppGlobalSettingsController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<AppGlobalSettingsController> _logger;
 
-    public AppGlobalSettingsController(AppDbContext context)
+    public AppGlobalSettingsController(AppDbContext context, ILogger<AppGlobalSettingsController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
 
@@ -47,6 +49,9 @@ public class AppGlobalSettingsController : ControllerBase
         settings.UseNonSearchQueryCache = !settings.UseNonSearchQueryCache;
         await _context.SaveChangesAsync();
 
+        _logger.LogInformation("AppGlobalSettings: UseNonSearchQueryCache toggled to {Value} by user '{UserId}'",
+            settings.UseNonSearchQueryCache, requesterUserId);
+
         return Ok(new AppGlobalSettingsDto { UseNonSearchQueryCache = settings.UseNonSearchQueryCache, UseSearchQueryCache = settings.UseSearchQueryCache });
     }
 
@@ -64,6 +69,9 @@ public class AppGlobalSettingsController : ControllerBase
 
         settings.UseSearchQueryCache = !settings.UseSearchQueryCache;
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation("AppGlobalSettings: UseSearchQueryCache toggled to {Value} by user '{UserId}'",
+            settings.UseSearchQueryCache, requesterUserId);
 
         return Ok(new AppGlobalSettingsDto { UseNonSearchQueryCache = settings.UseNonSearchQueryCache, UseSearchQueryCache = settings.UseSearchQueryCache });
     }

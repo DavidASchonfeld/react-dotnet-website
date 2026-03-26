@@ -710,8 +710,8 @@ export const apiSlice = createApi({
             onQueryStarted: (_, { queryFulfilled }) => {
                 safeToast.promise(queryFulfilled, {
                     loading: 'Updating...',
-                    success: 'Global cache setting updated',
-                    error: '',
+                    success: 'Global non-search cache setting updated',
+                    error: 'Failed to update cache setting',
                 })
             },
         }),
@@ -727,7 +727,7 @@ export const apiSlice = createApi({
                 safeToast.promise(queryFulfilled, {
                     loading: 'Updating...',
                     success: 'Global search cache setting updated',
-                    error: '',
+                    error: 'Failed to update cache setting',
                 })
             },
         }),
