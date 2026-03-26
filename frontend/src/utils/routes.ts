@@ -2,7 +2,7 @@
 
 // To export to App.tsx which uses these hardcoded strings
 export const routePaths = {
-    mediaApiRef: '/mediaapiref/:id',
+    mediaApiRef: '/mediaapiref/:apiName/:externalId',
     mediaList:   '/medialist/:id',
     tag:         '/tags/:tagId',
     tagItems:    '/tags/:tagId/items',
@@ -10,7 +10,8 @@ export const routePaths = {
 
 // To build those strings for other places
 export const routes = {
-    mediaApiRef: (id: number) => `/mediaapiref/${id}`,
+    mediaApiRef: (apiName: string, externalId: string) =>
+        `/mediaapiref/${encodeURIComponent(apiName)}/${encodeURIComponent(externalId)}`,
     mediaList:   (id: number) => `/medialist/${id}`,
     tag:         (id: number) => `/tags/${id}`,
     tagItems:    (id: number) => `/tags/${id}/items`,

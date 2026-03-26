@@ -8,14 +8,15 @@ public class MediaApiRefDetailDto
     public int ExternalApiSourceId {get; set;}
     public string ApiSourceName {get; set;} = string.Empty;
     public string ExternalId {get; set;} = string.Empty;
-    public DateTime DateAdded {get; set;}
     public string? ApiHomepageUrl {get; set;}
 
-    // Staleness detection: when details were last refreshed from the external API
-    public DateTime? DetailsFetchedAt {get; set;}
+    // Admin-only: DB record metadata. Null for non-administrators.
+    public MediaApiRefAdminInfoDto? AdminInfo {get; set;}
 
-    // True when details are older than AppConstants.DetailsStaleDays — triggers UI refresh hint
-    public bool IsStale {get; set;}
+    // True when the external API source is temporarily disabled by an administrator.
+    // The page will load with whatever data is in the cache or DB, but detail fields
+    // (Plot, Runtime, etc.) may be missing if the cache is empty.
+    public bool IsApiDisabled { get; set; }
 
     // Image URLs stored on MediaApiRef entity
     public string? ThumbnailUrl {get; set;}    // small image from search results

@@ -2,18 +2,11 @@ import { type ReactNode } from 'react';
 import { BACKEND_BASE_URL } from '../config';
 import ItemActionsButton from './ItemActionsButton';
 import type { MenuAction } from '../utils/menuActions';
-import RowItemStyling from './RowItemStyling';
+import type { RowItemDisplayProps } from '../types/rowItemTypes';
 
 export type { MenuAction };
 
-interface Props {
-    firstString: string;
-    secondString?: string;
-    thirdString?: string;
-    larger?: boolean;
-    photographOnLeft?: string;  // image URL; placeholder shown if omitted
-    useDirectUrl?: boolean;     // if true, use photographOnLeft as-is instead of proxying through image cache
-    labelPill?: ReactNode;
+interface Props extends RowItemDisplayProps {
     onClick?: () => void;
     onMenuClick?: MenuAction[];
     preview?: ReactNode;  // overrides the auto-generated drawer preview; only used when onMenuClick is set
@@ -21,7 +14,7 @@ interface Props {
 
 // Generic row content for any named object.
 // Layout: [Photo or placeholder] | [flex-col: [firstString + labelPill] / [secondString] / [thirdString (larger only)]]
-// Used as the children of SwipeReorderRowItem (swipe + drag) and RowItem (visual styling only), and other pages/modals.
+// Used as the children of SwipeReorderRowItem (swipe + drag) and RowItemStyling (visual styling only), and other pages/modals.
 export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, useDirectUrl, labelPill, onClick, onMenuClick, preview }: Props) {
 
     return (
@@ -93,23 +86,17 @@ export default function RowItemContent({ firstString, secondString, thirdString,
             </div>
 
             {onMenuClick && (
-                // No infinite loop: the inner RowItemContent in the auto-preview has no onMenuClick,
-                // so it never renders another ItemActionsButton.
+                // No infinite loop: ItemActionsButton builds its own preview from these display props,
+                // rendering an inner RowItemContent without onMenuClick — so the chain stops there.
                 <ItemActionsButton
                     onMenuClick={onMenuClick}
-                    preview={preview ?? (
-                        <RowItemStyling>
-                            <RowItemContent
-                                firstString={firstString}
-                                secondString={secondString}
-                                thirdString={thirdString}
-                                larger={larger}
-                                photographOnLeft={photographOnLeft}
-                                useDirectUrl={useDirectUrl}
-                                labelPill={labelPill}
-                            />
-                        </RowItemStyling>
-                    )}
+                    preview={preview}
+                    firstString={firstString}
+                    secondString={secondString}
+                    thirdString={thirdString}
+                    photographOnLeft={photographOnLeft}
+                    useDirectUrl={useDirectUrl}
+                    labelPill={labelPill}
                 />
             )}
 

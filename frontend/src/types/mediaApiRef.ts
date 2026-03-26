@@ -7,6 +7,7 @@ export interface MediaApiRefSummary {
     creatorName: string | null;
     publishedDate: string | null;
     externalId: string;
+    apiSourceName: string;
     thumbnailUrl?: string | null;
 }
 
@@ -19,12 +20,16 @@ export interface MediaApiRefDetail {
     externalApiSourceId: number;
     apiSourceName: string;
     externalId: string;
-    dateAdded: string;
     apiHomepageUrl?: string;
-    // Staleness detection: when details were last refreshed from the external API
-    detailsFetchedAt: string | null;
-    // True when details are older than the backend's DetailsStaleDays threshold
-    isStale: boolean;
+    // Admin-only: DB record metadata. Null for non-administrators.
+    adminInfo?: {
+        dateAdded: string;
+        detailsFetchedAt: string | null;
+        isStale: boolean;
+    } | null;
+    // True when the external API source is temporarily disabled by an administrator.
+    // Some detail fields (plot, runtime, etc.) may be missing if the cache is also empty.
+    isApiDisabled?: boolean;
     // Image URLs stored on MediaApiRef entity
     thumbnailUrl?: string | null;   // small image from search results
     // Detail fields sourced from CacheItem.ResponseJson, not MediaApiRef columns

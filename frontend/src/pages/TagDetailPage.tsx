@@ -73,7 +73,7 @@ export default function TagDetailPage() {
             {items.length > 0 ? (
                 <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     {items.map(item => (
-                        <RowItemStyling key={item.id} onClick={() => navigate(routes.mediaApiRef(item.id))}>
+                        <RowItemStyling key={item.id} onClick={() => navigate(routes.mediaApiRef(item.apiSourceName, item.externalId))}>
                             <RowItemContent
                                 firstString={item.name}
                                 secondString={item.creatorName ?? undefined}

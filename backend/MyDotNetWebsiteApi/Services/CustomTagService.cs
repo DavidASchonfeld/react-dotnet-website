@@ -210,6 +210,7 @@ public class CustomTagService : ICustomTagService
 
         var items = await tagQuery
             .Include(l => l.MediaApiRef)
+                .ThenInclude(r => r.ApiSource)
             .OrderBy(l => l.MediaApiRefId)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -220,7 +221,8 @@ public class CustomTagService : ICustomTagService
                 MediaTypeId = l.MediaApiRef.MediaTypeId,
                 CreatorName = l.MediaApiRef.CreatorName,
                 PublishedDate = l.MediaApiRef.PublishedDate,
-                ExternalId = l.MediaApiRef.ExternalId
+                ExternalId = l.MediaApiRef.ExternalId,
+                ApiSourceName = l.MediaApiRef.ApiSource.ApiName
             })
             .ToListAsync();
 

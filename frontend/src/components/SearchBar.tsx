@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
     useLazySearchExternalApiQuery,
-    useFindOrCreateMediaApiRefMutation,
     useGetActiveApiSourcesQuery,
 } from '../services/apiSlice'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
@@ -67,8 +66,6 @@ export default function SearchBar({
     }, [defaultApiSourceId])
 
     const [triggerSearch, { isFetching: isSearching }] = useLazySearchExternalApiQuery()
-    const [findOrCreate] = useFindOrCreateMediaApiRefMutation()
-
     // ---- Typeahead debounced search ----
     const handleInputChange = useCallback((value: string) => {
         setInputQuery(value)
@@ -109,8 +106,8 @@ export default function SearchBar({
         if (e.key === 'Enter') handleSubmit()
     }, [handleSubmit])
 
-    // ---- Typeahead result click: findOrCreate then navigate to detail page ----
-    const handleResultClick = useCallback(async (result: ExternalApiSearchResult) => {
+    // ---- Typeahead result click: navigate directly to detail page ----
+    const handleResultClick = useCallback((result: ExternalApiSearchResult) => {
         if (effectiveSelectedApiSourceId === null) return
 
         const activeSource = activeSources?.find(s => s.id === effectiveSelectedApiSourceId)
@@ -118,22 +115,8 @@ export default function SearchBar({
 
         setIsDropdownOpen(false)
         setInputQuery(result.name)
-
-        try {
-            const created = await findOrCreate({
-                externalApiSourceId: activeSource.id,
-                externalId: result.externalId,
-                name: result.name,
-                mediaTypeId: activeSource.mediaTypeId,
-                creatorName: result.creatorName,
-                publishedDate: result.publishedDate,
-                thumbnailUrl: result.thumbnailUrl,
-            }).unwrap()
-            navigate(routes.mediaApiRef(created.id))
-        } catch {
-            // Error toast is handled by baseQueryWithErrorHandling
-        }
-    }, [effectiveSelectedApiSourceId, activeSources, findOrCreate, navigate])
+        navigate(routes.mediaApiRef(activeSource.apiName, result.externalId))
+    }, [effectiveSelectedApiSourceId, activeSources, navigate])
 
     const handleClear = useCallback(() => {
         setInputQuery('')

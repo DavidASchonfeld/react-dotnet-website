@@ -41,7 +41,8 @@ export default function HomePage() {
                         : featuredItems.map((item, i) => (
                             <FeaturedCollageCard
                                 key={item.id}
-                                id={item.id}
+                                apiSourceName={item.apiSourceName}
+                                externalId={item.externalId}
                                 name={item.name}
                                 creatorName={item.creatorName}
                                 thumbnailUrl={item.thumbnailUrl}

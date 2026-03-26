@@ -148,6 +148,23 @@ export const apiSlice = createApi({
             providesTags: (_, __, id) => [{ type: 'MediaApiRef', id }],
         }),
 
+        // Fetch detail by external identifiers (apiName + externalId).
+        // Returns id=0 in the data when the item is not yet in the DB.
+        getMediaApiRefByExternal: builder.query<
+            CachedResponse<MediaApiRefDetail>,
+            { apiName: string; externalId: string }
+        >({
+            query: ({ apiName, externalId }) =>
+                `/api/mediaapiref/byexternal/${encodeURIComponent(apiName)}/${encodeURIComponent(externalId)}`,
+            transformResponse: (response: CachedResponse<MediaApiRefDetail>) => ({
+                ...response,
+                data: fillDetailImages(response.data),
+            }),
+            providesTags: (_, __, { apiName, externalId }) => [
+                { type: 'MediaApiRef', id: `${apiName}:${externalId}` },
+            ],
+        }),
+
         // ---- Searching External APIs ----
         // Searches the active external API (TMDB, Spotify, etc.) for the given media type.
         // Returns raw ExternalApiSearchResult items (not DB records yet).
@@ -640,6 +657,7 @@ export const apiSlice = createApi({
 export const {
     // MediaApiRef
     useGetMediaApiRefDetailQuery,
+    useGetMediaApiRefByExternalQuery,
     useSearchExternalApiQuery,
     useLazySearchExternalApiQuery,
     useFindOrCreateMediaApiRefMutation,

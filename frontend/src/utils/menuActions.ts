@@ -38,18 +38,19 @@ export function makeGoToDetailsAction(navigate: NavigateFunction, path: string):
 // Skip these and call the primitives directly when you need customization.
 
 export function mediaApiRefActions(item: {
-    id: number;
+    apiName: string;
+    externalId: string;
     name: string;
     navigate: NavigateFunction;
     onManageListsTagsOpen: () => void;
     includeGoToDetails?: boolean;
 }): MenuAction[] {
-    const path = routes.mediaApiRef(item.id);
+    const path = routes.mediaApiRef(item.apiName, item.externalId);
     return [
         makeShareAction(item.name, path),
         makeManageListsTagsAction(item.onManageListsTagsOpen),
 
-        // if includeGoToDetail == false, do NOT include the link to the object's details page
+        // if includeGoToDetails == false, do NOT include the link to the object's details page
         ...(item.includeGoToDetails !== false ? [makeGoToDetailsAction(item.navigate, path)] : []),
     ];
 }

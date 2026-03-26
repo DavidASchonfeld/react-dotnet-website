@@ -24,7 +24,6 @@ import {
 import type { MediaApiRefSummary } from '../types/mediaApiRef';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import SwipeReorderRowItem from '../components/SwipeReorderRowItem';
-import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
@@ -32,10 +31,10 @@ import { SEARCH_DEFAULT_LIMIT } from '../constants';
 import type { ExternalApiSourceSummary } from '../types/externalApiSource';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
-import ItemSettingsDrawerModal, { SettingsRow } from '../components/modals/ItemSettingsDrawerModal';
 import AnimatedPage from '../components/AnimatedPage';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import { routes } from '../utils/routes';
+import { makeShareAction, makeGoToDetailsAction } from '../utils/menuActions';
 
 
 
@@ -78,20 +77,10 @@ export default function MediaListDetailPage() {
     // from the current MediaList
     const [confirmRemoveItem, setConfirmRemoveItem] = useState<{ id: number; name: string } | null>(null);
 
-    const [settingsItem, setSettingsItem] = useState<MediaApiRefSummary | null>(null);
-
     // Local ordered list — kept in sync with the Redux store, updated optimistically on drag
     const [orderedItems, setOrderedItems] = useState<MediaApiRefSummary[]>([]);
     // Shown as an inline banner when a drag-reorder fails to save; cleared on dismiss
     const [reorderError, setReorderError] = useState<string | null>(null);
-
-
-
-    // navigator.share = the native iOS/Android/desktop share sheet (like Spotify).
-    // This is the default Share popup that you see whenever you click Share on your iPhone.
-    // Supported on Chrome/Safari/Edge on macOS & Windows, but NOT Firefox desktop.
-    // When unavailable, the button becomes a "Copy Link" button instead.
-    const canNativeShare = typeof navigator.share === 'function';
 
 
 
@@ -155,27 +144,21 @@ export default function MediaListDetailPage() {
                 dragDisabled={dragDisabled}
                 swipeDisabled={swipeDisabled}
                 swipeLeftAction={{ label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }}
-                swipeRightAction={{ label: '📑 Details', onPress: () => navigate(routes.mediaApiRef(item.id)) }}
+                swipeRightAction={{ label: '📑 Details', onPress: () => navigate(routes.mediaApiRef(item.apiSourceName, item.externalId)) }}
             >
                 <RowItemContent
                     firstString={item.name}
                     secondString={item.creatorName ?? undefined}
                     labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
+                    onMenuClick={[
+                        makeShareAction(item.name, routes.mediaApiRef(item.apiSourceName, item.externalId)),
+                        makeGoToDetailsAction(navigate, routes.mediaApiRef(item.apiSourceName, item.externalId)),
+                        { icon: '⛓️‍💥', label: 'Remove from List', onClick: () => setConfirmRemoveItem({ id: item.id, name: item.name }) },
+                    ]}
                 />
             </SwipeReorderRowItem>
         ));
     }
-
-
-    const preview = settingsItem ? (
-        <RowItemStyling>
-            <RowItemContent
-                firstString={settingsItem.name}
-                secondString={settingsItem.creatorName ?? undefined}
-                labelPill={<MediaTypeLabel mediaTypeId={settingsItem.mediaTypeId} faded={true} />}
-            />
-        </RowItemStyling>
-    ) : undefined;
 
 
     // token is kept for the guard below: if the user somehow loses auth mid-session,
@@ -265,13 +248,17 @@ export default function MediaListDetailPage() {
                                         id={item.id}
                                         isEditMode={isEditMode}
                                         swipeLeftAction={{ label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }}
-                                        swipeRightAction={{ label: '📑 Details', onPress: () => navigate(routes.mediaApiRef(item.id)) }}
-                                        onOptionsPress={() => setSettingsItem(item)}
+                                        swipeRightAction={{ label: '📑 Details', onPress: () => navigate(routes.mediaApiRef(item.apiSourceName, item.externalId)) }}
                                     >
                                         <RowItemContent
                                             firstString={item.name}
                                             secondString={item.creatorName ?? undefined}
                                             labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
+                                            onMenuClick={[
+                                                makeShareAction(item.name, routes.mediaApiRef(item.apiSourceName, item.externalId)),
+                                                makeGoToDetailsAction(navigate, routes.mediaApiRef(item.apiSourceName, item.externalId)),
+                                                { icon: '⛓️‍💥', label: 'Remove from List', onClick: () => setConfirmRemoveItem({ id: item.id, name: item.name }) },
+                                            ]}
                                         />
                                     </SwipeReorderRowItem>
                                 ))}
@@ -359,39 +346,6 @@ export default function MediaListDetailPage() {
                     onCancel={() => setIsEditModalOpen(false)}
                 />
             )}
-
-            {/* MediaApiRef Settings Modal */}
-            <ItemSettingsDrawerModal
-                open={!!settingsItem}
-                onClose={() => setSettingsItem(null)}
-                preview={preview}
-            >
-                {(close) => (<>
-                    <SettingsRow
-                        icon="🔗"
-                        label={canNativeShare ? "Share" : "Copy Link"}
-                        onClick={() => {
-                            const url = `${window.location.origin}${routes.mediaApiRef(settingsItem!.id)}`;
-                            if (canNativeShare) {
-                                navigator.share({ title: settingsItem!.name, url }).catch(() => {});
-                            } else {
-                                navigator.clipboard.writeText(url).catch(() => {});
-                            }
-                            close();
-                        }}
-                    />
-                    <SettingsRow
-                        icon="📄"
-                        label="Go to Details"
-                        onClick={() => { navigate(`/mediaapiref/${settingsItem!.id}`); close(); }}
-                    />
-                    <SettingsRow
-                        icon="⛓️‍💥"
-                        label="Remove from List"
-                        onClick={() => { setConfirmRemoveItem({ id: settingsItem!.id, name: settingsItem!.name }); close(); }}
-                    />
-                </>)}
-            </ItemSettingsDrawerModal>
 
             {/* Confirm Modal for Removing Item from List */}
             {confirmRemoveItem && (

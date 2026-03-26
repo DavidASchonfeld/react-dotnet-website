@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    useGetMediaApiRefDetailQuery,
+    useGetMediaApiRefByExternalQuery,
     useGetMediaApiRefListsQuery,
     useGetMediaApiRefTagsQuery,
     useRefreshMediaApiRefDetailsMutation,
+    useFindOrCreateMediaApiRefMutation,
     useLazySearchMediaListsQuery,
     useLazySearchCustomTagsQuery,
     useAddMediaApiRefToListMutation,
@@ -17,7 +18,7 @@ import MediaTypeLabel from '../components/MediaTypeLabel';
 import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/RowItemStyling';
 import RowItemContent from '../components/RowItemContent';
-import { CacheStatusPill } from '../components/CacheStatusPill';
+import { AdminItemStatusPanel } from '../components/AdminItemStatusPanel';
 import ItemActionsButton from '../components/ItemActionsButton';
 import { mediaApiRefActions } from '../utils/menuActions';
 import { routes } from '../utils/routes';
@@ -27,32 +28,40 @@ import { SEARCH_DEFAULT_LIMIT } from '../constants';
 
 
 export default function MediaApiRefDetailPage() {
-    const { id } = useParams<{ id: string }>();
+    const { apiName, externalId } = useParams<{ apiName: string; externalId: string }>();
     const navigate = useNavigate();
 
-    const mediaApiRefId = parseInt(id ?? '');
+    const decodedApiName = decodeURIComponent(apiName ?? '');
+    const decodedExternalId = decodeURIComponent(externalId ?? '');
 
-    const { data: cachedResponse, isLoading, error } = useGetMediaApiRefDetailQuery(
-        mediaApiRefId,
-        { skip: isNaN(mediaApiRefId) }
+    const { data: cachedResponse, isLoading, error } = useGetMediaApiRefByExternalQuery(
+        { apiName: decodedApiName, externalId: decodedExternalId },
+        { skip: !apiName || !externalId }
     );
     const detail = cachedResponse?.data;
     const cacheMetadata = cachedResponse?.cacheMetadata;
 
+    // When the item is not yet in the DB, detail.id === 0.
+    // resolvedId is set after a lazy findOrCreate (triggered by opening the manage modal).
+    const [resolvedId, setResolvedId] = useState(0);
+    const effectiveMediaApiRefId = (detail?.id ?? 0) > 0 ? detail!.id : resolvedId;
+    const isInDb = effectiveMediaApiRefId > 0;
+
     const [refreshDetails, { isLoading: isRefreshing }] = useRefreshMediaApiRefDetailsMutation();
+    const [findOrCreate] = useFindOrCreateMediaApiRefMutation();
+
     // Modal state for adding this item to lists/tags
     const [showLinkModal, setShowLinkModal] = useState(false);
     // Tracks which type is active so the modal remounts on switch (fresh linkedIds)
     const [activeModalType, setActiveModalType] = useState<SearchType>('lists');
 
-
     const { data: lists } = useGetMediaApiRefListsQuery(
-        mediaApiRefId,
-        { skip: isNaN(mediaApiRefId) }
+        effectiveMediaApiRefId,
+        { skip: !isInDb }
     );
     const { data: appliedTags } = useGetMediaApiRefTagsQuery(
-        mediaApiRefId,
-        { skip: isNaN(mediaApiRefId) }
+        effectiveMediaApiRefId,
+        { skip: !isInDb }
     );
 
     // Lazy search queries for the link modal
@@ -69,19 +78,35 @@ export default function MediaApiRefDetailPage() {
         ? `${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(detail.poster)}`
         : undefined;
 
-    // const { data: appliedTags } = useGetMediaApiRefTagsQuery(
-    //     mediaApiRefId,
-    //     { skip: isNaN(mediaApiRefId) }
-    // );
-    // const { data: myTags } = useGetMyCustomTagsQuery();
-    // const [addTag] = useAddTagToMediaApiRefMutation();
-    // const [removeTag] = useRemoveTagFromMediaApiRefMutation();
+    // Lazy findOrCreate: called when user opens the manage modal but the item isn't in the DB yet.
+    const handleOpenManageModal = async () => {
+        if (!detail) return;
+        if (!isInDb) {
+            try {
+                const ref = await findOrCreate({
+                    externalApiSourceId: detail.externalApiSourceId,
+                    externalId: detail.externalId,
+                    name: detail.name,
+                    mediaTypeId: detail.mediaTypeId,
+                    creatorName: detail.creatorName,
+                    publishedDate: detail.publishedDate,
+                    thumbnailUrl: detail.thumbnailUrl,
+                }).unwrap();
+                setResolvedId(ref.id);
+            } catch {
+                return;
+            }
+        }
+        setShowLinkModal(true);
+    };
 
     if (isLoading) return <div>Loading...</div>;
-    if (error) return <div>Error loading item.</div>;
+    if (error) {
+        const status = (error as { status?: number })?.status;
+        if (status === 503) return <div>This API is temporarily disabled. The item cannot be loaded right now.</div>;
+        return <div>Error loading item.</div>;
+    }
     if (!detail) return null;
-
-    // const appliedTagIds = new Set(appliedTags?.map(t => t.id) ?? []);
 
     const goToExternalWebsite = (inURL: string): (Window | null) => {return  window.open(inURL, "_blank", "noopener,noreferrer");}
 
@@ -92,40 +117,42 @@ export default function MediaApiRefDetailPage() {
                 <button className="btn btn-secondary w-fit" onClick={() => navigate(-1)}>⬅︎ Back</button>
                 <ItemActionsButton
                     buttonClassName="btn btn-secondary w-10 h-10 flex items-center justify-center"
-                    preview={
-                        <RowItemStyling>
-                            <RowItemContent
-                                firstString={detail.name}
-                                secondString={detail.creatorName ?? undefined}
-                                labelPill={<MediaTypeLabel mediaTypeId={detail.mediaTypeId} faded={true} />}
-                            />
-                        </RowItemStyling>
-                    }
+                    firstString={detail.name}
+                    secondString={detail.creatorName ?? undefined}
+                    labelPill={<MediaTypeLabel mediaTypeId={detail.mediaTypeId} faded={true} />}
                     onMenuClick={mediaApiRefActions({
-                        id: detail.id,
+                        apiName: detail.apiSourceName,
+                        externalId: detail.externalId,
                         name: detail.name,
                         navigate,
-                        onManageListsTagsOpen: () => setShowLinkModal(true),
+                        onManageListsTagsOpen: handleOpenManageModal,
                         includeGoToDetails: false,
                     })}
                 />
             </div>
 
             <h1 className="h1-styling">{detail.name}</h1>
-            <CacheStatusPill cacheMetadata={cacheMetadata} />
+            <AdminItemStatusPanel cacheMetadata={cacheMetadata} isInDb={isInDb} />
             <MediaTypeLabel mediaTypeId={detail.mediaTypeId} />
 
-            {/* Staleness hint: show when details are older than the backend's staleness threshold */}
-            {detail.isStale && (
+            {/* Staleness hint: admin-only — only visible when adminInfo is populated and data is stale */}
+            {detail.adminInfo?.isStale && isInDb && (
                 <div className="my-2 text-sm text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
                     <span>This data may be outdated.</span>
                     <button
                         className="btn btn-secondary btn-sm"
-                        onClick={() => refreshDetails(detail.id)}
+                        onClick={() => refreshDetails(effectiveMediaApiRefId)}
                         disabled={isRefreshing}
                     >
                         {isRefreshing ? 'Refreshing...' : 'Refresh'}
                     </button>
+                </div>
+            )}
+
+            {/* Disabled API warning — shown to all users when the external API is temporarily disabled */}
+            {detail.isApiDisabled && (
+                <div className="my-2 text-sm text-orange-600 dark:text-orange-400">
+                    The external API for this item is temporarily disabled. Some details may be missing or incomplete.
                 </div>
             )}
 
@@ -177,22 +204,9 @@ export default function MediaApiRefDetailPage() {
                 {detail.creatorName && <span>Creator: {detail.creatorName}</span>}
                 {detail.publishedDate && <span>Published: {new Date(detail.publishedDate).getFullYear()}</span>}
                 {detail.apiHomepageUrl && (
-                    // <span>
-                    //     API: <a
-                    //         href=
-                    //         target="_blank"
-                    //         rel="noopener noreferrer"
-                    //         className="text-blue-600 dark:text-blue-400 hover:underline"
-                    //     >
-                    //         
-                    //     </a>
-                    // </span>
                     <button
                     className="btn btn-secondary w-fit"
                     onClick={() =>
-                        // detail.apiHomepageUrl! has a "!" here because it is wrapped in {detail.apiHomepageUrl &&,
-                        // meaning that this onyl shows if detail.apiHomepageUrl is not null, so we can use !
-                        // to tell TypeScript that this variable will never have with a null value in this line"
                         goToExternalWebsite(detail.apiHomepageUrl!)}
                 >{detail.apiSourceName} · ID: {detail.externalId}</button>
                 )}
@@ -200,55 +214,22 @@ export default function MediaApiRefDetailPage() {
 
             <hr className="my-4" />
 
-            {/* -- Custom Tags -- */}
- {/*            <h2 className="font-semibold text-lg mb-2">Custom Tags</h2>
-            <div className="flex flex-wrap gap-2 mb-4">
-                {appliedTags?.map(tag => (
-                    <span key={tag.id} className="badge badge-primary flex items-center gap-1">
-                        {tag.name}
-                        <button
-                            className="ml-1 text-xs"
-                            onClick={() => removeTag({ tagId: tag.id, mediaApiRefId: detail.id })}
-                        >✕</button>
-                    </span>
-                ))}
-                {appliedTags?.length === 0 && <span className="text-gray-400 text-sm">No tags yet.</span>}
-            </div>
-*/}
-
-            {/* Add tag from user's tag list */}
- {/*           {myTags && myTags.filter(t => !appliedTagIds.has(t.id)).length > 0 && (
-                <div>
-                    <p className="text-sm text-gray-500 mb-1">Add a tag:</p>
-                    <div className="flex flex-wrap gap-2">
-                        {myTags.filter(t => !appliedTagIds.has(t.id)).map(tag => (
-                            <button
-                                key={tag.id}
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => addTag({ tagId: tag.id, mediaApiRefId: detail.id })}
-                            >
-                                + {tag.name}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-      */}  
-
-            <hr className="my-4" />
-
             {/* -- Lists containing this item -- */}
             <h2 className="font-semibold text-lg mb-2">Appears in Lists</h2>
-            {lists && lists.length > 0 ? (
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    {lists.map(list => (
-                        <RowItemStyling key={list.id} onClick={() => navigate(routes.mediaList(list.id))}>
-                            <RowItemContent firstString={list.name} secondString={list.description ?? undefined} />
-                        </RowItemStyling>
-                    ))}
-                </div>
+            {isInDb ? (
+                lists && lists.length > 0 ? (
+                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        {lists.map(list => (
+                            <RowItemStyling key={list.id} onClick={() => navigate(routes.mediaList(list.id))}>
+                                <RowItemContent firstString={list.name} secondString={list.description ?? undefined} />
+                            </RowItemStyling>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-gray-400 text-sm">Not in any lists yet.</p>
+                )
             ) : (
-                <p className="text-gray-400 text-sm">Not in any lists yet.</p>
+                <p className="text-gray-400 text-sm">Save this item to a list to see it here.</p>
             )}
         </div>
 
@@ -273,16 +254,16 @@ export default function MediaApiRefDetailPage() {
                     : (appliedTags ?? []).map(t => String(t.id))}
                 onAdd={async (id) => {
                     if (activeModalType === 'lists') {
-                        await addToList({ listId: parseInt(id), mediaApiRefId }).unwrap();
+                        await addToList({ listId: parseInt(id), mediaApiRefId: effectiveMediaApiRefId }).unwrap();
                     } else {
-                        await addTag({ tagId: parseInt(id), mediaApiRefId }).unwrap();
+                        await addTag({ tagId: parseInt(id), mediaApiRefId: effectiveMediaApiRefId }).unwrap();
                     }
                 }}
                 onRemove={async (id) => {
                     if (activeModalType === 'lists') {
-                        await removeFromList({ listId: parseInt(id), mediaApiRefId }).unwrap();
+                        await removeFromList({ listId: parseInt(id), mediaApiRefId: effectiveMediaApiRefId }).unwrap();
                     } else {
-                        await removeTag({ tagId: parseInt(id), mediaApiRefId }).unwrap();
+                        await removeTag({ tagId: parseInt(id), mediaApiRefId: effectiveMediaApiRefId }).unwrap();
                     }
                 }}
                 removeConfirmTitle={activeModalType === 'lists' ? 'Remove from list?' : 'Remove tag?'}

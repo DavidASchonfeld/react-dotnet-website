@@ -19,7 +19,7 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<MediaApiRefDetailDto>> GetMediaApiRefDetailAsync(int mediaApiRefId, string requesterUserId, bool bypassCache = false)
+    public async Task<ServiceResult<MediaApiRefDetailDto>> GetDetailByDbIdAsync(int mediaApiRefId, string requesterUserId, bool bypassCache = false)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<MediaApiRefDetailDto>.Unauthorized();
@@ -44,8 +44,13 @@ public class MediaApiRefService : IMediaApiRefService
             var cachedDetails = JsonSerializer.Deserialize<ExternalApiSearchResult>(cachedItem.ResponseJson);
             if (cachedDetails?.Poster != null) PrewarmPoster(cachedDetails.Poster);
             return ServiceResult<MediaApiRefDetailDto>.OkFromCache(
-                ToDetailDto(mediaApiRef, cachedDetails), cachedItem.CreatedAt);
+                ToDetailDto(mediaApiRef, cachedDetails, requesterUser), cachedItem.CreatedAt);
         }
+
+        // Cache miss — if the API is disabled, return what we have from the DB without calling the adapter
+        if (mediaApiRef.ApiSource.IsDisabledByAdmin)
+            return ServiceResult<MediaApiRefDetailDto>.Ok(
+                ToDetailDto(mediaApiRef, null, requesterUser, isApiDisabled: true));
 
         // Cache miss — fetch from external API and store in CacheItem
         var adapter = _adapterFactory.GetAdapter(mediaApiRef.ApiSource.ApiName);
@@ -77,15 +82,15 @@ public class MediaApiRefService : IMediaApiRefService
                 await _apiUsageService.TrackRequestAsync(mediaApiRef.ApiSource.ApiName);
                 if (detailedResult.Poster != null) PrewarmPoster(detailedResult.Poster);
 
-                return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(mediaApiRef, detailedResult));
+                return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(mediaApiRef, detailedResult, requesterUser));
             }
         }
 
-        return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(mediaApiRef, null));
+        return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(mediaApiRef, null, requesterUser));
     }
 
 
-    public async Task<ServiceResult<List<ExternalApiSearchResult>>> SearchExternalApiAsync(string query, int limit, int mediaTypeId, string requesterUserId, int page = 1, string? subtype = null, bool bypassCache = false)
+    public async Task<ServiceResult<List<ExternalApiSearchResult>>> SearchThirdPartyApiAsync(string query, int limit, int mediaTypeId, string requesterUserId, int page = 1, string? subtype = null, bool bypassCache = false)
     {
         if (query.Length < AppConstants.SearchMinQueryLength)
             return ServiceResult<List<ExternalApiSearchResult>>.BadRequest("Search query must be at least 2 characters.");
@@ -152,7 +157,7 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<ExternalApiSearchResult>> GetExternalApiItemAsync(string externalItemId, int externalApiSourceId, string requesterUserId, bool bypassCache = false)
+    public async Task<ServiceResult<ExternalApiSearchResult>> FetchRawItemFromExternalApiAsync(string externalItemId, int externalApiSourceId, string requesterUserId, bool bypassCache = false)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<ExternalApiSearchResult>.Unauthorized();
@@ -212,7 +217,63 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<MediaApiRefDetailDto>> FindOrCreateAsync(FindOrCreateMediaApiRefDto dto, string requesterUserId)
+    public async Task<ServiceResult<MediaApiRefDetailDto>> GetDetailByExternalKeyAsync(string apiName, string externalId, string requesterUserId)
+    {
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return ServiceResult<MediaApiRefDetailDto>.Unauthorized();
+
+        // Resolve ExternalApiSource by name (case-insensitive)
+        var source = await _context.ExternalApiSources
+            .Include(s => s.MediaType)
+            .FirstOrDefaultAsync(s => s.ApiName.ToLower() == apiName.ToLower());
+        if (source == null)
+            return ServiceResult<MediaApiRefDetailDto>.NotFound("API source not found.");
+
+        // Check if a DB record already exists for this external item
+        var existing = await _context.MediaApiRefs
+            .FirstOrDefaultAsync(r => r.ExternalApiSourceId == source.Id && r.ExternalId == externalId);
+
+        if (existing != null)
+            return await GetDetailByDbIdAsync(existing.Id, requesterUserId);
+
+        // Not in DB — fetch from external API (with caching)
+        var externalResult = await FetchRawItemFromExternalApiAsync(externalId, source.Id, requesterUserId);
+        if (!externalResult.IsSuccess)
+            return new ServiceResult<MediaApiRefDetailDto>
+            {
+                IsSuccess = false,
+                ErrorMessage = externalResult.ErrorMessage,
+                StatusCode = externalResult.StatusCode
+            };
+
+        // Build a partial DetailDto with Id = 0 to signal "not yet persisted"
+        var ext = externalResult.Data!;
+        var dto = new MediaApiRefDetailDto
+        {
+            Id = 0,
+            Name = ext.Name,
+            MediaTypeId = source.MediaTypeId,
+            ExternalApiSourceId = source.Id,
+            ApiSourceName = source.ApiName,
+            ExternalId = ext.ExternalId,
+            CreatorName = ext.CreatorName,
+            PublishedDate = ext.PublishedDate,
+            ThumbnailUrl = ext.ThumbnailUrl,
+            Poster = ext.Poster,
+            Plot = ext.Plot,
+            Runtime = ext.Runtime,
+            Country = ext.Country,
+            Genres = ext.Genres,
+            Rated = ext.Rated,
+            ApiHomepageUrl = ExternalApiRegistry.Apis.TryGetValue(source.ApiName, out var metadata) ? metadata.HomepageUrl : null,
+        };
+        return externalResult.CacheMetadata != null
+            ? ServiceResult<MediaApiRefDetailDto>.OkFromCache(dto, externalResult.CacheMetadata.CachedAt.Value)
+            : ServiceResult<MediaApiRefDetailDto>.Ok(dto);
+    }
+
+
+    public async Task<ServiceResult<MediaApiRefDetailDto>> GetOrCreateMediaApiRefAsync(FindOrCreateMediaApiRefDto dto, string requesterUserId)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<MediaApiRefDetailDto>.Unauthorized();
@@ -237,7 +298,7 @@ public class MediaApiRefService : IMediaApiRefService
                 existing.ThumbnailUrl = dto.ThumbnailUrl;
                 await _context.SaveChangesAsync();
             }
-            return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(existing, null));
+            return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(existing, null, requesterUser));
         }
 
         var newRef = new MediaApiRef
@@ -260,7 +321,7 @@ public class MediaApiRefService : IMediaApiRefService
             .Include(r => r.MediaType)
             .FirstAsync(r => r.Id == newRef.Id);
 
-        return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(newRef, null));
+        return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(newRef, null, requesterUser));
     }
 
 
@@ -316,56 +377,6 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    // Force-refresh: always fetches fresh from API and overwrites any existing CacheItem entry
-    public async Task<ServiceResult<MediaApiRefDetailDto>> FetchAndCacheDetailsAsync(int mediaApiRefId, string requesterUserId)
-    {
-        var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<MediaApiRefDetailDto>.Unauthorized();
-
-        var mediaApiRef = await _context.MediaApiRefs
-            .Include(r => r.ApiSource)
-            .Include(r => r.MediaType)
-            .FirstOrDefaultAsync(r => r.Id == mediaApiRefId);
-
-        if (mediaApiRef == null) return ServiceResult<MediaApiRefDetailDto>.NotFound();
-
-        var adapter = _adapterFactory.GetAdapter(mediaApiRef.ApiSource.ApiName);
-        if (adapter == null)
-            return ServiceResult<MediaApiRefDetailDto>.NotImplemented($"No adapter implemented for API '{mediaApiRef.ApiSource.ApiName}'.");
-
-        var detailedResult = await adapter.GetByExternalIdAsync(mediaApiRef.ExternalId);
-
-        if (detailedResult != null)
-        {
-            // Validate image URLs before caching or persisting — null out any that are unreachable
-            var thumbnailTask = detailedResult.ThumbnailUrl != null
-                ? _imageCacheService.IsImageReachableAsync(detailedResult.ThumbnailUrl)
-                : Task.FromResult(true);
-            var posterTask = detailedResult.Poster != null
-                ? _imageCacheService.IsImageReachableAsync(detailedResult.Poster)
-                : Task.FromResult(true);
-            await Task.WhenAll(thumbnailTask, posterTask);
-            if (!thumbnailTask.Result) detailedResult.ThumbnailUrl = null;
-            if (!posterTask.Result) detailedResult.Poster = null;
-
-            // Overwrite CacheItem entry with fresh data; update staleness timestamp and Poster on MediaApiRef
-            var queryParams = BuildGetByIdParams(mediaApiRef.ExternalId, mediaApiRef.ApiSource.ApiName);
-            var responseJson = JsonSerializer.Serialize(detailedResult);
-            await _cacheItemService.UpsertAsync(
-                mediaApiRef.ApiSource.ApiName, "GetById", mediaApiRef.MediaType.Name,
-                queryParams, responseJson, AppConstants.CacheItemGetByIdTtlDays);
-
-            mediaApiRef.DetailsFetchedAt = DateTime.UtcNow;
-            if (detailedResult.Poster != null) mediaApiRef.PosterUrl = detailedResult.Poster;
-            await _context.SaveChangesAsync();
-            await _apiUsageService.TrackRequestAsync(mediaApiRef.ApiSource.ApiName);
-            if (detailedResult.Poster != null) PrewarmPoster(detailedResult.Poster);
-        }
-
-        return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(mediaApiRef, detailedResult));
-    }
-
-
     // Fire-and-forget: pre-warm ImageCache for all thumbnail URLs in search results.
     // Called in both cache-hit and fresh-fetch paths since image TTL is independent of query cache TTL.
     private void PrewarmThumbnails(IEnumerable<ExternalApiSearchResult> results)
@@ -396,8 +407,10 @@ public class MediaApiRefService : IMediaApiRefService
             ["media_id"] = externalId,
         };
 
-    // Detail fields sourced from CacheItem.ResponseJson, not MediaApiRef columns
-    private static MediaApiRefDetailDto ToDetailDto(MediaApiRef r, ExternalApiSearchResult? details) => new()
+    // Detail fields sourced from CacheItem.ResponseJson, not MediaApiRef columns.
+    // AdminInfo is only populated for administrators — non-admins receive null.
+    // isApiDisabled: set when the API source is disabled by admin and the cache was empty.
+    private static MediaApiRefDetailDto ToDetailDto(MediaApiRef r, ExternalApiSearchResult? details, AppUser? requesterUser, bool isApiDisabled = false) => new()
     {
         Id = r.Id,
         Name = r.Name,
@@ -407,11 +420,15 @@ public class MediaApiRefService : IMediaApiRefService
         ExternalApiSourceId = r.ExternalApiSourceId,
         ApiSourceName = r.ApiSource.ApiName,
         ExternalId = r.ExternalId,
-        DateAdded = r.DateAdded,
         ApiHomepageUrl = ExternalApiRegistry.Apis.TryGetValue(r.ApiSource.ApiName, out var metadata) ? metadata.HomepageUrl : null,
-        DetailsFetchedAt = r.DetailsFetchedAt,
-        IsStale = r.DetailsFetchedAt.HasValue &&
-                  (DateTime.UtcNow - r.DetailsFetchedAt.Value).TotalDays > AppConstants.DetailsStaleDays,
+        AdminInfo = requesterUser != null && PermissionHelper.IsAdministrator(requesterUser) ? new MediaApiRefAdminInfoDto
+        {
+            DateAdded = r.DateAdded,
+            DetailsFetchedAt = r.DetailsFetchedAt,
+            IsStale = r.DetailsFetchedAt.HasValue &&
+                      (DateTime.UtcNow - r.DetailsFetchedAt.Value).TotalDays > AppConstants.DetailsStaleDays,
+        } : null,
+        IsApiDisabled = isApiDisabled,
         ThumbnailUrl = r.ThumbnailUrl,
         Poster = details?.Poster ?? r.PosterUrl,
         Plot = details?.Plot,

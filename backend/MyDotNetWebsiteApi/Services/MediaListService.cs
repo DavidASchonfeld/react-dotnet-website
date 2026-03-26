@@ -136,6 +136,7 @@ public class MediaListService : IMediaListService
         var mediaList_withIncludes = await _context.MediaLists
             .Include(l => l.ItemLinks)  // Load the link rows
                 .ThenInclude(link => link.MediaApiRef)  // and the MediaApiRef attached via the link row
+                    .ThenInclude(r => r.ApiSource)
             .FirstOrDefaultAsync(l => l.Id == mediaListId);
 
         if(mediaList_withIncludes == null) return ServiceResult<MediaListDetailDto>.NotFound();
@@ -160,6 +161,7 @@ public class MediaListService : IMediaListService
                     CreatorName = link.MediaApiRef.CreatorName,
                     PublishedDate = link.MediaApiRef.PublishedDate,
                     ExternalId = link.MediaApiRef.ExternalId,
+                    ApiSourceName = link.MediaApiRef.ApiSource.ApiName,
                     ThumbnailUrl = link.MediaApiRef.ThumbnailUrl
                 })
                 .ToList()
@@ -525,6 +527,7 @@ public class MediaListService : IMediaListService
             .OrderBy(l => l.Id)
             .Include(l => l.ItemLinks)
                 .ThenInclude(link => link.MediaApiRef)
+                    .ThenInclude(r => r.ApiSource)
             .ToListAsync();
 
         var dtos = lists.Select(l => new MediaListDetailDto
@@ -547,6 +550,7 @@ public class MediaListService : IMediaListService
                     CreatorName = link.MediaApiRef.CreatorName,
                     PublishedDate = link.MediaApiRef.PublishedDate,
                     ExternalId = link.MediaApiRef.ExternalId,
+                    ApiSourceName = link.MediaApiRef.ApiSource.ApiName,
                     ThumbnailUrl = link.MediaApiRef.ThumbnailUrl
                 })
                 .ToList()

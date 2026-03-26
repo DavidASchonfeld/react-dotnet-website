@@ -25,6 +25,7 @@ import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES } from '../constants'
 import ManageLinkModal from '../components/modals/ManageLinkModal'
 import { routes } from '../utils/routes'
+import { mediaApiRefActions } from '../utils/menuActions'
 
 const PAGE_SIZE = SEARCH_DEFAULT_LIMIT
 
@@ -123,27 +124,6 @@ export default function SearchPage() {
         })
     }
 
-    const handleMediaResultClick = async (result: ExternalApiSearchResult) => {
-        if (mediaTypeId === null || apiSourceId === null) return
-        const source = activeSources?.find(s => s.id === apiSourceId)
-        if (!source) return
-
-        try {
-            const created = await findOrCreate({
-                externalApiSourceId: source.id,
-                externalId: result.externalId,
-                name: result.name,
-                mediaTypeId,
-                creatorName: result.creatorName,
-                publishedDate: result.publishedDate,
-                thumbnailUrl: result.thumbnailUrl,
-            }).unwrap()
-            navigate(routes.mediaApiRef(created.id))
-        } catch {
-            // Error toast is handled by baseQueryWithErrorHandling
-        }
-    }
-
     const handlePageChange = (newPage: number) => {
         setSearchParams(prev => {
             const params = new URLSearchParams(prev)
@@ -211,30 +191,31 @@ export default function SearchPage() {
                                 </p>
                                 <div className="rounded-lg border border-border overflow-hidden">
                                     {mediaResults.data.map(result => (
-                                        // Each result: clickable row + "+" button to open link modal
-                                        <div key={result.externalId} className="flex items-center gap-2">
-                                            <div className="flex-1 min-w-0">
-                                            <RowItemStyling onClick={() => handleMediaResultClick(result)}>
-                                                <RowItemContent
-                                                    firstString={result.name}
-                                                    secondString={result.creatorName ?? undefined}
-                                                    photographOnLeft={result.thumbnailUrl ?? undefined}
-                                                    thirdString={
-                                                        result.publishedDate
-                                                            ? new Date(result.publishedDate).getFullYear().toString()
-                                                            : undefined
-                                                    }
-                                                    larger
-                                                    useDirectUrl
-                                                />
-                                            </RowItemStyling>
-                                            </div>
-                                            <button
-                                                className="btn btn-secondary w-fit shrink-0 mr-2"
-                                                onClick={() => { setSelectedResult(result); setActiveModalType('lists'); }}
-                                                title="Add to List / Tag"
-                                            >+</button>
-                                        </div>
+                                        <RowItemStyling key={result.externalId}>
+                                            <RowItemContent
+                                                firstString={result.name}
+                                                secondString={result.creatorName ?? undefined}
+                                                photographOnLeft={result.thumbnailUrl ?? undefined}
+                                                thirdString={
+                                                    result.publishedDate
+                                                        ? new Date(result.publishedDate).getFullYear().toString()
+                                                        : undefined
+                                                }
+                                                larger
+                                                useDirectUrl
+                                                onClick={() => navigate(routes.mediaApiRef(selectedSource!.apiName, result.externalId))}
+                                                onMenuClick={mediaApiRefActions({
+                                                    apiName: selectedSource!.apiName,
+                                                    externalId: result.externalId,
+                                                    name: result.name,
+                                                    navigate,
+                                                    onManageListsTagsOpen: () => {
+                                                        setSelectedResult(result)
+                                                        setActiveModalType('lists')
+                                                    },
+                                                })}
+                                            />
+                                        </RowItemStyling>
                                     ))}
                                 </div>
                                 <div className="flex items-center gap-3 mt-4">
