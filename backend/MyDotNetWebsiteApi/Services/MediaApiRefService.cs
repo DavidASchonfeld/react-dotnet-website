@@ -268,7 +268,11 @@ public class MediaApiRefService : IMediaApiRefService
             ApiHomepageUrl = ExternalApiRegistry.Apis.TryGetValue(source.ApiName, out var metadata) ? metadata.HomepageUrl : null,
         };
         return externalResult.CacheMetadata != null
-            ? ServiceResult<MediaApiRefDetailDto>.OkFromCache(dto, externalResult.CacheMetadata.CachedAt ?? DateTime.UtcNow)
+            // Allows being able to return a CacheMetadata with a NULL CachedAt value.
+            // This is helpful in case something weird happens to my cache in my database and causes
+            // a cache item to still exist but have an empty/null CachedAt value.
+            // This is helpful to return for the front-end administrator users to know about
+            ? ServiceResult<MediaApiRefDetailDto>.OkFromCache(dto, externalResult.CacheMetadata.CachedAt)
             : ServiceResult<MediaApiRefDetailDto>.Ok(dto);
     }
 

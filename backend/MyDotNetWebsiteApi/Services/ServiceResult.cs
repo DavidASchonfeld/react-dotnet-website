@@ -16,7 +16,7 @@ public class ServiceResult<T>
     public static ServiceResult<T> Ok(T data) =>
         new() { IsSuccess = true, Data = data, StatusCode = 200};
 
-    public static ServiceResult<T> OkFromCache(T data, DateTime cachedAt) =>
+    public static ServiceResult<T> OkFromCache(T data, DateTime? cachedAt) =>
         new()
         {
             IsSuccess = true,
@@ -28,7 +28,9 @@ public class ServiceResult<T>
 
                 // Saving the Cache's Time zone as UTC. (The frontend will convert it to the user's local time)
                 // Note: Before this, I had issues because I had not specified a timezone.
-                CachedAt = DateTime.SpecifyKind(cachedAt, DateTimeKind.Utc)
+                // cachedAt is nullable: if null, the frontend administrator will see "Cached (time unknown)"
+                // instead of a fabricated timestamp.
+                CachedAt = cachedAt.HasValue ? DateTime.SpecifyKind(cachedAt.Value, DateTimeKind.Utc) : null
             }
         };
 

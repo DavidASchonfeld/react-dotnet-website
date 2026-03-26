@@ -37,6 +37,17 @@ export function CacheStatusPill({ cacheMetadata }: CacheStatusPillProps) {
     );
   }
 
+  if (cacheMetadata?.isFromCache && !cacheMetadata?.cachedAt) {
+    return (
+      <div className="flex justify-center">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-100 text-yellow-700 text-sm rounded-full">
+          <span>⚠️</span>
+          <span>Cached (time unknown)</span>
+        </div>
+      </div>
+    );
+  }
+
   // Show "Fresh data" for non-cached results (when cacheMetadata is null or isFromCache is false)
   return (
     <div className="flex justify-center">
