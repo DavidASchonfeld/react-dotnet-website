@@ -16,7 +16,7 @@ export function useCacheNotification(cacheMetadata: CacheMetadata | null | undef
       const cacheAge = formatCacheAge(cacheMetadata.cachedAt);
       safeToast.info(`Showing cached results from ${cacheAge}`);
     } else if (cacheMetadata.isFromCache && !cacheMetadata.cachedAt) {
-      safeToast.warn('Showing cached results (cached time unknown)');
+      safeToast.warning('Showing cached results (cached time unknown)');
     } else if (!cacheMetadata.isFromCache) {
       safeToast.info('Fresh data from external API');
     }

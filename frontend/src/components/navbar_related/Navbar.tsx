@@ -233,26 +233,34 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
                 {/* Search bar + filter dropdown — only shown when logged in (search requires auth) */}
                 {userName && (
-                    // Wrapper keeps input, filter button, and Search button aligned as a row (top) or column (left)
-                    <div className={`flex items-center ${isTop ? 'flex-row gap-1' : 'flex-col gap-1 w-full'}`}>
-                        <SearchBar
-                            mode="on-submit"
-                            showApiSourcePills={false}
-                            showSearchButton={false}
-                            isTop={isTop}
-                            effectiveMinimized={effectiveMinimized}
-                            defaultApiSourceId={selectedApiSourceId ?? undefined}
-                            onSubmit={handleSearchSubmit}
-                        />
-                        {/* Filter dropdown: API source selection (OMDB, RAWG, etc.) */}
-                        {!effectiveMinimized && (
+                    effectiveMinimized ? (
+                        <button
+                            title="Search"
+                            onClick={() => navigate("/search")}
+                            className="flex items-center justify-center gap-0 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 transition-colors"
+                        >
+                            🔍
+                        </button>
+                    ) : (
+                        // Wrapper keeps input, filter button, and Search button aligned as a row (top) or column (left)
+                        <div className={`flex items-center ${isTop ? 'flex-row gap-1' : 'flex-col gap-1 w-full'}`}>
+                            <SearchBar
+                                mode="on-submit"
+                                showApiSourcePills={false}
+                                showSearchButton={false}
+                                isTop={isTop}
+                                effectiveMinimized={effectiveMinimized}
+                                defaultApiSourceId={selectedApiSourceId ?? undefined}
+                                onSubmit={handleSearchSubmit}
+                            />
+                            {/* Filter dropdown: API source selection (OMDB, RAWG, etc.) */}
                             <SearchFilterDropdown
                                 selectedApiSourceId={selectedApiSourceId}
                                 onApiSourceChange={setSelectedApiSourceId}
                                 isTop={isTop}
                             />
-                        )}
-                    </div>
+                        </div>
+                    )
                 )}
 
 

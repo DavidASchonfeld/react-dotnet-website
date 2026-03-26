@@ -37,6 +37,9 @@ export default function TagDetailPage() {
 
     // Tracks the API source chosen in the last search (needed by onAdd)
     const [currentApiSource, setCurrentApiSource] = useState<ExternalApiSourceSummary | null>(null);
+    // Pagination state for the ManageLinkModal search results
+    const [searchPage, setSearchPage] = useState(1);
+    const [lastSearchParams, setLastSearchParams] = useState<{ query: string; mediaTypeId: number } | null>(null);
 
     const { data: result, isLoading, error } = useGetItemsByTagQuery(
         { tagId: parsedTagId, page },
@@ -109,17 +112,29 @@ export default function TagDetailPage() {
                             ?? activeApiSources?.[0];
                         if (!source) return;
                         setCurrentApiSource(source);
-                        triggerSearch({ query, mediaTypeId: source.mediaTypeId, limit: SEARCH_DEFAULT_LIMIT });
+                        setSearchPage(1);
+                        setLastSearchParams({ query, mediaTypeId: source.mediaTypeId });
+                        triggerSearch({ query, mediaTypeId: source.mediaTypeId, limit: SEARCH_DEFAULT_LIMIT, page: 1 });
                     }}
                     candidates={(searchData?.data ?? []).map(item => ({
                         id: item.externalId,
-                        primaryLabel: item.name,
-                        secondaryLabel: item.creatorName ?? undefined,
-                        labelComponent: <MediaTypeLabel mediaTypeId={currentApiSource?.mediaTypeId ?? 1} />,
+                        firstString: item.name,
+                        secondString: item.creatorName ?? undefined,
+                        labelPill: <MediaTypeLabel mediaTypeId={currentApiSource?.mediaTypeId ?? 1} />,
                     }))}
                     candidatesLoading={isSearching}
                     // Best-effort: pre-check items visible on the current page
                     initialLinkedIds={items.map(i => i.externalId ?? String(i.id))}
+                    pagination={lastSearchParams ? {
+                        page: searchPage,
+                        hasNextPage: (searchData?.data?.length ?? 0) >= SEARCH_DEFAULT_LIMIT,
+                        hasPreviousPage: searchPage > 1,
+                    } : undefined}
+                    onPageChange={(p) => {
+                        if (!lastSearchParams) return;
+                        setSearchPage(p);
+                        triggerSearch({ query: lastSearchParams.query, mediaTypeId: lastSearchParams.mediaTypeId, limit: SEARCH_DEFAULT_LIMIT, page: p });
+                    }}
                     onAdd={async (externalId) => {
                         const item = searchData?.data.find(r => r.externalId === externalId);
                         if (!currentApiSource || !item) return;
@@ -142,7 +157,7 @@ export default function TagDetailPage() {
                         }
                     }}
                     removeConfirmTitle="Remove tag from item?"
-                    getRemoveConfirmMessage={(item) => `Remove tag from "${item.primaryLabel}"?`}
+                    getRemoveConfirmMessage={(item) => `Remove tag from "${item.firstString}"?`}
                     onClose={() => setShowTagModal(false)}
                 />
             )}

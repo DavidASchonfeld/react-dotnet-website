@@ -1,13 +1,13 @@
 type Props = {
     page: number
-    totalPages: number
+    totalPages?: number
     hasNextPage: boolean
     hasPreviousPage: boolean
     onPageChange: (newPage: number) => void
 }
 
 export default function PaginationControls({ page, totalPages, hasNextPage, hasPreviousPage, onPageChange }: Props) {
-    if (totalPages <= 1) return null
+    if (!hasNextPage && !hasPreviousPage) return null
 
     return (
         <div className="flex items-center gap-3 mt-4">
@@ -18,7 +18,9 @@ export default function PaginationControls({ page, totalPages, hasNextPage, hasP
             >
                 ← Prev
             </button>
-            <span className="text-sm text-text/60">Page {page} of {totalPages}</span>
+            <span className="text-sm text-text/60">
+                {totalPages != null ? `Page ${page} of ${totalPages}` : `Page ${page}`}
+            </span>
             <button
                 className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
                 disabled={!hasNextPage}

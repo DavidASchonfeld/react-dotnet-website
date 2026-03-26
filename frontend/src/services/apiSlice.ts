@@ -82,6 +82,8 @@ const baseQueryWithErrorHandling: BaseQueryFn<
             api.dispatch(clearCredentials())
         } else if (status === 403) {
             safeToast.error('Access denied.')
+        } else if (status === 409) {
+            safeToast.error('This item is already in the list.')
         } else if (status === 429) {
             safeToast.error('Too many requests. Please slow down.')
         } else if (status === 503) {
@@ -277,8 +279,8 @@ export const apiSlice = createApi({
                 body,
             }),
             invalidatesTags: ['MediaList'],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Creating list...',
                     success: 'List created!',
                     error: '',   // suppressed — baseQueryWithErrorHandling handles errors
@@ -292,8 +294,8 @@ export const apiSlice = createApi({
                 method: 'DELETE',
             }),
             invalidatesTags: ['MediaList'],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Deleting...',
                     success: 'List deleted',
                     error: '',   // suppressed — baseQueryWithErrorHandling handles errors
@@ -314,8 +316,8 @@ export const apiSlice = createApi({
                 { type: 'MediaList', id: mediaListId },
                 'MediaList',
             ],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Saving...',
                     success: 'Changes saved',
                     error: '',   // suppressed — baseQueryWithErrorHandling handles errors
@@ -336,8 +338,8 @@ export const apiSlice = createApi({
                 { type: 'MediaList', id: listId },
                 'MediaList',
             ],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Adding...',
                     success: 'Item added to list',
                     error: '',   // suppressed — baseQueryWithErrorHandling handles errors
@@ -357,8 +359,8 @@ export const apiSlice = createApi({
                 { type: 'MediaList', id: listId },
                 'MediaList',
             ],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Removing...',
                     success: 'Item removed',
                     error: '',   // suppressed — baseQueryWithErrorHandling handles errors
@@ -382,8 +384,8 @@ export const apiSlice = createApi({
                 { type: 'MediaList', id: listId },
                 'MediaList',
             ],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Adding...',
                     success: 'Item added to list',
                     error: '',   // suppressed — baseQueryWithErrorHandling handles errors
@@ -406,8 +408,8 @@ export const apiSlice = createApi({
                 { type: 'MediaList', id: listId },
                 'MediaList',
             ],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Removing...',
                     success: 'Item removed from list',
                     error: '',   // suppressed — baseQueryWithErrorHandling handles errors
@@ -425,8 +427,8 @@ export const apiSlice = createApi({
                 body: { orderedItemIds },
             }),
             invalidatesTags: (_, __, { mediaListId }) => [{ type: 'MediaList', id: mediaListId }],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Saving order...',
                     success: 'Order saved',
                     error: '',   // suppressed — baseQueryWithErrorHandling handles errors
@@ -444,8 +446,8 @@ export const apiSlice = createApi({
                 body: data,
             }),
             invalidatesTags: (_, __, { listId }) => [{ type: 'MediaList', id: listId }],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Moving...',
                     success: 'Item moved',
                     error: '',   // suppressed — baseQueryWithErrorHandling handles errors
@@ -484,8 +486,8 @@ export const apiSlice = createApi({
                 body,
             }),
             invalidatesTags: ['MediaList'],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Creating featured list...',
                     success: 'Featured list created!',
                     error: '',
@@ -511,8 +513,8 @@ export const apiSlice = createApi({
                 body,
             }),
             invalidatesTags: ['CustomTag'],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Creating tag...',
                     success: 'Tag created!',
                     error: '',
@@ -530,8 +532,8 @@ export const apiSlice = createApi({
                 body: data,
             }),
             invalidatesTags: ['CustomTag'],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Saving...',
                     success: 'Tag updated',
                     error: '',
@@ -545,8 +547,8 @@ export const apiSlice = createApi({
                 method: 'DELETE',
             }),
             invalidatesTags: ['CustomTag'],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Deleting tag...',
                     success: 'Tag deleted',
                     error: '',
@@ -577,8 +579,8 @@ export const apiSlice = createApi({
             invalidatesTags: (_, __, { mediaApiRefId }) => [
                 { type: 'CustomTag', id: `ref-${mediaApiRefId}` },
             ],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Tagging...',
                     success: 'Tag applied',
                     error: '',
@@ -597,8 +599,8 @@ export const apiSlice = createApi({
             invalidatesTags: (_, __, { mediaApiRefId }) => [
                 { type: 'CustomTag', id: `ref-${mediaApiRefId}` },
             ],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Removing tag...',
                     success: 'Tag removed',
                     error: '',
@@ -639,8 +641,8 @@ export const apiSlice = createApi({
                 method: 'PATCH',
             }),
             invalidatesTags: ['ExternalApiSource'],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Updating...',
                     success: 'API status updated',
                     error: '',
@@ -658,8 +660,8 @@ export const apiSlice = createApi({
                 method: 'PATCH',
             }),
             invalidatesTags: ['ExternalApiSource'],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Updating...',
                     success: 'Cache setting updated',
                     error: '',
@@ -680,8 +682,8 @@ export const apiSlice = createApi({
                 method: 'PATCH',
             }),
             invalidatesTags: ['AppGlobalSettings'],
-            onQueryStarted: async (_, { queryFulfilled }) => {
-                await safeToast.promise(queryFulfilled, {
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
                     loading: 'Updating...',
                     success: 'Global cache setting updated',
                     error: '',

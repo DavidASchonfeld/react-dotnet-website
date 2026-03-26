@@ -247,8 +247,8 @@ export default function MediaApiRefDetailPage() {
                     else triggerSearchTags({ query, limit: SEARCH_DEFAULT_LIMIT });
                 }}
                 candidates={activeModalType === 'lists'
-                    ? (listSearchData ?? []).map(l => ({ id: String(l.id), primaryLabel: l.name, secondaryLabel: l.description ?? undefined }))
-                    : (tagSearchData ?? []).map(t => ({ id: String(t.id), primaryLabel: t.name }))}
+                    ? (listSearchData ?? []).map(l => ({ id: String(l.id), firstString: l.name, secondString: l.description ?? undefined }))
+                    : (tagSearchData ?? []).map(t => ({ id: String(t.id), firstString: t.name }))}
                 candidatesLoading={isSearchingLists || isSearchingTags}
                 initialLinkedIds={activeModalType === 'lists'
                     ? (lists ?? []).map(l => String(l.id))
@@ -268,7 +268,7 @@ export default function MediaApiRefDetailPage() {
                     }
                 }}
                 removeConfirmTitle={activeModalType === 'lists' ? 'Remove from list?' : 'Remove tag?'}
-                getRemoveConfirmMessage={(item) => `Remove "${item.primaryLabel}"?`}
+                getRemoveConfirmMessage={(item) => `Remove "${item.firstString}"?`}
                 onClose={() => setShowLinkModal(false)}
             />
         )}

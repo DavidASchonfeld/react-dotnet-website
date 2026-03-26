@@ -73,6 +73,9 @@ export default function MediaListDetailPage() {
     const [currentApiSource, setCurrentApiSource] = useState<ExternalApiSourceSummary | null>(null);
     // Lazy external API search — triggered on SearchBarWithFilters submit
     const [triggerSearch, { data: searchData, isFetching: isSearching }] = useLazySearchExternalApiQuery();
+    // Pagination state for the ManageLinkModal search results
+    const [searchPage, setSearchPage] = useState(1);
+    const [lastSearchParams, setLastSearchParams] = useState<{ query: string; mediaTypeId: number } | null>(null);
 
     // This is about showing/not showing the modal
     // for confirming if a user wants to remove the selected item in the <ConfirmModal> section
@@ -99,8 +102,6 @@ export default function MediaListDetailPage() {
     if (error) return <div>Error loading list</div>;
     if (!selectedMediaListDetail) return null;
 
-
-    const existingIds = new Set(selectedMediaListDetail?.listContent.map(i => i.id));
 
     function handleToggleEditMode() {
         if (isEditMode) setShowAddBrowsePanel(false);
@@ -290,16 +291,34 @@ export default function MediaListDetailPage() {
                             ?? activeApiSources?.[0];
                         if (!source) return;
                         setCurrentApiSource(source);
-                        triggerSearch({ query, mediaTypeId: source.mediaTypeId, limit: SEARCH_DEFAULT_LIMIT });
+                        setSearchPage(1);
+                        setLastSearchParams({ query, mediaTypeId: source.mediaTypeId });
+                        triggerSearch({ query, mediaTypeId: source.mediaTypeId, limit: SEARCH_DEFAULT_LIMIT, page: 1 });
                     }}
-                    candidates={(searchData?.data ?? []).map(item => ({
-                        id: item.externalId,
-                        primaryLabel: item.name,
-                        secondaryLabel: item.creatorName ?? undefined,
-                        labelComponent: <MediaTypeLabel mediaTypeId={currentApiSource?.mediaTypeId ?? 1} />,
-                    }))}
+                    candidates={
+                        [...new Map(
+                            (searchData?.data ?? []).map(item => [item.externalId, item])
+                        ).values()]
+                        .map(item => ({
+                            id: item.externalId,
+                            firstString: item.name,
+                            secondString: item.creatorName ?? undefined,
+                            labelPill: <MediaTypeLabel mediaTypeId={currentApiSource?.mediaTypeId ?? 1} />,
+                            photographOnLeft: item.thumbnailUrl ?? undefined,
+                        }))
+                    }
                     candidatesLoading={isSearching}
-                    initialLinkedIds={[...existingIds].map(String)}
+                    initialLinkedIds={selectedMediaListDetail.listContent.map(i => i.externalId)}
+                    pagination={lastSearchParams ? {
+                        page: searchPage,
+                        hasNextPage: (searchData?.data?.length ?? 0) >= SEARCH_DEFAULT_LIMIT,
+                        hasPreviousPage: searchPage > 1,
+                    } : undefined}
+                    onPageChange={(p) => {
+                        if (!lastSearchParams) return;
+                        setSearchPage(p);
+                        triggerSearch({ query: lastSearchParams.query, mediaTypeId: lastSearchParams.mediaTypeId, limit: SEARCH_DEFAULT_LIMIT, page: p });
+                    }}
                     onAdd={async (externalId) => {
                         const item = searchData?.data.find(r => r.externalId === externalId);
                         if (!currentApiSource || !item) return;
@@ -326,7 +345,7 @@ export default function MediaListDetailPage() {
                         }
                     }}
                     removeConfirmTitle="Remove item from list?"
-                    getRemoveConfirmMessage={(item) => `Remove "${item.primaryLabel}" from this list?`}
+                    getRemoveConfirmMessage={(item) => `Remove "${item.firstString}" from this list?`}
                     onClose={() => setShowAddBrowsePanel(false)}
                 />
             )}

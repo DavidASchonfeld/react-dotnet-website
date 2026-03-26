@@ -1,19 +1,16 @@
 import { useState } from 'react';
-import type { ReactNode } from 'react';
 import RowItemContent from "../row_item_related/RowItemContent";
-import RowItemStyling from "../row_item_related/RowItemStyling";
+import type { RowItemDisplayProps } from '../../types/rowItemTypes';
 import ConfirmModal from "./ConfirmModal";
+import PaginationControls from "../PaginationControls";
 import AnimatedPage from '../AnimatedPage';
 import SearchBarWithFilters from '../SearchBarWithFilters';
 import type { FilterState, SearchType } from '../SearchBarWithFilters';
 import type { ExternalApiSourceSummary } from '../../types/externalApiSource';
 
-interface LinkRowItem {
+interface LinkRowItem extends RowItemDisplayProps {
     id: string;
-    primaryLabel: string;  // Main name (Ex: MediaItem Name I am focusing on)
-    secondaryLabel?: string; // Optional subtitle
     countLabel?: string; // Optional right-side count of the links
-    labelComponent?: ReactNode;  // Ex: <MediaTypeLabel
     hasModifyLinkAccess?: boolean // Used for the click guard: blocks toggling rows the user cannot edit.
     //     For example, you can add a MediaItem to your own MediaList
     //     but not to a list that isn't owned by you (Note: In the future, I will want to implement public/shared MediaLists)
@@ -62,6 +59,9 @@ interface ManageLinkModalProps {
     removeConfirmTitle?: string;
     getRemoveConfirmMessage?: (item: LinkRowItem) => string;
 
+    pagination?: { page: number; totalPages?: number; hasNextPage: boolean; hasPreviousPage: boolean };
+    onPageChange?: (page: number) => void;
+
     onClose: (updatedLinkedIds: string[]) => void;
 }
 
@@ -90,6 +90,9 @@ export default function ManageLinkModal({
 
     removeConfirmTitle,
     getRemoveConfirmMessage,
+
+    pagination,
+    onPageChange,
 
     onClose
 }: ManageLinkModalProps){
@@ -128,10 +131,18 @@ export default function ManageLinkModal({
     // For Tab 1 (pre-loaded): this filters locally.
     // For Tab 2 (server-searched): the parent already narrowed results server-side; this adds a local refinement.
     const displayed = activeCandidates
-        .filter(c => c.primaryLabel.toLowerCase().includes(searchQuery.toLowerCase()));
+        .filter(c => c.firstString.toLowerCase().includes(searchQuery.toLowerCase()));
 
     // All candidates across all tabs (used to look up items by id for the ConfirmModal)
     const allCandidates = tabs ? tabs.flatMap(t => t.candidates) : (candidates ?? []);
+
+    function rowStatusIcon(linked: boolean, pendingToAdd: boolean) {
+        return (
+            <span className="w-5 text-center shrink-0 text-primary">
+                {pendingToAdd ? '…' : linked ? '✓' : ''}
+            </span>
+        );
+    }
 
     async function handleToggle(id: string) {
         const isLinked = linkedIds.includes(id);
@@ -223,17 +234,16 @@ export default function ManageLinkModal({
                                     // (Example: public lists the user can see but cannot edit)
                                     onClick={() => !pendingToAdd && item.hasModifyLinkAccess !== false && handleToggle(item.id)}
                                 >
-                                    {/* Check Mark / Loading Indicator */}
-                                    <span className="w-5 text-center shrink-0 text-primary">
-                                        {pendingToAdd ? '…' : linked ? '✓' : ''}
-                                    </span>
-                                    <RowItemStyling>
+                                    {rowStatusIcon(linked, pendingToAdd)}
+                                    <div className="flex-1 min-w-0">
                                         <RowItemContent
-                                            firstString={item.primaryLabel}
-                                            secondString={item.secondaryLabel}
-                                            labelPill={item.labelComponent}
+                                            firstString={item.firstString}
+                                            secondString={item.secondString}
+                                            labelPill={item.labelPill}
+                                            photographOnLeft={item.photographOnLeft}
                                         />
-                                    </RowItemStyling>
+                                    </div>
+                                    {rowStatusIcon(linked, pendingToAdd)}
                                     {item.countLabel && (
                                         <span className="ml-auto text-sm opacity-50 shrink-0">
                                             {item.countLabel}
@@ -244,6 +254,19 @@ export default function ManageLinkModal({
                         })
                     )}
                 </div>
+
+                {/* Pagination footer — outside the scroll area so it stays pinned at the bottom */}
+                {pagination && (
+                    <div className="px-4 py-2 border-t border-border">
+                        <PaginationControls
+                            page={pagination.page}
+                            totalPages={pagination.totalPages}
+                            hasNextPage={pagination.hasNextPage}
+                            hasPreviousPage={pagination.hasPreviousPage}
+                            onPageChange={onPageChange ?? (() => {})}
+                        />
+                    </div>
+                )}
             </div>
             </AnimatedPage>
             </div>
