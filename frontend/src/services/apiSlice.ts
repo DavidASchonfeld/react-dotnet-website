@@ -1,8 +1,10 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query'
-import { clearCredentials } from '../store/authSlice'
+import { clearCredentials, setCredentials } from '../store/authSlice'
 import { safeToast } from '../utils/safeToast'
 import { BACKEND_BASE_URL } from '../config'
+import { refreshAccessToken } from './authService'
+import type { UserRole } from '../types/userRole'
 
 import type {
     MediaApiRefSummary,
@@ -57,29 +59,52 @@ const baseQuery = fetchBaseQuery({
 })
 
 
-// ---- Error Handling Wrapper ----
-// api.dispatch is injected by RTK's middleware
-// This is a wrapper around baseQuery to handle errors.
-// This is the base query object that gets passed into apiSlice
-// Below, in apiSlice, every query listed is added at the end of this baseQuery
-// (as commanded in the object apiSlice's "baseQuery" value)
-// that way, whenever I call a query,
-// I never have to keep typing about the token, the BACKEND_BASE_URL etc.
+// ---- Reauth Wrapper ----
+// Wraps baseQuery with automatic token refresh on 401.
+// On a 401 response, we silently try to get a new access token via the HttpOnly
+// refresh cookie before giving up and logging the user out.
 //
+// Module-level flag prevents multiple simultaneous 401 responses from each
+// triggering a separate refresh call — only the first one refreshes; the rest
+// wait and then retry with the new token already in Redux state.
+let isRefreshing = false
+
 const baseQueryWithErrorHandling: BaseQueryFn<
     string | FetchArgs,
     unknown,
     FetchBaseQueryError
 > = async (args, api, extra) => {
-    const result = await baseQuery(args, api, extra)
+    let result = await baseQuery(args, api, extra)
 
     if (result.error) {
         const status = result.error.status
-        if (status === 'FETCH_ERROR') {
+
+        if (status === 401) {
+            if (!isRefreshing) {
+                isRefreshing = true
+                try {
+                    // Ask the backend for a new access token using the HttpOnly refresh cookie.
+                    // If successful, store the new token so prepareHeaders picks it up on the retry.
+                    const newToken = await refreshAccessToken()
+                    const state = api.getState() as { auth: { userName: string | null; roleLevel: UserRole | null } }
+                    api.dispatch(setCredentials({
+                        token: newToken,
+                        userName: state.auth.userName ?? '',
+                        roleLevel: state.auth.roleLevel,
+                    }))
+                } catch {
+                    // Refresh failed — session is truly expired. Log the user out.
+                    safeToast.error('Your session has expired. Please log in again.')
+                    api.dispatch(clearCredentials())
+                    isRefreshing = false
+                    return result
+                }
+                isRefreshing = false
+            }
+            // Retry the original request — prepareHeaders now has the new token.
+            result = await baseQuery(args, api, extra)
+        } else if (status === 'FETCH_ERROR') {
             safeToast.error('Unable to reach the server. Please try again later.')
-        } else if (status === 401) {
-            safeToast.error('Your session has expired. Please log in again.')
-            api.dispatch(clearCredentials())
         } else if (status === 403) {
             safeToast.error('Access denied.')
         } else if (status === 409) {

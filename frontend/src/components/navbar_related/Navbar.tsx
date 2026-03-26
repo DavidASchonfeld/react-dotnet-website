@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 
 // Importing from My Files
 import type { RootState, AppDispatch } from "../../store/store";
-import { clearCredentials } from "../../store/authSlice";
+import { logoutThunk } from "../../store/authSlice";
 import SearchBar from "../SearchBar";
 import SearchFilterDropdown from "./SearchFilterDropdown";
 import DropdownMenuButton from "./DropdownMenuButton";
@@ -149,12 +149,9 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
     }
 
     const handleLogout = () => {
-
-        // calling the logout function was refactored into clearCredentials() in frontend/src/store/authSlice.ts
-        dispatch(clearCredentials());
-
-        // The following line(s) only run if the clearCrednetials() line above is successful.
-        // Navigate to the login page.
+        // logoutThunk tells the backend to invalidate the server-side refresh token
+        // (so a stolen cookie can't be reused), then clears local Redux state.
+        dispatch(logoutThunk());
         navigate('/login');
     }
 

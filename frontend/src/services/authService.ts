@@ -1,68 +1,72 @@
 import { BACKEND_BASE_URL } from '../config';
 
 
-// export: So other files in our frontend can use this function
-// async: Because this function uses "await" to run an asynchronous function
-export async function registerUser(userName: string, email: string, password: string) {
+// Note: auth calls use fetch() directly (not apiSlice) because login/register
+// cannot have a valid token yet, so they don't need 401-auto-logout handling.
 
-    // fetch makes HTTP requests
-    // await: Async call. Waits for response before continuing
-    // Note: auth calls use fetch() directly (not apiClient/apiSlice) because login/register
-    // cannot have a valid token yet, so they don't need 401-auto-logout handling.
+export async function registerUser(userName: string, email: string, password: string) {
     const response = await fetch(`${BACKEND_BASE_URL}/api/auth/register`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            // This variable names (on the left) need to match perfectly
-            // with the matching DTO (Data Transfer Object) (simple object container file)
-            // in my backend: "backened/MyDotNetWebsiteApi/DTOs/RegisterUserDto.cs"
-            // Here, it uses camelCase (even though it uses UpperCase in the DTO file)
-            // since the .NET JSON Serializer converts between each programming language's standard
-            // capitalization for variable names each programmming lagnuage
-            // TypeScript Standard for Variable Names: camelCase
-            // C#/.NET Standard for Variable Names: PascalCase
-            userName: userName,
-            email: email,
-            password: password
-        })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // credentials: 'include' is required for the browser to send/receive the
+        // HttpOnly refresh token cookie on cross-origin requests.
+        credentials: 'include',
+        body: JSON.stringify({ userName, email, password })
     });
 
     if (response.status === 429)
-        throw new Error("Too many attempts. Please wait a moment and try again.")
+        throw new Error('Too many attempts. Please wait a moment and try again.')
     if (!response.ok)
-        throw new Error("Registration failed")
+        throw new Error('Registration failed')
 
-    const data = await response.json();
-    
-    return data;
+    return response.json();
 }
 
 
-// export: So other files in our frontend can use this function
-// async: Because this function uses "await" to run an asynchronous function
 export async function loginUser(userName: string, password: string) {
-
-    // fetch makes HTTP requests
-    // await: Async call. Waits for response before continuing
     const response = await fetch(`${BACKEND_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            userName: userName,
-            password: password
-        })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // credentials: 'include' is required for the browser to send/receive the
+        // HttpOnly refresh token cookie on cross-origin requests.
+        credentials: 'include',
+        body: JSON.stringify({ userName, password })
     });
 
     if (response.status === 429)
-        throw new Error("Too many attempts. Please wait a moment and try again.")
+        throw new Error('Too many attempts. Please wait a moment and try again.')
     if (!response.ok)
-        throw new Error("Login failed")
+        throw new Error('Login failed')
 
+    return response.json();
+}
+
+
+// Silently fetches a new access token using the HttpOnly refresh token cookie.
+// No body needed — the browser sends the cookie automatically with credentials: 'include'.
+// Throws on failure so the caller (apiSlice reauth wrapper) can fall back to logout.
+export async function refreshAccessToken(): Promise<string> {
+    const response = await fetch(`${BACKEND_BASE_URL}/api/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Refresh failed');
     const data = await response.json();
-    
-    return data;
+    return data.accessToken as string;
+}
+
+
+// Tells the backend to invalidate the server-side refresh token so the cookie
+// cannot be reused after logout, even if it was captured.
+// Errors are swallowed — the frontend clears its own state regardless.
+export async function logoutUser(accessToken: string): Promise<void> {
+    try {
+        await fetch(`${BACKEND_BASE_URL}/api/auth/logout`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+    } catch {
+        // Network failure on logout is non-critical; local state is always cleared.
+    }
 }

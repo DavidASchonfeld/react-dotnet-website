@@ -136,7 +136,10 @@ builder.Services.AddCors(options => {
         // allowedOrigin is the frontend URL for this website (more details are right above "var allowedOrigin" line.)
        policy.WithOrigins(allowedOrigin)
             .AllowAnyHeader()
-            .AllowAnyMethod(); 
+            .AllowAnyMethod()
+            // Required for HttpOnly refresh token cookies to be sent/received cross-origin.
+            // Safe here because the origin is pinned to the frontend URL (not a wildcard).
+            .AllowCredentials();
     });
 });
 

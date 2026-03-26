@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import {loginUser, registerUser} from '../services/authService';
+import { loginUser, registerUser, logoutUser } from '../services/authService';
 import type { UserRole } from '../types/userRole';
 
 // This file replaces my AuthContext.tsx for storing/taking care of cookies for being logged in.
@@ -11,7 +11,7 @@ import type { UserRole } from '../types/userRole';
 // each slice bundles 3 things together:
 // -- the shape of that piece of state
 //    type AuthState = {
-//        token: string | null, 
+//        token: string | null,
 //        userName: string | null,
 //        isAuthenticated: boolean
 //    }
@@ -82,39 +82,39 @@ const initialState: AuthState = {
 
 export const loginThunk = createAsyncThunk(
     'auth/login',
-    async({userName, password}: {userName: string; password: string}) => {
-        
-
-        // Run the api call to "/api/auth/login/" and returns the token
-        // Runs the loginUser() method from frontend/src/services/authService.ts
+    async({ userName, password }: { userName: string; password: string }) => {
         const data = await loginUser(userName, password);
 
-        // Note on Casting: Here I am casting data.token and date.roleLevel
-        // since those variable types are unclear.
-        // Since userName was passed in as a parameter to this loginThunk as a string,
-        // I do not need to cast it since this loginThunk already knows that userName is a string.
-        return {token: data.token as string, userName, roleLevel: data.roleLevel as UserRole};
-
+        // The server returns accessToken (not token) since we switched to short-lived JWTs.
+        // userName and roleLevel now also come from the server via AuthResponseDto.
+        return { token: data.accessToken as string, userName: data.userName as string, roleLevel: data.roleLevel as UserRole };
     }
 );
 
 export const registerThunk = createAsyncThunk(
     'auth/register',
-    async({userName, email, password}: {userName: string; email: string; password: string}) => {
-
-        // Runs the registerUser() method from frontend/src/services/authService.ts
+    async({ userName, email, password }: { userName: string; email: string; password: string }) => {
         const data = await registerUser(userName, email, password);
-        return {token: data.token as string, userName, roleLevel: data.roleLevel as UserRole};
-
+        return { token: data.accessToken as string, userName: data.userName as string, roleLevel: data.roleLevel as UserRole };
     }
 );
 
+// Tells the backend to invalidate the server-side refresh token (so a stolen cookie
+// cannot be reused), then clears local Redux state and localStorage via redux-persist.
+export const logoutThunk = createAsyncThunk(
+    'auth/logout',
+    async (_, { getState, dispatch }) => {
+        const token = (getState() as { auth: { token: string | null } }).auth.token;
+        await logoutUser(token ?? '');
+        dispatch(clearCredentials());
+    }
+);
 
 
 // Slices
 // createSlice bundles together: initial state, reducers (sync actions) and a general reducer function.
 
-// reducers: 
+// reducers:
 // a function that takes in {state, action} and returns {new state}.
 
 // extraReducers: for reacting to async thunk results.
@@ -124,13 +124,13 @@ const authSlice = createSlice({
     name: 'auth',
     initialState,
     reducers: {
-        
+
         // Replaces the login() function for putting the received credentials into being stored locally.
         // PayloadAction <- Tells TypeScript what shape that
         // action.payload will have when it is inputted here as a parameter
 
-        
-        setCredentials: (state, action: PayloadAction<{token: string; userName: string; roleLevel: UserRole | null}>)  => {
+
+        setCredentials: (state, action: PayloadAction<{ token: string; userName: string; roleLevel: UserRole | null }>)  => {
 
             // RTK (Reducer Toolkit Library) runs my reducer code
             // through a library called Immer, which intercepts code
@@ -145,7 +145,7 @@ const authSlice = createSlice({
         },
 
         // Replaces the logout() function
-        // redux-persistent will also clear the persisted localStorage entry when this 
+        // redux-persistent will also clear the persisted localStorage entry when this
         // fires because state becomes null and the persist will sync that.
         clearCredentials: (state) => {
             state.token = null;
@@ -160,14 +160,14 @@ const authSlice = createSlice({
         }
     },
     extraReducers: (builder) => {
-        
+
         // builder.addCase lets us add methods that get called, depending on the thunk (aka action)'s state.
         // Think of this like a more complicated try/catch block
         // theThunk.pending: fired immediately right after dispatch(theThunk(...)) is called
         // theThunk.fulfilled: fired when the async function returns successfully
         // theThunk.rejected: fired when the async function throws an error
 
-        
+
 
 
         builder.addCase(loginThunk.fulfilled, (state, action) => {
@@ -178,7 +178,7 @@ const authSlice = createSlice({
             state.status = 'succeeded';
             state.error = null;
         });
-        
+
         builder.addCase(loginThunk.pending, (state) => {
             state.status = 'loading';
             state.error = null;
