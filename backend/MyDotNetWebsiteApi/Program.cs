@@ -44,6 +44,8 @@ builder.Services.AddIdentity<AppUser, IdentityRole>()
 // Note: Remember to navigate into backend/MyDotNetWebsiteApi folder first.
 // dotnet user-secrets init
 // dotnet user-secrets set "JwtSettings:Secret" "MySecretKeyWhichMustBe32PlusCharactersLong"
+// dotnet user-secrets set "ExternalApiSettings:OmdbApiKey" "<your-omdb-key>"
+// dotnet user-secrets set "ExternalApiSettings:RawgApiKey" "<your-rawg-key>"
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secret = jwtSettings["Secret"];
 
@@ -185,6 +187,10 @@ else
 
     app.UseHttpsRedirection();
 }
+
+// Add HTTP security headers to every response — hardens the API against common browser-level attacks.
+// Placed first so headers are set before any other middleware can short-circuit the pipeline.
+app.UseSecurityHeaders();
 
 // Enable CORS
 //// Activate the CORS we described in the builder.Services.AddCors section above
