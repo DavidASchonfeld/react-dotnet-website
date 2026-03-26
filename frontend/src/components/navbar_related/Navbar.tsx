@@ -9,6 +9,7 @@ import SearchBar from "../SearchBar";
 import SearchFilterDropdown from "./SearchFilterDropdown";
 import DropdownMenuButton from "./DropdownMenuButton";
 import MinimizableIconTextButton from "../MinimizableIconTextButton";
+import RoleBadge from "../RoleBadge";
 import { NAVBAR_AUTO_MINIMIZE_BREAKPOINT } from "../../constants";
 import { useGetActiveApiSourcesQuery } from "../../services/apiSlice";
 
@@ -272,17 +273,8 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                 {" "}
                                 {/* {" "} is adding a manual space there. I'm adding it here
                                 so there is a space between the username, the badge and the dropdown icon for the dropdown menu. */}
-                                {roleLevel === 'Moderator' && (
-                                    <>
-                                        <span className="ml-1 text-xs bg-gray-400 text-white px-1 rounded">MOD</span>
-                                        {" "}
-                                    </>
-                                )}
-                                {roleLevel === 'Administrator' && (
-                                    <>
-                                        <span className="ml-1 text-xs bg-amber-500 text-white px-1 rounded">ADMIN</span>
-                                        {" "}
-                                    </>
+                                {(roleLevel === 'Administrator' || roleLevel === 'Moderator') && (
+                                    <><RoleBadge role={roleLevel} />{" "}</>
                                 )}
                                 {isUserMenuOpen ? "▲" : "▼"}
                             </>}

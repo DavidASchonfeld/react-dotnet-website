@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import SearchBar from './SearchBar'
+import RoleBadge from './RoleBadge'
 import { API_SUBTYPES, SEARCH_MIN_CHARS, SITE_TYPE_SUBTYPES } from '../constants'
 import type { ExternalApiSourceSummary } from '../types/externalApiSource'
 
@@ -275,9 +276,7 @@ export default function SearchBarWithFilters({
                         {isModerator && (
                             <div className="mt-6 rounded-xl border border-border p-4 bg-surface">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded font-semibold">
-                                        {roleLevel === 'Administrator' ? 'ADMIN' : 'MOD'}
-                                    </span>
+                                    <RoleBadge role={roleLevel as 'Administrator' | 'Moderator'} />
                                     <p className="text-sm font-semibold text-text">Moderation Filters</p>
                                 </div>
                                 {isAdmin ? (

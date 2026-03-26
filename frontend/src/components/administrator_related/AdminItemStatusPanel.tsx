@@ -1,6 +1,7 @@
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { CacheStatusPill } from './CacheStatusPill';
+import RoleBadge from '../RoleBadge';
 import { RefInDbPill } from './RefInDbPill';
 import type { CacheMetadata } from '../../types/cacheMetadata';
 
@@ -17,9 +18,7 @@ export function AdminItemStatusPanel({ cacheMetadata, isInDb, showRefInDb = true
   return (
     <div className="my-4 rounded-xl border border-border p-4 bg-surface">
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded font-semibold">
-          ADMIN
-        </span>
+        <RoleBadge role="Administrator" />
         <p className="text-sm font-semibold text-text">Item Status</p>
       </div>
       <div className="flex flex-wrap gap-x-3">
