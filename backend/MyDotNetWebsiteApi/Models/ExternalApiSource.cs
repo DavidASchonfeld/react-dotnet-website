@@ -17,10 +17,6 @@ public class ExternalApiSource
     // Independent of IsActive (which controls routing, not availability).
     public bool IsDisabledByAdmin {get; set;} = false;
 
-    // When false, non-search detail-fetch caching is skipped for this API specifically.
-    // Only takes effect when AppGlobalSettings.UseNonSearchQueryCache is also true.
-    public bool UseNonSearchQueryCache {get; set;} = true;
-
     // When true, fresh detail fetches also call the API's high-res poster endpoint (requires SupportsPosterApi in plan config).
     public bool UsePosterApi {get; set;} = false;
 

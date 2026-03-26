@@ -520,6 +520,17 @@ a:hover {
     max-height: 50px;
   }
 
+  /* --- Row Item: Larger variant ---
+       Additive constraint on .row-item — apply both classes together, e.g. "row-item row-item-larger".
+       Enforces a fixed height so all rows in a list are the same size regardless of content length.
+       items-stretch overrides .row-item's items-center so RowItemContent's wrapper fills the full row
+       height, letting the photo's self-stretch go flush to the top and bottom edges.
+       h-[72px] = 64px photo (w-16) + 4px top padding (py-1) + 4px bottom padding (py-1).
+  */
+  .row-item-larger {
+    @apply items-stretch h-[72px];
+  }
+
   /* --- Swipeable Row Item ---
        Classes for SwipeReorderRowItem's outer wrapper, reveal panels,
        draggable content layer, and action buttons.

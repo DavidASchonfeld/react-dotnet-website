@@ -11,7 +11,6 @@ public class ApiUsageStatsDto
     public DateTime PeriodEnd { get; set; }         // UTC end of the current billing period (exclusive)
     public int ExternalApiSourceId { get; set; }    // Id of the ExternalApiSource row for this API
     public bool IsDisabledByAdmin { get; set; }         // true when an admin has temporarily blocked this API
-    public bool UseNonSearchQueryCache { get; set; }    // true when non-search detail-fetch caching is enabled for this API
     public bool? SupportsPosterApi { get; set; }        // null = plan has no poster API tier; true = toggle button should be shown
     public bool UsePosterApi { get; set; }              // current per-source poster API toggle state
 }

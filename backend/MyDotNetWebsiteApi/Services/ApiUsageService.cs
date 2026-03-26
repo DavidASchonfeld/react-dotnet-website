@@ -92,7 +92,6 @@ public class ApiUsageService : IApiUsageService
                 PeriodEnd = periodEnd,
                 ExternalApiSourceId = source?.Id ?? 0,
                 IsDisabledByAdmin = source?.IsDisabledByAdmin ?? false,
-                UseNonSearchQueryCache = source?.UseNonSearchQueryCache ?? true,
                 // Only expose SupportsPosterApi when the plan actually supports it; null hides the toggle in the UI.
                 SupportsPosterApi = config.SupportsPosterApi ? true : (bool?)null,
                 UsePosterApi = source?.UsePosterApi ?? false,

@@ -675,25 +675,6 @@ export const apiSlice = createApi({
             },
         }),
 
-        // Flips UseNonSearchQueryCache for one API source. Admin-only.
-        toggleApiNonSearchCache: builder.mutation<
-            { id: number; apiName: string; useNonSearchQueryCache: boolean },
-            number  // externalApiSourceId
-        >({
-            query: (id) => ({
-                url: `/api/externalapisource/${id}/toggle-nonsearch-cache`,
-                method: 'PATCH',
-            }),
-            invalidatesTags: ['ExternalApiSource'],
-            onQueryStarted: (_, { queryFulfilled }) => {
-                safeToast.promise(queryFulfilled, {
-                    loading: 'Updating...',
-                    success: 'Cache setting updated',
-                    error: '',
-                })
-            },
-        }),
-
         // Flips UsePosterApi for one API source — only shown when the plan supports it. Admin-only.
         togglePosterApi: builder.mutation<
             { id: number; apiName: string; usePosterApi: boolean },
@@ -730,6 +711,22 @@ export const apiSlice = createApi({
                 safeToast.promise(queryFulfilled, {
                     loading: 'Updating...',
                     success: 'Global cache setting updated',
+                    error: '',
+                })
+            },
+        }),
+
+        // Flips the global UseSearchQueryCache flag. Admin-only.
+        toggleGlobalSearchCache: builder.mutation<AppGlobalSettings, void>({
+            query: () => ({
+                url: '/api/appsettings/toggle-search-cache',
+                method: 'PATCH',
+            }),
+            invalidatesTags: ['AppGlobalSettings'],
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
+                    loading: 'Updating...',
+                    success: 'Global search cache setting updated',
                     error: '',
                 })
             },
@@ -848,11 +845,11 @@ export const {
     // API Usage
     useGetApiUsageStatsQuery,
     useToggleApiDisabledMutation,
-    useToggleApiNonSearchCacheMutation,
     useTogglePosterApiMutation,           // toggles UsePosterApi on a per-source basis
     // App Global Settings
     useGetAppGlobalSettingsQuery,
     useToggleGlobalNonSearchCacheMutation,
+    useToggleGlobalSearchCacheMutation,
     // ImageCache
     useDeleteImageCachePlaceholdersMutation,
     useDeleteBigImagesMutation,           // removes poster-api:// blobs + resets PosterUrl values

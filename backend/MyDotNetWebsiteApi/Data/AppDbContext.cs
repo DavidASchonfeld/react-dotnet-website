@@ -182,15 +182,15 @@ public class AppDbContext : IdentityDbContext<AppUser>
         // External API Sources — one per MediaType, all active by default
         // These are stubs; real HTTP calls are implemented in the adapter classes
         modelBuilder.Entity<ExternalApiSource>().HasData(
-            new ExternalApiSource { Id = 1, ApiName = "OMDB",        MediaTypeId = 1, IsActive = true, UseNonSearchQueryCache = true },
-            new ExternalApiSource { Id = 2, ApiName = "TVMaze",      MediaTypeId = 2, IsActive = true, UseNonSearchQueryCache = true },
-            new ExternalApiSource { Id = 3, ApiName = "OpenLibrary", MediaTypeId = 3, IsActive = true, UseNonSearchQueryCache = true },
-            new ExternalApiSource { Id = 4, ApiName = "RAWG",        MediaTypeId = 4, IsActive = true, UseNonSearchQueryCache = true }
+            new ExternalApiSource { Id = 1, ApiName = "OMDB",        MediaTypeId = 1, IsActive = true },
+            new ExternalApiSource { Id = 2, ApiName = "TVMaze",      MediaTypeId = 2, IsActive = true },
+            new ExternalApiSource { Id = 3, ApiName = "OpenLibrary", MediaTypeId = 3, IsActive = true },
+            new ExternalApiSource { Id = 4, ApiName = "RAWG",        MediaTypeId = 4, IsActive = true }
         );
 
         // Global settings singleton — Id is always 1; never insert a second row.
         modelBuilder.Entity<AppGlobalSettings>().HasData(
-            new AppGlobalSettings { Id = 1, UseNonSearchQueryCache = true }
+            new AppGlobalSettings { Id = 1, UseNonSearchQueryCache = true, UseSearchQueryCache = true }
         );
     }
 

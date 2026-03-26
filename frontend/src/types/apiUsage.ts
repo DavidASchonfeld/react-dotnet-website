@@ -10,7 +10,6 @@ export interface ApiUsageStats {
     periodEnd: string                  // ISO 8601 UTC string (exclusive)
     externalApiSourceId: number        // Id of the ExternalApiSource row for this API
     isDisabledByAdmin: boolean         // true when an admin has temporarily blocked this API
-    useNonSearchQueryCache: boolean    // true when non-search detail-fetch caching is enabled for this API
     supportsPosterApi?: boolean        // undefined = plan has no poster API tier; true = show the toggle button
     usePosterApi: boolean              // current per-source poster API toggle state
 }

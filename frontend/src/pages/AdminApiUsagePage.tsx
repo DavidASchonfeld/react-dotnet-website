@@ -2,10 +2,10 @@ import AnimatedPage from '../components/AnimatedPage'
 import {
     useGetApiUsageStatsQuery,
     useToggleApiDisabledMutation,
-    useToggleApiNonSearchCacheMutation,
     useTogglePosterApiMutation,
     useGetAppGlobalSettingsQuery,
     useToggleGlobalNonSearchCacheMutation,
+    useToggleGlobalSearchCacheMutation,
     useDeleteImageCachePlaceholdersMutation,
     useDeleteBigImagesMutation,
 } from '../services/apiSlice'
@@ -18,6 +18,7 @@ export default function AdminApiUsagePage() {
     })
     const { data: globalSettings } = useGetAppGlobalSettingsQuery()
     const [toggleGlobalNonSearchCache, { isLoading: isTogglingGlobal }] = useToggleGlobalNonSearchCacheMutation()
+    const [toggleGlobalSearchCache, { isLoading: isTogglingGlobalSearch }] = useToggleGlobalSearchCacheMutation()
     const [deleteImageCachePlaceholders, { isLoading: isDeletingPlaceholders }] = useDeleteImageCachePlaceholdersMutation()
     const [deleteBigImages, { isLoading: isDumpingBigImages }] = useDeleteBigImagesMutation()
 
@@ -49,6 +50,29 @@ export default function AdminApiUsagePage() {
                             }`}
                         >
                             {globalSettings?.useNonSearchQueryCache ? 'Disable' : 'Enable'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Global search cache toggle */}
+                <div className="bg-surface-raised rounded-lg p-4 border border-border mb-4">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                            <h2 className="font-semibold">Global Search Cache</h2>
+                            <p className="text-sm text-text-muted">
+                                Master switch for caching search-result fetches across all APIs.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => toggleGlobalSearchCache()}
+                            disabled={isTogglingGlobalSearch || globalSettings === undefined}
+                            className={`px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 ${
+                                globalSettings?.useSearchQueryCache
+                                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                                    : 'bg-green-600 hover:bg-green-700 text-white'
+                            }`}
+                        >
+                            {globalSettings?.useSearchQueryCache ? 'Disable' : 'Enable'}
                         </button>
                     </div>
                 </div>
@@ -114,7 +138,6 @@ export default function AdminApiUsagePage() {
 function ApiUsageCard({ api }: { api: ApiUsageStats }) {
 
     const [toggleApiDisabled, { isLoading: isToggling }] = useToggleApiDisabledMutation()
-    const [toggleApiNonSearchCache, { isLoading: isTogglingCache }] = useToggleApiNonSearchCacheMutation()
     // Only rendered when api.supportsPosterApi is true (i.e. the active plan tier supports it).
     const [togglePosterApi, { isLoading: isTogglingPosterApi }] = useTogglePosterApiMutation()
 
@@ -180,19 +203,6 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
 
             {/* Action buttons row */}
             <div className="mt-3 flex justify-end gap-2 flex-wrap">
-                {/* Toggle non-search cache for this API */}
-                <button
-                    onClick={() => toggleApiNonSearchCache(api.externalApiSourceId)}
-                    disabled={isTogglingCache}
-                    className={`px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 ${
-                        api.useNonSearchQueryCache
-                            ? 'bg-red-600 hover:bg-red-700 text-white'
-                            : 'bg-green-600 hover:bg-green-700 text-white'
-                    }`}
-                >
-                    {api.useNonSearchQueryCache ? 'Disable Detail Cache' : 'Enable Detail Cache'}
-                </button>
-
                 {/* Poster API toggle — only shown when the active plan tier supports it */}
                 {api.supportsPosterApi && (
                     <button

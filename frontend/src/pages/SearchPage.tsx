@@ -191,7 +191,7 @@ export default function SearchPage() {
                                 </p>
                                 <div className="rounded-lg border border-border overflow-hidden">
                                     {mediaResults.data.map(result => (
-                                        <RowItemStyling key={result.externalId}>
+                                        <RowItemStyling key={result.externalId} variant="larger">
                                             <RowItemContent
                                                 firstString={
                                                     result.publishedDate

@@ -5,6 +5,8 @@ public class AppGlobalSettings
     public int Id { get; set; }
 
     // When false, non-search detail-fetch caching is disabled globally for all APIs.
-    // Per-API UseNonSearchQueryCache is only checked when this is true.
     public bool UseNonSearchQueryCache { get; set; } = true;
+
+    // When false, search-result caching is disabled globally for all APIs.
+    public bool UseSearchQueryCache { get; set; } = true;
 }

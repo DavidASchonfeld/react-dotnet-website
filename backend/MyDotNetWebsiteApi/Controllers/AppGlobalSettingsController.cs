@@ -28,7 +28,7 @@ public class AppGlobalSettingsController : ControllerBase
         var settings = await _context.AppGlobalSettings.FindAsync(1);
         if (settings == null) return NotFound();
 
-        return Ok(new AppGlobalSettingsDto { UseNonSearchQueryCache = settings.UseNonSearchQueryCache });
+        return Ok(new AppGlobalSettingsDto { UseNonSearchQueryCache = settings.UseNonSearchQueryCache, UseSearchQueryCache = settings.UseSearchQueryCache });
     }
 
 
@@ -47,6 +47,24 @@ public class AppGlobalSettingsController : ControllerBase
         settings.UseNonSearchQueryCache = !settings.UseNonSearchQueryCache;
         await _context.SaveChangesAsync();
 
-        return Ok(new AppGlobalSettingsDto { UseNonSearchQueryCache = settings.UseNonSearchQueryCache });
+        return Ok(new AppGlobalSettingsDto { UseNonSearchQueryCache = settings.UseNonSearchQueryCache, UseSearchQueryCache = settings.UseSearchQueryCache });
+    }
+
+    // Flips the global UseSearchQueryCache flag. Admin-only.
+    [HttpPatch("toggle-search-cache")]
+    public async Task<IActionResult> ToggleSearchCache()
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return Unauthorized();
+        if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
+
+        var settings = await _context.AppGlobalSettings.FindAsync(1);
+        if (settings == null) return NotFound();
+
+        settings.UseSearchQueryCache = !settings.UseSearchQueryCache;
+        await _context.SaveChangesAsync();
+
+        return Ok(new AppGlobalSettingsDto { UseNonSearchQueryCache = settings.UseNonSearchQueryCache, UseSearchQueryCache = settings.UseSearchQueryCache });
     }
 }

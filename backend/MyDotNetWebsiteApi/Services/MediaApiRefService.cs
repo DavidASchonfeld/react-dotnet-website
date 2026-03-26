@@ -33,10 +33,14 @@ public class MediaApiRefService : IMediaApiRefService
 
         var effectiveBypass = bypassCache && PermissionHelper.IsAdministrator(requesterUser);
 
+        // Caching is active only when the global master switch is true.
+        var globalSettings = await _context.AppGlobalSettings.FindAsync(1);
+        var cachingEnabled = globalSettings?.UseNonSearchQueryCache ?? true;
+
         // Check CacheItem(GetById) for a fresh detail response before calling external API
         var queryParams = BuildGetByIdParams(mediaApiRef.ExternalId, mediaApiRef.ApiSource.ApiName);
-        var cachedItem = effectiveBypass ? null : await _cacheItemService.GetFreshAsync(
-            mediaApiRef.ApiSource.ApiName, "GetById", mediaApiRef.MediaType.Name, queryParams);
+        var cachedItem = (cachingEnabled && !effectiveBypass) ? await _cacheItemService.GetFreshAsync(
+            mediaApiRef.ApiSource.ApiName, "GetById", mediaApiRef.MediaType.Name, queryParams) : null;
 
         if (cachedItem != null)
         {
@@ -71,10 +75,13 @@ public class MediaApiRefService : IMediaApiRefService
                 if (!posterTask.Result) detailedResult.Poster = null;
 
                 // Store raw API response in CacheItem; update staleness timestamp and PosterUrl on MediaApiRef
-                var responseJson = JsonSerializer.Serialize(detailedResult);
-                await _cacheItemService.UpsertAsync(
-                    mediaApiRef.ApiSource.ApiName, "GetById", mediaApiRef.MediaType.Name,
-                    queryParams, responseJson, AppConstants.CacheItemGetByIdTtlDays);
+                if (cachingEnabled)
+                {
+                    var responseJson = JsonSerializer.Serialize(detailedResult);
+                    await _cacheItemService.UpsertAsync(
+                        mediaApiRef.ApiSource.ApiName, "GetById", mediaApiRef.MediaType.Name,
+                        queryParams, responseJson, AppConstants.CacheItemGetByIdTtlDays);
+                }
 
                 mediaApiRef.DetailsFetchedAt = DateTime.UtcNow;
                 // Store a poster-api:// pseudo-URL when the feature is enabled; otherwise store the real CDN URL.
@@ -121,6 +128,10 @@ public class MediaApiRefService : IMediaApiRefService
 
         var effectiveBypass = bypassCache && PermissionHelper.IsAdministrator(requesterUser);
 
+        // Caching is active only when the global master switch is true.
+        var globalSettings = await _context.AppGlobalSettings.FindAsync(1);
+        var cachingEnabled = globalSettings?.UseSearchQueryCache ?? true;
+
         // CacheItem lookup: query_type="Search" with normalized query params
         var normalizedQuery = query.Trim().ToLower();
         var queryParams = new SortedDictionary<string, string?>
@@ -130,8 +141,8 @@ public class MediaApiRefService : IMediaApiRefService
             ["subtype"] = subtype,
         };
 
-        var cachedItem = effectiveBypass ? null : await _cacheItemService.GetFreshAsync(
-            activeSource.ApiName, "Search", activeSource.MediaType.Name, queryParams);
+        var cachedItem = (cachingEnabled && !effectiveBypass) ? await _cacheItemService.GetFreshAsync(
+            activeSource.ApiName, "Search", activeSource.MediaType.Name, queryParams) : null;
 
         if (cachedItem != null)
         {
@@ -151,10 +162,13 @@ public class MediaApiRefService : IMediaApiRefService
                 r.ThumbnailUrl = null;
         }));
 
-        var responseJson = JsonSerializer.Serialize(results);
-        await _cacheItemService.UpsertAsync(
-            activeSource.ApiName, "Search", activeSource.MediaType.Name,
-            queryParams, responseJson, AppConstants.CacheItemSearchTtlDays);
+        if (cachingEnabled)
+        {
+            var responseJson = JsonSerializer.Serialize(results);
+            await _cacheItemService.UpsertAsync(
+                activeSource.ApiName, "Search", activeSource.MediaType.Name,
+                queryParams, responseJson, AppConstants.CacheItemSearchTtlDays);
+        }
 
         PrewarmThumbnails(results);
         return ServiceResult<List<ExternalApiSearchResult>>.Ok(results);
@@ -183,9 +197,9 @@ public class MediaApiRefService : IMediaApiRefService
 
         var effectiveBypass = bypassCache && PermissionHelper.IsAdministrator(requesterUser);
 
-        // Caching is active only when both the global master switch AND the per-source flag are true.
+        // Caching is active only when the global master switch is true.
         var globalSettings = await _context.AppGlobalSettings.FindAsync(1);
-        var cachingEnabled = (globalSettings?.UseNonSearchQueryCache ?? true) && source.UseNonSearchQueryCache;
+        var cachingEnabled = globalSettings?.UseNonSearchQueryCache ?? true;
 
         if (cachingEnabled && !effectiveBypass)
         {
