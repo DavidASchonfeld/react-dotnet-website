@@ -20,6 +20,7 @@ import BackButton from '../components/BackButton';
 import RowItemStyling from '../components/row_item_related/RowItemStyling';
 import RowItemContent from '../components/row_item_related/RowItemContent';
 import { AdminItemStatusPanel } from '../components/administrator_related/AdminItemStatusPanel';
+import ImageCacheIndicatorDot from '../components/administrator_related/ImageCacheIndicatorDot';
 import ItemActionsButton from '../components/row_item_related/ItemActionsButton';
 import { mediaApiRefActions } from '../utils/menuActions';
 import { routes } from '../utils/routes';
@@ -76,7 +77,9 @@ export default function MediaApiRefDetailPage() {
 
     // Route poster through backend ImageCache instead of direct external URL
     const posterSrc = detail?.poster
-        ? `${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(detail.poster)}`
+        ? detail.poster.startsWith('http')
+            ? `${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(detail.poster)}`
+            : detail.poster
         : undefined;
 
     // Lazy findOrCreate: called when user opens the manage modal but the item isn't in the DB yet.
@@ -159,13 +162,14 @@ export default function MediaApiRefDetailPage() {
 
             {/* Images served via backend ImageCache instead of direct external URL */}
             {posterSrc && (
-                <div className="my-4">
+                <div className="my-4 relative inline-block">
                     <img
                         src={posterSrc}
                         alt={detail.name}
                         className="max-w-xs rounded-lg shadow-md"
                         onError={e => { (e.currentTarget as HTMLImageElement).src = '/placeholder-poster.svg'; }}
                     />
+                    <ImageCacheIndicatorDot src={posterSrc} />
                 </div>
             )}
 

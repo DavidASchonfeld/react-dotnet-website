@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -138,6 +139,7 @@ public class MediaListController : ControllerBase
 
     [HttpGet("featured")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimiterExtensions.PublicEndpointPolicy)]
     public async Task<IActionResult> GetFeaturedLists()
     {
         var result = await _mediaListService.GetFeaturedListsAsync();

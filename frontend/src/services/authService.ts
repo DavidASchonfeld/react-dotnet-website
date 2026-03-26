@@ -29,6 +29,8 @@ export async function registerUser(userName: string, email: string, password: st
         })
     });
 
+    if (response.status === 429)
+        throw new Error("Too many attempts. Please wait a moment and try again.")
     if (!response.ok)
         throw new Error("Registration failed")
 
@@ -55,6 +57,8 @@ export async function loginUser(userName: string, password: string) {
         })
     });
 
+    if (response.status === 429)
+        throw new Error("Too many attempts. Please wait a moment and try again.")
     if (!response.ok)
         throw new Error("Login failed")
 

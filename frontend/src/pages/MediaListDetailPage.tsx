@@ -331,6 +331,7 @@ export default function MediaListDetailPage() {
                             mediaTypeId: currentApiSource.mediaTypeId,
                             creatorName: item.creatorName,
                             publishedDate: item.publishedDate,
+                            thumbnailUrl: item.thumbnailUrl,
                         }).unwrap();
 
                         await addItemMutation({ listId: mediaListId, mediaApiRefId: ref.id }).unwrap();

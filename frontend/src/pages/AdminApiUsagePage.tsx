@@ -5,6 +5,7 @@ import {
     useToggleApiNonSearchCacheMutation,
     useGetAppGlobalSettingsQuery,
     useToggleGlobalNonSearchCacheMutation,
+    useDeleteImageCachePlaceholdersMutation,
 } from '../services/apiSlice'
 import type { ApiUsageStats } from '../types/apiUsage'
 
@@ -15,6 +16,7 @@ export default function AdminApiUsagePage() {
     })
     const { data: globalSettings } = useGetAppGlobalSettingsQuery()
     const [toggleGlobalNonSearchCache, { isLoading: isTogglingGlobal }] = useToggleGlobalNonSearchCacheMutation()
+    const [deleteImageCachePlaceholders, { isLoading: isDeletingPlaceholders }] = useDeleteImageCachePlaceholdersMutation()
 
     return (
         <AnimatedPage>
@@ -44,6 +46,27 @@ export default function AdminApiUsagePage() {
                             }`}
                         >
                             {globalSettings?.useNonSearchQueryCache ? 'Disable' : 'Enable'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Image Cache maintenance */}
+                <div className="bg-surface-raised rounded-lg p-4 border border-border mb-4">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                            <h2 className="font-semibold">Image Cache</h2>
+                            <p className="text-sm text-text-muted">
+                                Step 1: deletes <code className="font-mono">ImageCache</code> rows whose URL is a local path or whose blob is null (corrupt/incomplete entries).
+                                Step 2: sets <code className="font-mono">ThumbnailUrl</code> to null on any <code className="font-mono">MediaApiRef</code> whose thumbnail is a local path instead of a real external URL.
+                                Also runs automatically each night.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => deleteImageCachePlaceholders()}
+                            disabled={isDeletingPlaceholders}
+                            className="px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            Clean Image Data
                         </button>
                     </div>
                 </div>

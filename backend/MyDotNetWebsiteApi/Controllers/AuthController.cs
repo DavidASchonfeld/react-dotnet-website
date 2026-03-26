@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 
 [ApiController] // This part of the controller controls routing
@@ -35,6 +36,7 @@ public class AuthController : ControllerBase
     /// waiting for the result, free up server to handle other requests
     /// And without this specification, the server would freeze while waiting for the result
     [HttpPost("register")]  // Occurs with route /register (with POST request)
+    [EnableRateLimiting(RateLimiterExtensions.AuthPolicy)]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
     {
         var user = new AppUser
@@ -66,6 +68,7 @@ public class AuthController : ControllerBase
 
 
     [HttpPost("login")]
+    [EnableRateLimiting(RateLimiterExtensions.AuthPolicy)]
     public async Task<IActionResult> Login([FromBody] LoginUserDto dto)
     {
         AppUser? userToCheck = await _userManager.FindByNameAsync(dto.UserName);

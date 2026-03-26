@@ -7,6 +7,7 @@ import storage from 'redux-persist/lib/storage';
 
 import authReducer from './authSlice'
 import themeReducer from './themeSlice';
+import adminSettingsReducer from './adminSettingsSlice';
 import { apiSlice } from '../services/apiSlice';
 
 
@@ -16,6 +17,7 @@ import { apiSlice } from '../services/apiSlice';
 const rootReducer = combineReducers({
     auth: authReducer,
     theme: themeReducer,
+    adminSettings: adminSettingsReducer,
     // For the "key" (aka lefthand value) name,
     // import the name inside apiSlice.ts 's object apiSlice's attribute reducerPath's value.
     [apiSlice.reducerPath]: apiSlice.reducer,
@@ -38,7 +40,7 @@ const rootReducer = combineReducers({
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['auth', 'theme']
+    whitelist: ['auth', 'theme', 'adminSettings']
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

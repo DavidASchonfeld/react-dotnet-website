@@ -360,6 +360,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                                 <DropdownMenuButton icon="⚙" label="Manage Users" title="Manage Users" onClick={() => navigate("/admin/users")} />
                                                 <DropdownMenuButton icon="★" label="Edit Featured" title="Edit Featured" onClick={() => navigate("/admin/edit-featured")} />
                                                 <DropdownMenuButton icon="📊" label="API Usage" title="API Usage" onClick={() => navigate("/admin/api-usage")} />
+                                                <DropdownMenuButton icon="⚙" label="Admin Settings" title="Admin Settings" onClick={() => navigate("/admin/settings")} />
                                             </>
                                         )}
 

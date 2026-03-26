@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BACKEND_BASE_URL } from '../config';
 import { routes } from '../utils/routes';
+import ImageCacheIndicatorDot from './administrator_related/ImageCacheIndicatorDot';
 
 interface Props {
     apiSourceName: string;
@@ -18,7 +19,9 @@ interface Props {
 export default function FeaturedCollageCard({ apiSourceName, externalId, name, creatorName, thumbnailUrl, rotation, boxShadow, defaultZ, style, className }: Props) {
 
     const proxiedUrl = thumbnailUrl
-        ? `${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(thumbnailUrl)}`
+        ? thumbnailUrl.startsWith('http')
+            ? `${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(thumbnailUrl)}`
+            : thumbnailUrl
         : null;
 
     return (
@@ -39,7 +42,7 @@ export default function FeaturedCollageCard({ apiSourceName, externalId, name, c
                 el.style.zIndex = String(defaultZ ?? 1);
             }}
         >
-            <div className="polaroid-photo bg-border">
+            <div className="polaroid-photo bg-border relative">
                 {proxiedUrl && (
                     <img
                         src={proxiedUrl}
@@ -48,6 +51,7 @@ export default function FeaturedCollageCard({ apiSourceName, externalId, name, c
                         onError={e => { (e.currentTarget as HTMLImageElement).src = '/placeholder-poster.svg'; }}
                     />
                 )}
+                <ImageCacheIndicatorDot src={proxiedUrl ?? ''} />
             </div>
 
             <div className="polaroid-caption">

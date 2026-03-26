@@ -202,7 +202,6 @@ export default function SearchPage() {
                                                         : undefined
                                                 }
                                                 larger
-                                                useDirectUrl
                                                 onClick={() => navigate(routes.mediaApiRef(selectedSource!.apiName, result.externalId))}
                                                 onMenuClick={mediaApiRefActions({
                                                     apiName: selectedSource!.apiName,

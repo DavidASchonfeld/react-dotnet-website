@@ -95,7 +95,7 @@ export const safeToast = {
     error:   (message: string) => show('error',   message),
     info:    (message: string) => show('info',     message),
     warning: (message: string) => show('warning',  message),
-    promise: <T>(promise: Promise<T>, msgs: { loading: string; success: string; error: string }) => {
+    promise: <T>(promise: Promise<T>, msgs: { loading: string; success: string | ((result: T) => string); error: string }) => {
         //
         // Explanation of the "Promise" option:
         //
@@ -177,18 +177,21 @@ export const safeToast = {
             toastEvents.emit({ kind: 'add', id: loadingId, type: 'loading', message: msgs.loading });
 
             promise.then(
-                () => {
+                (result) => {
                     // Promise succeeded: always remove the loading toast (even if success is suppressed),
                     // then only show a success toast if msgs.success is non-empty.
 
                     toastEvents.emit({ kind: 'remove', id: loadingId });
 
+                    // Resolve success — it may be a plain string or a function that receives the result.
+                    const successMsg = typeof msgs.success === 'function'
+                        ? msgs.success(result)
+                        : msgs.success;
+
                     // Mirroring Sonner's built-in way of handling falsy messages,
-                    // so only show the toast notifcation is the message is truthy.
-                    if (msgs.success) {
-
-
-                        toastEvents.emit({ kind: 'add', id: Date.now().toString(), type: 'success', message: msgs.success });
+                    // so only show the toast notification if the message is truthy.
+                    if (successMsg) {
+                        toastEvents.emit({ kind: 'add', id: Date.now().toString(), type: 'success', message: successMsg });
                     }
                 },
                 () => {

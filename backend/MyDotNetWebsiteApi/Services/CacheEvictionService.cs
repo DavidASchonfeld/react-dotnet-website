@@ -42,6 +42,7 @@ public class CacheEvictionService : BackgroundService
         await EvictExpiredCacheItemsAsync(db);
         await EvictExpiredImageCachesAsync(db);
         await EvictLruImageCachesAsync(db);
+        await CleanCorruptImageDataAsync(scope.ServiceProvider);
     }
 
     private async Task EvictExpiredCacheItemsAsync(AppDbContext db)
@@ -64,6 +65,14 @@ public class CacheEvictionService : BackgroundService
 
         if (deleted > 0)
             _logger.LogInformation("Cache eviction: deleted {Count} expired ImageCaches.", deleted);
+    }
+
+    private async Task CleanCorruptImageDataAsync(IServiceProvider services)
+    {
+        var imageCacheService = services.GetRequiredService<IImageCacheService>();
+        var (deletedCache, nulledThumbnails) = await imageCacheService.DeletePlaceholderEntriesAsync();
+        if (deletedCache > 0 || nulledThumbnails > 0)
+            _logger.LogInformation("Cache eviction: cleaned {Cache} corrupt ImageCache entries, nulled {Thumbs} placeholder ThumbnailUrls.", deletedCache, nulledThumbnails);
     }
 
     private async Task EvictLruImageCachesAsync(AppDbContext db)

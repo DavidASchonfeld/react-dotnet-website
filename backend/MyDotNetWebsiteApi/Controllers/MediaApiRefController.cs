@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -35,6 +36,7 @@ public class MediaApiRefController : ControllerBase
     // Proxies the search to the active external API for the given media type.
     // Returns ExternalApiSearchResult items (not MediaApiRef records) — these are raw API results.
     [HttpGet("search")]
+    [EnableRateLimiting(RateLimiterExtensions.ExternalApiSearchPolicy)]
     public async Task<IActionResult> SearchExternalApi(
         [FromQuery] string q,
         [FromQuery] int mediaTypeId,
@@ -50,6 +52,7 @@ public class MediaApiRefController : ControllerBase
 
     // Fetches a single item by its external API ID, using non-search caching when enabled.
     [HttpGet("external-detail")]
+    [EnableRateLimiting(RateLimiterExtensions.ExternalApiSearchPolicy)]
     public async Task<IActionResult> GetExternalApiItem(
         [FromQuery] string externalItemId,
         [FromQuery] int sourceId,
@@ -63,6 +66,7 @@ public class MediaApiRefController : ControllerBase
     // Idempotent: if the item already exists in our DB, returns the existing record.
     // Call this after the user picks a result from the external API search.
     [HttpPost("find-or-create")]
+    [EnableRateLimiting(RateLimiterExtensions.ExternalApiSearchPolicy)]
     public async Task<IActionResult> FindOrCreate([FromBody] FindOrCreateMediaApiRefDto dto)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;

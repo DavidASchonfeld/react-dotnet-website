@@ -93,6 +93,7 @@ builder.Services.AddHttpClient<ImageCacheService>(); // Named client for fetchin
 // Singleton: This scope will be created/exist for the entire time that the website is active
 //            and it will only have one instance.
 builder.Services.AddSingleton<ExternalMediaApiAdapterFactory>();
+builder.Services.AddAppRateLimiting(builder.Configuration);
 // Every time the backend receives an HTTPRequest the DI Container wakes up a creates a "scope" for this request
 //  -- new AppDbContext()
 //  -- Here in this .AddScoped(), it will also create these services too.
@@ -223,6 +224,10 @@ app.UseAuthentication();
 // Tells app to eforce [Authorize] attributes on my controllers
 app.UseAuthorization();
 
+// Rate limiting — placed after UseAuthentication/UseAuthorization so that
+// user ID claims are available for user-keyed policies (ExternalApiSearch, AuthenticatedGeneral)
+app.UseRateLimiter();
+
 // Map controller routes
 // Map controllers to the routing system.
 // This is needed. Without it, requests never reach controllers.
@@ -249,6 +254,12 @@ using (var scope = app.Services.CreateScope())
     // In this file (yes, Program.cs lines 17-20)
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();  // Applies any unapplied migrations (if all migrations are applied already, this is still fine to call.)
+
+    // Enable WAL (Write-Ahead Logging) mode for SQLite.
+    // WAL allows concurrent reads while a write is in progress, significantly reducing
+    // "database is locked" conflicts when multiple requests hit the DB simultaneously.
+    // This setting persists in the database file — it only needs to be applied once.
+    db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
 
 
     // Pulls .NET's built-in UserManager for CRUDing users.

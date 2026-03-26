@@ -85,7 +85,7 @@ const baseQueryWithErrorHandling: BaseQueryFn<
         } else if (status === 409) {
             safeToast.error('This item is already in the list.')
         } else if (status === 429) {
-            safeToast.error('Too many requests. Please slow down.')
+            safeToast.error('Too many requests. Please wait a moment and try again.')
         } else if (status === 503) {
             const detail = (result.error.data as { detail?: string })?.detail
             safeToast.error(detail ?? 'This API is temporarily unavailable.')
@@ -692,6 +692,30 @@ export const apiSlice = createApi({
         }),
 
 
+        // ---- ImageCache Endpoints ----
+
+        // Cleans invalid ImageCache entries and non-http MediaApiRef thumbnail URLs. Admin-only.
+        deleteImageCachePlaceholders: builder.mutation<{ deletedCacheEntries: number; nulledPlaceholderThumbnails: number }, void>({
+            query: () => ({
+                url: '/api/imagecache/placeholders',
+                method: 'DELETE',
+            }),
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
+                    loading: 'Cleaning image data...',
+                    success: (result) => {
+                        const { deletedCacheEntries, nulledPlaceholderThumbnails } = result.data
+                        const parts = []
+                        if (deletedCacheEntries > 0) parts.push(`${deletedCacheEntries} cache ${deletedCacheEntries === 1 ? 'entry' : 'entries'} removed`)
+                        if (nulledPlaceholderThumbnails > 0) parts.push(`${nulledPlaceholderThumbnails} bad thumbnail ${nulledPlaceholderThumbnails === 1 ? 'URL' : 'URLs'} cleared`)
+                        return parts.length > 0 ? parts.join(', ') : 'Nothing to clean up'
+                    },
+                    error: '',
+                })
+            },
+        }),
+
+
         // ---- MediaType Endpoints ----
 
         getAllApprovedMediaTypes: builder.query<MediaTypeSummary[], void>({
@@ -750,6 +774,8 @@ export const {
     // App Global Settings
     useGetAppGlobalSettingsQuery,
     useToggleGlobalNonSearchCacheMutation,
+    // ImageCache
+    useDeleteImageCachePlaceholdersMutation,
     // ExternalApiSource
     useGetActiveApiSourcesQuery,
     // MediaType
