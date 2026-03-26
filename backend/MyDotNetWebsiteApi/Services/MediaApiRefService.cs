@@ -268,7 +268,7 @@ public class MediaApiRefService : IMediaApiRefService
             ApiHomepageUrl = ExternalApiRegistry.Apis.TryGetValue(source.ApiName, out var metadata) ? metadata.HomepageUrl : null,
         };
         return externalResult.CacheMetadata != null
-            ? ServiceResult<MediaApiRefDetailDto>.OkFromCache(dto, externalResult.CacheMetadata.CachedAt.Value)
+            ? ServiceResult<MediaApiRefDetailDto>.OkFromCache(dto, externalResult.CacheMetadata.CachedAt ?? DateTime.UtcNow)
             : ServiceResult<MediaApiRefDetailDto>.Ok(dto);
     }
 

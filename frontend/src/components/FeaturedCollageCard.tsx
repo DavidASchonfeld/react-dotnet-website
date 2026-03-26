@@ -9,9 +9,13 @@ interface Props {
     creatorName?: string | null;
     thumbnailUrl?: string | null;
     rotation: number;
+    boxShadow?: string;
+    defaultZ?: number;
+    style?: React.CSSProperties;
+    className?: string;
 }
 
-export default function FeaturedCollageCard({ apiSourceName, externalId, name, creatorName, thumbnailUrl, rotation }: Props) {
+export default function FeaturedCollageCard({ apiSourceName, externalId, name, creatorName, thumbnailUrl, rotation, boxShadow, defaultZ, style, className }: Props) {
 
     const proxiedUrl = thumbnailUrl
         ? `${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(thumbnailUrl)}`
@@ -20,15 +24,22 @@ export default function FeaturedCollageCard({ apiSourceName, externalId, name, c
     return (
         <Link
             to={routes.mediaApiRef(apiSourceName, externalId)}
-            className="block overflow-hidden rounded-lg shadow-lg cursor-pointer
-                       bg-card border border-border
-                       transition-transform duration-200"
-            style={{ transform: `rotate(${rotation}deg)` }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'rotate(0deg) scale(1.05)'}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = `rotate(${rotation}deg)`}
+            className={`polaroid-card ${className ?? ''}`}
+            style={{ ...style, transform: `rotate(${rotation}deg)`, boxShadow }}
+            onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.transform = 'rotate(0deg) translateY(-8px) scale(1.04)';
+                el.style.boxShadow = '0 16px 48px rgba(0,0,0,0.45), 0 4px 12px rgba(0,0,0,0.30)';
+                el.style.zIndex = '20';
+            }}
+            onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.transform = `rotate(${rotation}deg)`;
+                el.style.boxShadow = boxShadow ?? '';
+                el.style.zIndex = String(defaultZ ?? 1);
+            }}
         >
-            {/* Poster image area — 2:3 aspect ratio */}
-            <div className="aspect-[2/3] bg-border flex items-center justify-center overflow-hidden">
+            <div className="polaroid-photo bg-border">
                 {proxiedUrl && (
                     <img
                         src={proxiedUrl}
@@ -39,12 +50,9 @@ export default function FeaturedCollageCard({ apiSourceName, externalId, name, c
                 )}
             </div>
 
-            {/* Title + creator */}
-            <div className="px-2 py-2 flex flex-col gap-0.5">
-                <span className="text-[13px] font-semibold text-text leading-tight line-clamp-2">{name}</span>
-                {creatorName && (
-                    <span className="text-[11px] text-text/70 truncate">{creatorName}</span>
-                )}
+            <div className="polaroid-caption">
+                <span className="polaroid-title">{name}</span>
+                {creatorName && <span className="polaroid-creator">{creatorName}</span>}
             </div>
         </Link>
     );
