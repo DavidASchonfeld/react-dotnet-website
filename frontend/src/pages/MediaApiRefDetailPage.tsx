@@ -16,6 +16,7 @@ import {
 import { BACKEND_BASE_URL } from '../config';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import AnimatedPage from '../components/AnimatedPage';
+import BackButton from '../components/BackButton';
 import RowItemStyling from '../components/row_item_related/RowItemStyling';
 import RowItemContent from '../components/row_item_related/RowItemContent';
 import { AdminItemStatusPanel } from '../components/administrator_related/AdminItemStatusPanel';
@@ -114,7 +115,7 @@ export default function MediaApiRefDetailPage() {
         <AnimatedPage>
         <div className="page">
             <div className="flex justify-between items-center">
-                <button className="btn btn-secondary w-fit" onClick={() => navigate(-1)}>⬅︎ Back</button>
+                <BackButton />
                 <ItemActionsButton
                     buttonClassName="btn btn-secondary w-10 h-10 flex items-center justify-center"
                     firstString={detail.name}

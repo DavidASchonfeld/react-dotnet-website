@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useGetItemsByTagQuery } from '../services/apiSlice';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import AnimatedPage from '../components/AnimatedPage';
+import BackButton from '../components/BackButton';
 import RowItemStyling from '../components/row_item_related/RowItemStyling';
 import RowItemContent from '../components/row_item_related/RowItemContent';
 import PaginationControls from '../components/PaginationControls';
@@ -32,7 +33,7 @@ export default function ExploreByTagPage() {
     return (
         <AnimatedPage>
         <div className="page">
-            <button className="btn btn-secondary w-fit" onClick={() => navigate(-1)}>⬅︎ Back</button>
+            <BackButton />
             <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="h1-styling">{tagName ?? `Tag #${parsedTagId}`}</h1>
             </div>

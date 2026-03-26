@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSelector, useDispatch } from "react-redux";
 
 // Importing from My Files
@@ -97,10 +97,23 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
 
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const userMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isUserMenuOpen) return;
+        const handleClickOutside = (event: MouseEvent) => {
+            if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+                setIsUserMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isUserMenuOpen]);
 
     const { data: activeSources } = useGetActiveApiSourcesQuery()
 
-    // Initialize selectedApiSourceId to first available source, matching SearchPage behavior
+    // selectedApiSourceId holds explicit user selections only; null means "no selection yet".
+    // effectiveSelectedApiSourceId below falls back to activeSources[0] when null — no effect needed.
     const [selectedApiSourceId, setSelectedApiSourceId] = useState<number | null>(() =>
         activeSources?.[0]?.id ?? null
     )
@@ -120,13 +133,6 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
         window.addEventListener('resize', check)
         return () => window.removeEventListener('resize', check)
     }, [])
-
-    // Set default API source to first available when sources load
-    useEffect(() => {
-        if (selectedApiSourceId === null && activeSources && activeSources.length > 0) {
-            setSelectedApiSourceId(activeSources[0].id)
-        }
-    }, [activeSources, selectedApiSourceId])
 
     // Importing ability to Redirect
     const navigate = useNavigate();  // set up useNavigate React.js to use it later (just like with useAuth()  ).
@@ -175,10 +181,13 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                 //
                 // justify-center centers items in top mode (horizontal bar).
                 // justify-start + pt-3 sm:pt-4 pins items to the top in left mode (vertical sidebar).
-                // z-10: z is the frontness/behindness axis. It is needed here because things marked with opacity
-                //   on the main webpage render on top on items that don't have z-values.
-                //   So navbar needs a z-value so it will always render on top of transparent items that exist on the main website
-                `fixed top-0 left-0 z-10 flex items-center
+                // z-30: page content elements (e.g. row items via .row-item-swipe-content) use z-10.
+                //   Elements with no z-index specified default to z-index: auto, which is treated as 0 for
+                //   stacking order purposes (though unlike explicit z-index: 0, auto does not create a new stacking context).
+                //   When framer-motion ends its page animation, those z-10 elements can enter the root stacking context
+                //   and beat a nav at z-10 via DOM order (<main> follows <nav>). z-30 ensures the nav always wins.
+                //   The internal dropdown uses z-40/z-50 within the nav's own stacking context — those remain correct.
+                `fixed top-0 left-0 z-30 flex items-center
                 gap-y-1 sm:gap-y-2 gap-x-2 sm:gap-x-4 bg-bg/80 backdrop-blur-md border border-border shadow-lg
                 transition-all duration-300
                 ${isTop ? 'rounded-b-xl' : 'rounded-r-xl'}
@@ -254,7 +263,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                 {userName &&
                 <>
 
-                    <div className={`relative${!isTop ? ' w-full' : ''}`}>
+                    <div ref={userMenuRef} className={`relative${!isTop ? ' w-full' : ''}`}>
                         {/* Clicking Username will toggle (open/close) this User-Specific Menu. */}
                         {/* Potential Icons to Use for Opening/Closing Menus:
                         ⇤⤒⬇︎▼▲—|⬅︎⬆︎
@@ -286,15 +295,6 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                         {/* The Dropdown Menu */}
                         {isUserMenuOpen &&(
                             <>
-                                {/* Invisible full-screen overlay sitting BEHIND the dropdown panel (z-40 < z-50).
-                                     Clicking anywhere outside the panel hits this overlay, which closes the menu.
-                                     This is the standard React-only "click outside to close" pattern — no useEffect needed.
-                                     fixed inset-0 stretches it across the entire viewport. */}
-                                <div
-                                    className="fixed inset-0 z-40"
-                                    onClick={() => setIsUserMenuOpen(false)}
-                                />
-
                                 {/* Tailwind:
                                      -- absolute: removes element from normal page flow, puts it relative to the nearest relative parent.
                                             This is how we get this menu to float over other elements.
@@ -308,7 +308,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                             so it opens to the right — into the main page content area where there is room.
                                             Without this, right-0 would push a 200px panel left past the narrow sidebar edge and off-screen.
                                             ml-2 adds a small gap between the sidebar and the panel.
-                                     -- z-50: renders the panel above the z-40 overlay and all other page content.
+                                     -- z-50: renders the panel above other page content.
                                      -- min-w-[200px]: guarantees enough width so menu items are always readable.
                                      -- overflow-hidden: clips the child buttons' hover backgrounds to the
                                             panel's rounded corners (without this, hover highlight bleeds outside).

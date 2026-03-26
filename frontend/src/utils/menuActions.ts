@@ -24,14 +24,21 @@ export function makeShareAction(name: string, path: string): MenuAction {
     };
 }
 
-export function makeManageListsTagsAction(onOpen: () => void): MenuAction {
-    return { icon: '📋', label: 'Manage Lists / Tags for This Item', onClick: onOpen };
-}
-
 export function makeGoToDetailsAction(navigate: NavigateFunction, path: string): MenuAction {
     return { icon: '📄', label: 'Go to Details', onClick: () => navigate(path) };
 }
 
+export function makeManageListsTagsAction(onOpen: () => void): MenuAction {
+    return { icon: '📋', label: 'Manage Lists / Tags for This Item', onClick: onOpen };
+}
+
+export function makeManageListContentsAction(onOpen: () => void): MenuAction {
+    return { icon: '📋', label: 'Add / Remove Items', onClick: onOpen };
+}
+
+export function makeEditBasicInfo(onOpen: () => void): MenuAction {
+    return { icon: '✏️', label: 'Name & Details', onClick: onOpen };
+}
 // ── Preset builders ────────────────────────────────────────────────────
 // A preset builder returns the full standard MenuAction[] for a given item type.
 // Convenience wrappers for the most common per-type action sets.
@@ -59,11 +66,22 @@ export function mediaListActions(item: {
     id: number;
     name: string;
     navigate: NavigateFunction;
+    onManageListContentsOpen: () => void;
+    includeGoToDetails?: boolean;
+    onEditBasicInfoOpen?: () => void;
 }): MenuAction[] {
     const path = routes.mediaList(item.id);
     return [
         makeShareAction(item.name, path),
-        makeGoToDetailsAction(item.navigate, path),
+        makeManageListContentsAction(item.onManageListContentsOpen),
+
+        // Make "Edit Basic Info" action only available if the caller passes in an action.
+        //   This is also helpful because we do not want for "Edit Basic Info" menus to open
+        //   when people click Public lists that they do not have edit status for
+        ...(item.onEditBasicInfoOpen ? [makeEditBasicInfo(item.onEditBasicInfoOpen)] : []),
+
+        // if includeGoToDetails == false, do NOT include the link to the object's details page
+        ...(item.includeGoToDetails !== false ? [makeGoToDetailsAction(item.navigate, path)] : []),
     ];
 }
 

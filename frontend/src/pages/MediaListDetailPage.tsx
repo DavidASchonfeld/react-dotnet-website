@@ -32,9 +32,11 @@ import type { ExternalApiSourceSummary } from '../types/externalApiSource';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import AnimatedPage from '../components/AnimatedPage';
+import BackButton from '../components/BackButton';
+import ItemActionsButton from '../components/row_item_related/ItemActionsButton';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import { routes } from '../utils/routes';
-import { makeShareAction, makeGoToDetailsAction } from '../utils/menuActions';
+import { makeShareAction, makeGoToDetailsAction, mediaListActions } from '../utils/menuActions';
 
 
 
@@ -150,6 +152,7 @@ export default function MediaListDetailPage() {
                     firstString={item.name}
                     secondString={item.creatorName ?? undefined}
                     labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
+                    photographOnLeft={item.thumbnailUrl ?? undefined}
                     onMenuClick={[
                         makeShareAction(item.name, routes.mediaApiRef(item.apiSourceName, item.externalId)),
                         makeGoToDetailsAction(navigate, routes.mediaApiRef(item.apiSourceName, item.externalId)),
@@ -177,25 +180,31 @@ export default function MediaListDetailPage() {
             )}
 
             {/* -- Header -- */}
-            <div className="flex flex-wrap gap-2">
-                <button
-                    className="btn btn-secondary w-fit"
-                    onClick={() => navigate("/my-medialists")}
-                >⬅︎ Back to My Lists</button>
-                {selectedMediaListDetail.canEdit && (
-                    <button
-                        className="btn btn-secondary w-fit"
-                        onClick={handleToggleEditMode}>
-                        {isEditMode ? 'Exit "Edit Mode"' : 'Edit'}
-                    </button>
-                )}
-                {isEditMode && (
-                    <button
-                        className="btn btn-secondary w-fit"
-                        onClick={() => setIsEditModalOpen(true)}>
-                        Edit List's Basic Info
-                    </button>
-                )}
+            <div className="flex justify-between items-center">
+                <div className="flex flex-wrap gap-2">
+                    <BackButton />
+                    {selectedMediaListDetail.canEdit && (
+                        <button
+                            className="btn btn-secondary w-fit"
+                            onClick={handleToggleEditMode}>
+                            {isEditMode ? 'Exit "Edit Mode"' : 'Edit'}
+                        </button>
+                    )}
+
+                </div>
+                <ItemActionsButton
+                    buttonClassName="btn btn-secondary w-10 h-10 flex items-center justify-center"
+                    firstString={selectedMediaListDetail.name}
+                    secondString={selectedMediaListDetail.description ?? undefined}
+                    onMenuClick={mediaListActions({
+                        id: mediaListId,
+                        name: selectedMediaListDetail.name,
+                        navigate,
+                        onManageListContentsOpen: () => { setShowAddBrowsePanel(true); },
+                        includeGoToDetails: false,
+                        ...(selectedMediaListDetail.canEdit ? { onEditBasicInfoOpen: () => setIsEditModalOpen(true) } : {}),
+                    })}
+                />
             </div>
 
             {/* -- List Info -- */}
@@ -254,6 +263,7 @@ export default function MediaListDetailPage() {
                                             firstString={item.name}
                                             secondString={item.creatorName ?? undefined}
                                             labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
+                                            photographOnLeft={item.thumbnailUrl ?? undefined}
                                             onMenuClick={[
                                                 makeShareAction(item.name, routes.mediaApiRef(item.apiSourceName, item.externalId)),
                                                 makeGoToDetailsAction(navigate, routes.mediaApiRef(item.apiSourceName, item.externalId)),
@@ -268,15 +278,8 @@ export default function MediaListDetailPage() {
                 </ErrorBoundary>
             </ErrorBoundary>
 
-            {/* -- Add Item to List — press to open the search modal (Edit Mode only) */}
-            {isEditMode && !showAddBrowsePanel && (
-                <button
-                className = "btn btn-secondary w-fit"
-                onClick={() => setShowAddBrowsePanel(true)}>+ Add Item</button>
-            )}
-
             {/* -- Add Item Modal — SearchBarWithFilters drives API source/type; find-or-creates MediaApiRef on selection -- */}
-            {isEditMode && showAddBrowsePanel && (
+            {showAddBrowsePanel && (
                 <ManageLinkModal
                     modalTitle="Add Items to List"
                     allowedSearchTypes={['media']}

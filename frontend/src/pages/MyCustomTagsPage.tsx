@@ -8,6 +8,7 @@ import {
 } from '../services/apiSlice';
 import { VisibilityStatus } from '../types/enums';
 import AnimatedPage from '../components/AnimatedPage';
+import BackButton from '../components/BackButton';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import RowItemStyling from '../components/row_item_related/RowItemStyling';
 import RowItemContent from '../components/row_item_related/RowItemContent';
@@ -41,7 +42,7 @@ export default function MyCustomTagsPage() {
     return (
         <AnimatedPage>
         <div className="page">
-            <button className="btn btn-secondary w-fit" onClick={() => navigate(-1)}>⬅︎ Back</button>
+            <BackButton />
             <h1 className="h1-styling">My Custom Tags</h1>
             <p className="text-sm text-gray-500 mb-4">
                 Tags let you categorize items across any media type. Private tags are only visible to you; public tags are visible to everyone.

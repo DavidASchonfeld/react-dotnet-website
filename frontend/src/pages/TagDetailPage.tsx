@@ -12,6 +12,7 @@ import {
 } from '../services/apiSlice';
 import type { ExternalApiSourceSummary } from '../types/externalApiSource';
 import AnimatedPage from '../components/AnimatedPage';
+import BackButton from '../components/BackButton';
 import RowItemStyling from '../components/row_item_related/RowItemStyling';
 import RowItemContent from '../components/row_item_related/RowItemContent';
 import MediaTypeLabel from '../components/MediaTypeLabel';
@@ -56,7 +57,7 @@ export default function TagDetailPage() {
         <AnimatedPage>
         <div className="page">
             <div className="flex gap-2 flex-wrap">
-                <button className="btn btn-secondary w-fit" onClick={() => navigate(-1)}>⬅︎ Back</button>
+                <BackButton />
                 {/* Only logged-in users can tag items */}
                 {isAuthenticated && (
                     <button className="btn btn-secondary w-fit" onClick={() => setShowTagModal(true)}>

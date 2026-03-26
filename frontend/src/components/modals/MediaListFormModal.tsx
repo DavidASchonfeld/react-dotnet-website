@@ -42,7 +42,7 @@ export default function MediaListFormModal({
             <AnimatedPage>
                 {/* The Modal aka Popup — see .modal-panel in index.css for Tailwind breakdown */}
                 <div className="modal-panel">
-                    <h2>{mode === 'create' ? 'Create New List' : 'Edit List'}</h2>
+                    <h2 className="h1-styling">Name &amp; Description</h2>
                     {/* See .form-input in index.css for Tailwind breakdown */}
                     <input
                         placeholder="Name (Required)"
@@ -50,11 +50,12 @@ export default function MediaListFormModal({
                         onChange={(e) => setName(e.target.value)}
                         className="form-input"
                     />
-                    <input
-                        placeholder="Description (Optional)"
-                        value = {description}
+                    <textarea
+                        placeholder="Add description"
+                        value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        className="form-input"
+                        rows={2}
+                        className="form-input resize-none"
                     />
                     {/*
                         I do not need to add flex-row because here, it by default fits things side-by-side
