@@ -1,8 +1,8 @@
 import { type ReactNode } from 'react';
-import { BACKEND_BASE_URL } from '../config';
+import { BACKEND_BASE_URL } from '../../config';
 import ItemActionsButton from './ItemActionsButton';
-import type { MenuAction } from '../utils/menuActions';
-import type { RowItemDisplayProps } from '../types/rowItemTypes';
+import type { MenuAction } from '../../utils/menuActions';
+import type { RowItemDisplayProps } from '../../types/rowItemTypes';
 
 export type { MenuAction };
 

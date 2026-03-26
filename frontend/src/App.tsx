@@ -10,13 +10,13 @@ import { Toaster } from 'sonner'
 
 // My Code:
 /// Component
-import ProtectedRoute from './components/ProtectedRoute'
+import ProtectedRoute from './components/route_protections/ProtectedRoute'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import FallbackToaster from './components/FallbackToaster'
 
 /// All Pages
 import About from './pages/About'
-import Navbar from './components/Navbar'
+import Navbar from './components/navbar_related/Navbar'
 import LoginOrRegisterPage from './pages/LoginOrRegisterPage'
 import MyMediaListsPage from './pages/MyMediaListsPage'
 import MediaListDetailPage from './pages/MediaListDetailPage'
@@ -28,7 +28,7 @@ import AdminEditFeaturedPage from './pages/AdminEditFeaturedPage'
 import { routePaths } from './utils/routes'
 import type { AppDispatch, RootState } from './store/store'
 import { useGetAllApprovedMediaTypesQuery } from './services/apiSlice'
-import AdminRoute from './components/AdminRoute'
+import AdminRoute from './components/route_protections/AdminRoute'
 import MediaApiRefDetailPage from './pages/MediaApiRefDetailPage'
 import MyCustomTagsPage from './pages/MyCustomTagsPage'
 import ExploreByTagPage from './pages/ExploreByTagPage'

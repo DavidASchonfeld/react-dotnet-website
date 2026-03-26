@@ -6,7 +6,7 @@ import {
 } from '../services/apiSlice';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import AnimatedPage from '../components/AnimatedPage';
-import RowItemContent from '../components/RowItemContent';
+import RowItemContent from '../components/row_item_related/RowItemContent';
 import { routes } from '../utils/routes';
 
 
@@ -74,7 +74,7 @@ export default function AdminEditFeaturedPage() {
                     >
                         <RowItemContent
                             firstString={list.name}
-                            secondString={`${list.itemCount} items`}
+                            secondString={`${list.listContent.length} items`}
                             larger={true}
                             thirdString={list.description ?? undefined}
                         />

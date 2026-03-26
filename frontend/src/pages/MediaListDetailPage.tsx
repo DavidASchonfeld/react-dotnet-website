@@ -23,8 +23,8 @@ import {
 } from '../services/apiSlice';
 import type { MediaApiRefSummary } from '../types/mediaApiRef';
 import MediaTypeLabel from '../components/MediaTypeLabel';
-import SwipeReorderRowItem from '../components/SwipeReorderRowItem';
-import RowItemContent from '../components/RowItemContent';
+import SwipeReorderRowItem from '../components/row_item_related/SwipeReorderRowItem';
+import RowItemContent from '../components/row_item_related/RowItemContent';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 import { SEARCH_DEFAULT_LIMIT } from '../constants';

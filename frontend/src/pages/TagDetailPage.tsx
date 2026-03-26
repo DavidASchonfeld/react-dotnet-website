@@ -12,8 +12,8 @@ import {
 } from '../services/apiSlice';
 import type { ExternalApiSourceSummary } from '../types/externalApiSource';
 import AnimatedPage from '../components/AnimatedPage';
-import RowItemStyling from '../components/RowItemStyling';
-import RowItemContent from '../components/RowItemContent';
+import RowItemStyling from '../components/row_item_related/RowItemStyling';
+import RowItemContent from '../components/row_item_related/RowItemContent';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import PaginationControls from '../components/PaginationControls';
 import ManageLinkModal from '../components/modals/ManageLinkModal';

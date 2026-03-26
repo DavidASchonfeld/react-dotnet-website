@@ -3,8 +3,8 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useGetItemsByTagQuery } from '../services/apiSlice';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import AnimatedPage from '../components/AnimatedPage';
-import RowItemStyling from '../components/RowItemStyling';
-import RowItemContent from '../components/RowItemContent';
+import RowItemStyling from '../components/row_item_related/RowItemStyling';
+import RowItemContent from '../components/row_item_related/RowItemContent';
 import PaginationControls from '../components/PaginationControls';
 import { routes } from '../utils/routes';
 

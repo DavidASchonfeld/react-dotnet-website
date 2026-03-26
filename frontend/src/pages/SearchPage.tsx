@@ -18,9 +18,9 @@ import {
 import AnimatedPage from '../components/AnimatedPage'
 import SearchBarWithFilters from '../components/SearchBarWithFilters'
 import type { FilterState, SearchType } from '../components/SearchBarWithFilters'
-import RowItemStyling from '../components/RowItemStyling'
-import RowItemContent from '../components/RowItemContent'
-import { CacheStatusPill } from '../components/CacheStatusPill'
+import RowItemStyling from '../components/row_item_related/RowItemStyling'
+import RowItemContent from '../components/row_item_related/RowItemContent'
+import { AdminItemStatusPanel } from '../components/administrator_related/AdminItemStatusPanel'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES } from '../constants'
 import ManageLinkModal from '../components/modals/ManageLinkModal'
@@ -178,7 +178,7 @@ export default function SearchPage() {
                 {urlSearchType === 'media' && shouldFetch && !isLoading && (
                     <>
                         {mediaResults && (
-                            <CacheStatusPill cacheMetadata={mediaResults.cacheMetadata} />
+                            <AdminItemStatusPanel cacheMetadata={mediaResults.cacheMetadata} showRefInDb={false} />
                         )}
 
                         {mediaResults && mediaResults.data.length === 0 && (

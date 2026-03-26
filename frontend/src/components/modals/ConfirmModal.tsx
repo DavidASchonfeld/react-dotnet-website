@@ -1,5 +1,5 @@
-import RowItemContent from '../RowItemContent';
-import RowItemStyling from '../RowItemStyling';
+import RowItemContent from '../row_item_related/RowItemContent';
+import RowItemStyling from '../row_item_related/RowItemStyling';
 import MediaTypeLabel from '../MediaTypeLabel';
 import AnimatedPage from '../AnimatedPage';
 

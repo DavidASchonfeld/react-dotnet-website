@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import ItemSettingsDrawerModal, { SettingsRow } from './modals/ItemSettingsDrawerModal';
-import type { MenuAction } from '../utils/menuActions';
+import ItemSettingsDrawerModal, { SettingsRow } from '../modals/ItemSettingsDrawerModal';
+import type { MenuAction } from '../../utils/menuActions';
 import RowItemStyling from './RowItemStyling';
 import RowItemContent from './RowItemContent';
-import type { RowItemDisplayProps } from '../types/rowItemTypes';
+import type { RowItemDisplayProps } from '../../types/rowItemTypes';
 
 // `larger` is intentionally excluded: the drawer preview is always compact regardless of
 // how the row itself is displayed.

@@ -1,7 +1,7 @@
 import { useSelector } from 'react-redux';
-import { formatCacheAge } from '../utils/formatCacheAge';
-import type { RootState } from '../store/store';
-import type { CacheMetadata } from '../types/cacheMetadata';
+import { formatCacheAge } from '../../utils/formatCacheAge';
+import type { RootState } from '../../store/store';
+import type { CacheMetadata } from '../../types/cacheMetadata';
 
 interface CacheStatusPillProps {
   cacheMetadata: CacheMetadata | null | undefined;
@@ -28,7 +28,7 @@ export function CacheStatusPill({ cacheMetadata }: CacheStatusPillProps) {
     const cacheAge = formatCacheAge(cacheMetadata.cachedAt);
     const cacheTime = formatTime(cacheMetadata.cachedAt);
     return (
-      <div className="flex justify-center mt-8 mb-4">
+      <div className="flex justify-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 text-sm rounded-full">
           <span>📦</span>
           <span>Cached {cacheAge} ({cacheTime})</span>
@@ -39,7 +39,7 @@ export function CacheStatusPill({ cacheMetadata }: CacheStatusPillProps) {
 
   // Show "Fresh data" for non-cached results (when cacheMetadata is null or isFromCache is false)
   return (
-    <div className="flex justify-center mt-8 mb-4">
+    <div className="flex justify-center">
       <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 text-sm rounded-full">
         <span>✨</span>
         <span>Fresh data</span>

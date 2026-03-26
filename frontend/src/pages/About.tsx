@@ -1,4 +1,3 @@
-import { ThemePicker } from "../components/ThemePicker";
 import AnimatedPage from "../components/AnimatedPage";
 
 export default function About(){

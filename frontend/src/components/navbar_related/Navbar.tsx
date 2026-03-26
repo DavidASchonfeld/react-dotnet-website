@@ -3,14 +3,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from "react-redux";
 
 // Importing from My Files
-import type { RootState, AppDispatch } from "../store/store";
-import { clearCredentials } from "../store/authSlice";
-import SearchBar from "./SearchBar";
+import type { RootState, AppDispatch } from "../../store/store";
+import { clearCredentials } from "../../store/authSlice";
+import SearchBar from "../SearchBar";
 import SearchFilterDropdown from "./SearchFilterDropdown";
 import DropdownMenuButton from "./DropdownMenuButton";
-import MinimizableIconTextButton from "./MinimizableIconTextButton";
-import { NAVBAR_AUTO_MINIMIZE_BREAKPOINT } from "../constants";
-import { useGetActiveApiSourcesQuery } from "../services/apiSlice";
+import MinimizableIconTextButton from "../MinimizableIconTextButton";
+import { NAVBAR_AUTO_MINIMIZE_BREAKPOINT } from "../../constants";
+import { useGetActiveApiSourcesQuery } from "../../services/apiSlice";
 
 
 

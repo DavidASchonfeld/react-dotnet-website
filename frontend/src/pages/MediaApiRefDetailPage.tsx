@@ -16,10 +16,10 @@ import {
 import { BACKEND_BASE_URL } from '../config';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import AnimatedPage from '../components/AnimatedPage';
-import RowItemStyling from '../components/RowItemStyling';
-import RowItemContent from '../components/RowItemContent';
-import { AdminItemStatusPanel } from '../components/AdminItemStatusPanel';
-import ItemActionsButton from '../components/ItemActionsButton';
+import RowItemStyling from '../components/row_item_related/RowItemStyling';
+import RowItemContent from '../components/row_item_related/RowItemContent';
+import { AdminItemStatusPanel } from '../components/administrator_related/AdminItemStatusPanel';
+import ItemActionsButton from '../components/row_item_related/ItemActionsButton';
 import { mediaApiRefActions } from '../utils/menuActions';
 import { routes } from '../utils/routes';
 import ManageLinkModal from '../components/modals/ManageLinkModal';

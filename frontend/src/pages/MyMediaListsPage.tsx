@@ -1,5 +1,5 @@
 // React.js Library
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
@@ -14,7 +14,7 @@ import {
 } from '../services/apiSlice';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
-import RowItemContent from '../components/RowItemContent';
+import RowItemContent from '../components/row_item_related/RowItemContent';
 import AnimatedPage from '../components/AnimatedPage';
 import PaginationControls from '../components/PaginationControls';
 import { routes } from '../utils/routes';

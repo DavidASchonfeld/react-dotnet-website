@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useGetActiveApiSourcesQuery } from '../services/apiSlice'
+import { useGetActiveApiSourcesQuery } from '../../services/apiSlice'
 
 interface SearchFilterDropdownProps {
     selectedApiSourceId?: number | null

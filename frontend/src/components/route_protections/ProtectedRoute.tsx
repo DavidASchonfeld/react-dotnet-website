@@ -3,7 +3,7 @@ import type {ReactNode} from "react";
 import { useSelector } from 'react-redux';
 
 // Importing from my File
-import type { RootState } from '../store/store';
+import type { RootState } from '../../store/store';
 
 
 // NOTE:

@@ -4,7 +4,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSwipeable } from 'react-swipeable';
 import RowItemStyling from './RowItemStyling';
-import { AMOUNT_TO_SWIPE_HORIZONTALLY_TO_ACTIVATE_TRIGGER } from "../constants";
+import { AMOUNT_TO_SWIPE_HORIZONTALLY_TO_ACTIVATE_TRIGGER } from "../../constants";
 
 // Describes one swipe action: the label shown behind the sliding row and the callback to fire.
 // The same label is used in SwipeableRow (as a large background text) and StaticRow (as a button).

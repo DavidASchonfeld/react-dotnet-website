@@ -6,7 +6,7 @@ import {
 } from '../services/apiSlice'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_CHARS } from '../constants'
-import RowItemContent from './RowItemContent'
+import RowItemContent from './row_item_related/RowItemContent'
 import { routes } from '../utils/routes'
 
 interface SearchBarProps {

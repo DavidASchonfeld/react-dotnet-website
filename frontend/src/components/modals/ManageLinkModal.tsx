@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import RowItemContent from "../RowItemContent";
-import RowItemStyling from "../RowItemStyling";
+import RowItemContent from "../row_item_related/RowItemContent";
+import RowItemStyling from "../row_item_related/RowItemStyling";
 import ConfirmModal from "./ConfirmModal";
 import AnimatedPage from '../AnimatedPage';
 import SearchBarWithFilters from '../SearchBarWithFilters';

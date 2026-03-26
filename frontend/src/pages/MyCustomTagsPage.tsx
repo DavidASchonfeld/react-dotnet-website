@@ -9,8 +9,8 @@ import {
 import { VisibilityStatus } from '../types/enums';
 import AnimatedPage from '../components/AnimatedPage';
 import ConfirmModal from '../components/modals/ConfirmModal';
-import RowItemStyling from '../components/RowItemStyling';
-import RowItemContent from '../components/RowItemContent';
+import RowItemStyling from '../components/row_item_related/RowItemStyling';
+import RowItemContent from '../components/row_item_related/RowItemContent';
 import PaginationControls from '../components/PaginationControls';
 import { routes } from '../utils/routes';
 
