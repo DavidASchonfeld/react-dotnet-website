@@ -1,7 +1,7 @@
 import RowItemContent from '../row_item_related/RowItemContent';
 import RowItemStyling from '../row_item_related/RowItemStyling';
 import MediaTypeLabel from '../MediaTypeLabel';
-import AnimatedPage from '../AnimatedPage';
+import DialogOverlay from './DialogOverlay';
 
 // Generic item context shape — any object with name + mediaTypeId can be shown as a header
 interface ItemContext {
@@ -25,9 +25,7 @@ interface Props {
 export default function ConfirmModal({ title, message, confirmLabel = "Confirm", onConfirm, onCancel, itemContext }: Props)
 {
     return (
-        <div className="modal-overlay">
-            {/* Dark backdrop — see .modal-overlay in index.css for Tailwind breakdown */}
-            <AnimatedPage>
+        <DialogOverlay>
             {/* The Modal aka Popup — see .modal-panel in index.css for Tailwind breakdown */}
             <div className="modal-panel">
 
@@ -57,7 +55,6 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
                         onClick={onConfirm}>{confirmLabel}</button>
                 </div>
             </div>
-            </AnimatedPage>
-        </div>
+        </DialogOverlay>
     )
 }

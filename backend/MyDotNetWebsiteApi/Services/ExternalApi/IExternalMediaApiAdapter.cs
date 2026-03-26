@@ -13,4 +13,8 @@ public interface IExternalMediaApiAdapter
     // Fetch a single item by its native external ID (e.g. IMDB ID "tt0111161").
     // Returns null if the item is not found or the API is unavailable.
     Task<ExternalApiSearchResult?> GetByExternalIdAsync(string externalId);
+
+    // Returns the full fetch URL for the high-res poster endpoint, or null if unsupported.
+    // Override this in any adapter whose plan includes a dedicated poster/image API.
+    string? BuildPosterFetchUrl(string externalId) => null;
 }

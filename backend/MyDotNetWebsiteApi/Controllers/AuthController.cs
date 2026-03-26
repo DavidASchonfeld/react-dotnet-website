@@ -144,7 +144,8 @@ public class AuthController : ControllerBase
         {
             AccessToken = accessToken,
             RoleLevel = user.RoleLevel.ToString(),
-            UserName = user.UserName!
+            UserName = user.UserName!,
+            PreferredTheme = user.PreferredTheme  // return saved theme so client can restore it
         };
     }
 

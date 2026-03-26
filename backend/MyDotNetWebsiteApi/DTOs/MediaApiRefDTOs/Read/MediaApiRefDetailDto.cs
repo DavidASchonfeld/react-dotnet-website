@@ -21,7 +21,10 @@ public class MediaApiRefDetailDto
     // Image URLs stored on MediaApiRef entity
     public string? ThumbnailUrl {get; set;}    // small image from search results
     // Detail fields sourced from CacheItem.ResponseJson, not MediaApiRef columns
-    public string? Poster {get; set;}          // full-size image from detail fetch
+    public string? Poster {get; set;}          // full-size CDN poster URL from detail fetch
+    // "poster-api://{apiName}/{externalId}" when the high-res Poster API is enabled; null otherwise.
+    // The frontend converts this pseudo-URL to /api/imagecache/poster-api/{apiName}/{externalId}.
+    public string? BigPosterUrl {get; set;}
     public string? Plot {get; set;}
     public string? Runtime {get; set;}
     public string? Country {get; set;}

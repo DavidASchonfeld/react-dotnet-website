@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { VisibilityStatus } from '../../types/enums';
-import AnimatedPage from '../AnimatedPage';
+import DialogOverlay from './DialogOverlay';
 
 // This defines what the caller must pass in
 interface Props {
@@ -37,9 +37,7 @@ export default function MediaListFormModal({
     }
 
     return (
-        <div className="modal-overlay">
-            {/* Dark backdrop — see .modal-overlay in index.css for Tailwind breakdown */}
-            <AnimatedPage>
+        <DialogOverlay>
                 {/* The Modal aka Popup — see .modal-panel in index.css for Tailwind breakdown */}
                 <div className="modal-panel">
                     <h2 className="h1-styling">Name &amp; Description</h2>
@@ -79,7 +77,6 @@ export default function MediaListFormModal({
                         </button>
                     </div>
                 </div>
-            </AnimatedPage>
-        </div>
+        </DialogOverlay>
     );
 }

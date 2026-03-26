@@ -26,4 +26,6 @@ public class ApiPlan
     public string PeriodType { get; set; } = "";
     public int? RequestLimit { get; set; }
     public int? WarningThreshold { get; set; }
+    // True when this plan tier grants access to the API's high-res poster endpoint.
+    public bool SupportsPosterApi { get; set; } = false;
 }

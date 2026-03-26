@@ -24,6 +24,9 @@ public class AppUser : IdentityUser
     // even if the cookie is still present on the client.
     public DateTime? RefreshTokenExpiry { get; set; }
 
+    // User's selected UI theme; null means use app default. Stored as the Theme string key.
+    public string? PreferredTheme { get; set; }
+
     // C# Only (does not exist in the SQL database)
     // Navigation Properties to your own tables
     public ICollection<MediaList> Lists {get; set; } = new List<MediaList>();

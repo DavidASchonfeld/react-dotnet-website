@@ -32,6 +32,16 @@ public class UserController : ControllerBase
         return result.ToActionResult(this);  // This method is defined in backend/MyDotNetWebsiteApi/Services/ServiceResult.cs
     }
 
+    // Saves the caller's theme preference — no permission check needed (own data only).
+    [HttpPatch("me/theme")]
+    public async Task<IActionResult> UpdateMyTheme([FromBody] UpdateUserThemeDto dto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _userService.UpdateUserThemeAsync(userId, dto.Theme);
+        return result.ToActionResult(this);
+    }
+
+
     // Update a User's Role
     [HttpPatch("{targetUserId}/role")]
     public async Task<IActionResult> UpdateUserRole(string targetUserId, [FromBody] UpdateUserRoleDto dto)

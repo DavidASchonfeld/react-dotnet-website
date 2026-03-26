@@ -6,13 +6,14 @@ public class ApiUsageService : IApiUsageService
 
     // Derived from ExternalApiRegistry so there is exactly one place to add/update API config.
     // Note: Accesses plan data through CurrentPlan to support multi-tier plans.
-    private static readonly Dictionary<string, (string PeriodType, int? Limit, int? WarningThreshold)> _apiConfig =
+    private static readonly Dictionary<string, (string PeriodType, int? Limit, int? WarningThreshold, bool SupportsPosterApi)> _apiConfig =
         ExternalApiRegistry.Apis.ToDictionary(
             kvp => kvp.Key,
             kvp => (
                 kvp.Value.CurrentPlan?.PeriodType ?? "Daily",
                 kvp.Value.CurrentPlan?.RequestLimit,
-                kvp.Value.CurrentPlan?.WarningThreshold
+                kvp.Value.CurrentPlan?.WarningThreshold,
+                kvp.Value.CurrentPlan?.SupportsPosterApi ?? false
             )
         );
 
@@ -92,6 +93,9 @@ public class ApiUsageService : IApiUsageService
                 ExternalApiSourceId = source?.Id ?? 0,
                 IsDisabledByAdmin = source?.IsDisabledByAdmin ?? false,
                 UseNonSearchQueryCache = source?.UseNonSearchQueryCache ?? true,
+                // Only expose SupportsPosterApi when the plan actually supports it; null hides the toggle in the UI.
+                SupportsPosterApi = config.SupportsPosterApi ? true : (bool?)null,
+                UsePosterApi = source?.UsePosterApi ?? false,
             });
         }
 

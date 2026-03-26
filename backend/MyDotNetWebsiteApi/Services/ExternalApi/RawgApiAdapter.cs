@@ -43,7 +43,7 @@ public class RawgApiAdapter : IExternalMediaApiAdapter
             Name = response.Name,
             PublishedDate = DateTime.TryParse(response.Released, out var d) ? d : null,
             ThumbnailUrl = response.BackgroundImage,
-            CreatorName = response.Developers?.FirstOrDefault()?.Name,
+            CreatorName = response.Developers?.Count > 0 ? string.Join(", ", response.Developers.Select(d => d.Name)) : null,
             Poster = response.BackgroundImage,
             Plot = response.Description != null && response.Description != "N/A" ? response.Description : response.DescriptionRaw,
             Country = null, // RAWG doesn't provide country info for games
@@ -82,7 +82,7 @@ public class RawgApiAdapter : IExternalMediaApiAdapter
                 Name          = item.Name,
                 PublishedDate = DateTime.TryParse(item.Released, out var d) ? d : null,
                 ThumbnailUrl  = item.BackgroundImage,
-                CreatorName   = item.Developers?.FirstOrDefault()?.Name
+                CreatorName   = item.Developers?.Count > 0 ? string.Join(", ", item.Developers.Select(d => d.Name)) : null
             })
             .ToList();
     }

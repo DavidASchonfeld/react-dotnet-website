@@ -70,14 +70,18 @@ public class MediaApiRefService : IMediaApiRefService
                 if (!thumbnailTask.Result) detailedResult.ThumbnailUrl = null;
                 if (!posterTask.Result) detailedResult.Poster = null;
 
-                // Store raw API response in CacheItem; update staleness timestamp and Poster on MediaApiRef
+                // Store raw API response in CacheItem; update staleness timestamp and PosterUrl on MediaApiRef
                 var responseJson = JsonSerializer.Serialize(detailedResult);
                 await _cacheItemService.UpsertAsync(
                     mediaApiRef.ApiSource.ApiName, "GetById", mediaApiRef.MediaType.Name,
                     queryParams, responseJson, AppConstants.CacheItemGetByIdTtlDays);
 
                 mediaApiRef.DetailsFetchedAt = DateTime.UtcNow;
-                if (detailedResult.Poster != null) mediaApiRef.PosterUrl = detailedResult.Poster;
+                // Store a poster-api:// pseudo-URL when the feature is enabled; otherwise store the real CDN URL.
+                if (mediaApiRef.ApiSource.UsePosterApi && adapter.BuildPosterFetchUrl(mediaApiRef.ExternalId) != null)
+                    mediaApiRef.PosterUrl = $"poster-api://{mediaApiRef.ApiSource.ApiName}/{mediaApiRef.ExternalId}";
+                else if (detailedResult.Poster != null)
+                    mediaApiRef.PosterUrl = detailedResult.Poster;
                 await _context.SaveChangesAsync();
                 await _apiUsageService.TrackRequestAsync(mediaApiRef.ApiSource.ApiName);
                 if (detailedResult.Poster != null) PrewarmPoster(detailedResult.Poster);
@@ -260,6 +264,10 @@ public class MediaApiRefService : IMediaApiRefService
             PublishedDate = ext.PublishedDate,
             ThumbnailUrl = ext.ThumbnailUrl,
             Poster = ext.Poster,
+            BigPosterUrl = source.UsePosterApi &&
+                           _adapterFactory.GetAdapter(source.ApiName)?.BuildPosterFetchUrl(ext.ExternalId) != null
+                ? $"poster-api://{source.ApiName}/{ext.ExternalId}"
+                : null,
             Plot = ext.Plot,
             Runtime = ext.Runtime,
             Country = ext.Country,
@@ -434,7 +442,12 @@ public class MediaApiRefService : IMediaApiRefService
         } : null,
         IsApiDisabled = isApiDisabled,
         ThumbnailUrl = r.ThumbnailUrl,
-        Poster = details?.Poster ?? r.PosterUrl,
+        // BigPosterUrl is set when PosterUrl holds a pseudo-URL; null means no high-res poster is available.
+        BigPosterUrl = r.ApiSource.UsePosterApi
+            ? $"poster-api://{r.ApiSource.ApiName}/{r.ExternalId}"
+            : null,
+        // Poster is always a real CDN URL — skip PosterUrl when it's a pseudo-URL.
+        Poster = details?.Poster ?? (r.PosterUrl?.StartsWith("poster-api://") == true ? null : r.PosterUrl),
         Plot = details?.Plot,
         Runtime = details?.Runtime,
         Country = details?.Country ?? r.Country,

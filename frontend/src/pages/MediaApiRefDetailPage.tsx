@@ -75,12 +75,20 @@ export default function MediaApiRefDetailPage() {
     const [addTag] = useAddTagToMediaApiRefMutation();
     const [removeTag] = useRemoveTagFromMediaApiRefMutation();
 
-    // Route poster through backend ImageCache instead of direct external URL
-    const posterSrc = detail?.poster
-        ? detail.poster.startsWith('http')
-            ? `${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(detail.poster)}`
-            : detail.poster
-        : undefined;
+    // If a high-res poster-api:// pseudo-URL is available, route through the dedicated endpoint;
+    // otherwise fall back to the regular CDN poster URL proxied through the image cache.
+    const posterSrc = (() => {
+        if (detail?.bigPosterUrl?.startsWith('poster-api://')) {
+            const withoutScheme = detail.bigPosterUrl.replace('poster-api://', '')
+            const slashIdx = withoutScheme.indexOf('/')
+            const apiNamePart = withoutScheme.substring(0, slashIdx)
+            const externalIdPart = withoutScheme.substring(slashIdx + 1)
+            return `${BACKEND_BASE_URL}/api/imagecache/poster-api/${encodeURIComponent(apiNamePart)}/${encodeURIComponent(externalIdPart)}`
+        }
+        if (detail?.poster?.startsWith('http'))
+            return `${BACKEND_BASE_URL}/api/imagecache?url=${encodeURIComponent(detail.poster)}`
+        return undefined
+    })()
 
     // Lazy findOrCreate: called when user opens the manage modal but the item isn't in the DB yet.
     const handleOpenManageModal = async () => {

@@ -21,6 +21,9 @@ public class ExternalApiSource
     // Only takes effect when AppGlobalSettings.UseNonSearchQueryCache is also true.
     public bool UseNonSearchQueryCache {get; set;} = true;
 
+    // When true, fresh detail fetches also call the API's high-res poster endpoint (requires SupportsPosterApi in plan config).
+    public bool UsePosterApi {get; set;} = false;
+
 
 
     ///// C# Only - They do not exist in the SQL Database

@@ -193,14 +193,13 @@ export default function SearchPage() {
                                     {mediaResults.data.map(result => (
                                         <RowItemStyling key={result.externalId}>
                                             <RowItemContent
-                                                firstString={result.name}
+                                                firstString={
+                                                    result.publishedDate
+                                                        ? `${result.name} (${new Date(result.publishedDate).getFullYear()})`
+                                                        : result.name
+                                                }
                                                 secondString={result.creatorName ?? undefined}
                                                 photographOnLeft={result.thumbnailUrl ?? undefined}
-                                                thirdString={
-                                                    result.publishedDate
-                                                        ? new Date(result.publishedDate).getFullYear().toString()
-                                                        : undefined
-                                                }
                                                 larger
                                                 onClick={() => navigate(routes.mediaApiRef(selectedSource!.apiName, result.externalId))}
                                                 onMenuClick={mediaApiRefActions({

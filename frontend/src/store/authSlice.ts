@@ -2,6 +2,8 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { loginUser, registerUser, logoutUser } from '../services/authService';
 import type { UserRole } from '../types/userRole';
+import { loadThemeFromServer } from './themeSlice';
+import type { Theme } from './themeSlice';
 
 // This file replaces my AuthContext.tsx for storing/taking care of cookies for being logged in.
 
@@ -82,19 +84,27 @@ const initialState: AuthState = {
 
 export const loginThunk = createAsyncThunk(
     'auth/login',
-    async({ userName, password }: { userName: string; password: string }) => {
+    async({ userName, password }: { userName: string; password: string }, { dispatch }) => {
         const data = await loginUser(userName, password);
 
         // The server returns accessToken (not token) since we switched to short-lived JWTs.
         // userName and roleLevel now also come from the server via AuthResponseDto.
+
+        // Apply server-saved theme on login, overwriting any local preference.
+        if (data.preferredTheme) dispatch(loadThemeFromServer(data.preferredTheme as Theme));
+
         return { token: data.accessToken as string, userName: data.userName as string, roleLevel: data.roleLevel as UserRole };
     }
 );
 
 export const registerThunk = createAsyncThunk(
     'auth/register',
-    async({ userName, email, password }: { userName: string; email: string; password: string }) => {
+    async({ userName, email, password }: { userName: string; email: string; password: string }, { dispatch }) => {
         const data = await registerUser(userName, email, password);
+
+        // New accounts have no saved theme yet, but dispatch for consistency if one is ever seeded.
+        if (data.preferredTheme) dispatch(loadThemeFromServer(data.preferredTheme as Theme));
+
         return { token: data.accessToken as string, userName: data.userName as string, roleLevel: data.roleLevel as UserRole };
     }
 );

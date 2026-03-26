@@ -3,9 +3,11 @@ import {
     useGetApiUsageStatsQuery,
     useToggleApiDisabledMutation,
     useToggleApiNonSearchCacheMutation,
+    useTogglePosterApiMutation,
     useGetAppGlobalSettingsQuery,
     useToggleGlobalNonSearchCacheMutation,
     useDeleteImageCachePlaceholdersMutation,
+    useDeleteBigImagesMutation,
 } from '../services/apiSlice'
 import type { ApiUsageStats } from '../types/apiUsage'
 
@@ -17,6 +19,7 @@ export default function AdminApiUsagePage() {
     const { data: globalSettings } = useGetAppGlobalSettingsQuery()
     const [toggleGlobalNonSearchCache, { isLoading: isTogglingGlobal }] = useToggleGlobalNonSearchCacheMutation()
     const [deleteImageCachePlaceholders, { isLoading: isDeletingPlaceholders }] = useDeleteImageCachePlaceholdersMutation()
+    const [deleteBigImages, { isLoading: isDumpingBigImages }] = useDeleteBigImagesMutation()
 
     return (
         <AnimatedPage>
@@ -71,6 +74,26 @@ export default function AdminApiUsagePage() {
                     </div>
                 </div>
 
+                {/* Big Image (Poster API) cache dump */}
+                <div className="bg-surface-raised rounded-lg p-4 border border-border mb-4">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                            <h2 className="font-semibold">Big Image Cache</h2>
+                            <p className="text-sm text-text-muted">
+                                Removes all high-res poster images fetched via the Poster API from <code className="font-mono">ImageCache</code>,
+                                and resets each affected <code className="font-mono">MediaApiRef.PosterUrl</code> back to its thumbnail image.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => deleteBigImages()}
+                            disabled={isDumpingBigImages}
+                            className="px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            Dump Big Images
+                        </button>
+                    </div>
+                </div>
+
                 {isLoading && <p className="text-text-muted">Loading...</p>}
                 {error && <p className="text-red-500">Failed to load usage data.</p>}
 
@@ -92,6 +115,8 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
 
     const [toggleApiDisabled, { isLoading: isToggling }] = useToggleApiDisabledMutation()
     const [toggleApiNonSearchCache, { isLoading: isTogglingCache }] = useToggleApiNonSearchCacheMutation()
+    // Only rendered when api.supportsPosterApi is true (i.e. the active plan tier supports it).
+    const [togglePosterApi, { isLoading: isTogglingPosterApi }] = useTogglePosterApiMutation()
 
     const hasLimit = api.requestLimit !== null
 
@@ -168,6 +193,21 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
                     {api.useNonSearchQueryCache ? 'Disable Detail Cache' : 'Enable Detail Cache'}
                 </button>
 
+                {/* Poster API toggle — only shown when the active plan tier supports it */}
+                {api.supportsPosterApi && (
+                    <button
+                        onClick={() => togglePosterApi(api.externalApiSourceId)}
+                        disabled={isTogglingPosterApi}
+                        className={`px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 ${
+                            api.usePosterApi
+                                ? 'bg-red-600 hover:bg-red-700 text-white'
+                                : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                    >
+                        {api.usePosterApi ? 'Disable Poster API' : 'Enable Poster API'}
+                    </button>
+                )}
+
                 {/* Toggle API availability for all users */}
                 <button
                     onClick={() => toggleApiDisabled(api.externalApiSourceId)}
@@ -181,6 +221,12 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
                     {api.isDisabledByAdmin ? 'Re-enable API' : 'Disable API'}
                 </button>
             </div>
+
+            {api.supportsPosterApi && (
+                <p className="mt-2 text-xs text-text-muted text-right">
+                    Note: OMDB's Poster API returns the same low-resolution image as the standard CDN for most titles — enabling this uses extra API quota without a visible quality improvement.
+                </p>
+            )}
 
         </div>
     )

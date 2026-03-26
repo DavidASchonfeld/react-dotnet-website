@@ -33,7 +33,10 @@ export interface MediaApiRefDetail {
     // Image URLs stored on MediaApiRef entity
     thumbnailUrl?: string | null;   // small image from search results
     // Detail fields sourced from CacheItem.ResponseJson, not MediaApiRef columns
-    poster?: string | null;         // full-size image from detail fetch
+    poster?: string | null;         // full-size CDN poster URL from detail fetch
+    // "poster-api://{apiName}/{externalId}" when the Poster API is enabled — null otherwise.
+    // The page converts this pseudo-URL to /api/imagecache/poster-api/{apiName}/{externalId}.
+    bigPosterUrl?: string | null;
     plot?: string | null;
     runtime?: string | null;
     country?: string | null;

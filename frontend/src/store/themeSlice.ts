@@ -72,8 +72,14 @@ const themeSlice = createSlice({
                    document.documentElement.setAttribute('data-theme', action.payload);
                } */
         },
+
+        // Same mutation as setCurrentTheme but a distinct action type so the listener
+        // middleware does NOT re-sync to the backend (prevents an infinite save loop).
+        loadThemeFromServer(state, action: PayloadAction<Theme | null>){
+            state.currentTheme = action.payload;
+        },
     }
 });
 
-export const { setCurrentTheme } = themeSlice.actions;
+export const { setCurrentTheme, loadThemeFromServer } = themeSlice.actions;
 export default themeSlice.reducer;

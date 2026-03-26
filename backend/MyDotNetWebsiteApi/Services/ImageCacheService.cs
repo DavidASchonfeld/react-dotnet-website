@@ -14,11 +14,27 @@ public class ImageCacheService : IImageCacheService
         _logger = logger;
     }
 
-    public async Task<(byte[] blob, string contentType)?> GetOrFetchImageAsync(string imageUrl)
+    // Single-param version: cache key and fetch URL are the same (the normal image proxy path).
+    public Task<(byte[] blob, string contentType)?> GetOrFetchImageAsync(string imageUrl) =>
+        GetOrFetchImageAsync(imageUrl, imageUrl);
+
+    // Two-param version: cacheKey is the DB key; fetchUrl is the actual HTTP URL to download from.
+    // Used by the poster-api:// pseudo-URL scheme where the two differ.
+    public async Task<(byte[] blob, string contentType)?> GetOrFetchImageAsync(string cacheKey, string fetchUrl)
     {
+        var imageUrl = cacheKey; // alias for readability in the body below — DB lookups use cacheKey
         // Cache hit: update LRU tracking and return stored blob
         // LRU stands for "Least Recently Used"
-        var cached = await _context.ImageCaches.FindAsync(imageUrl);
+        ImageCache? cached;
+        try
+        {
+            cached = await _context.ImageCaches.FindAsync(imageUrl);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ImageCache: Failed to look up cache entry for {Url}", imageUrl);
+            return null;
+        }
         if (cached != null && DateTime.SpecifyKind(cached.ExpiresAt, DateTimeKind.Utc) > DateTime.UtcNow && cached.ImageBlob != null)
         {
             // LRU tracking is cosmetic — never fail the request if this write conflicts
@@ -35,20 +51,21 @@ public class ImageCacheService : IImageCacheService
             return (cached.ImageBlob, cached.ContentType ?? "image/jpeg");
         }
 
-        // Cache miss — fetch from external URL and store blob
+        // Cache miss — fetch from the actual fetch URL (may differ from cacheKey for pseudo-URL schemes)
         HttpResponseMessage response;
         try
         {
-            response = await _httpClient.GetAsync(imageUrl);
+            response = await _httpClient.GetAsync(fetchUrl);
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("ImageCache: External URL returned {StatusCode} for {Url}", (int)response.StatusCode, imageUrl);
+                // Log cacheKey (not fetchUrl) to avoid leaking API keys embedded in the URL.
+                _logger.LogWarning("ImageCache: External URL returned {StatusCode} for {CacheKey}", (int)response.StatusCode, imageUrl);
                 return null;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ImageCache: Failed to fetch external URL {Url}", imageUrl);
+            _logger.LogError(ex, "ImageCache: Failed to fetch external URL for {CacheKey}", imageUrl);
             return null;
         }
 
@@ -59,11 +76,12 @@ public class ImageCacheService : IImageCacheService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ImageCache: Failed to read response body for {Url}", imageUrl);
+            _logger.LogError(ex, "ImageCache: Failed to read response body for {CacheKey}", imageUrl);
             return null;
         }
 
         var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+        _logger.LogInformation("ImageCache: Fetched {Size} bytes ({ContentType}) from external URL for key {CacheKey}", blob.Length, contentType, imageUrl);
 
         // Upsert: insert new or refresh existing ImageCache entry
         if (cached != null)
@@ -93,7 +111,7 @@ public class ImageCacheService : IImageCacheService
         {
             await _context.SaveChangesAsync();
         }
-        catch (DbUpdateException ex) when (cached == null)
+        catch (DbUpdateException) when (cached == null)
         {
             // Race condition: multiple concurrent requests for the same URL all saw a cache miss
             // and raced to insert. The first one won; re-fetch its entry and serve it instead.
@@ -129,9 +147,9 @@ public class ImageCacheService : IImageCacheService
 
     public async Task<(int deletedCacheEntries, int nulledPlaceholderThumbnails)> DeletePlaceholderEntriesAsync()
     {
-        // Step 1: Delete ImageCache rows with relative/local URLs or a null blob (corrupt/incomplete entries)
+        // Step 1: Delete corrupt/incomplete entries — but preserve valid poster-api:// pseudo-URL entries.
         var deletedCacheEntries = await _context.ImageCaches
-            .Where(i => !i.ImageUrl.StartsWith("http") || i.ImageBlob == null)
+            .Where(i => (!i.ImageUrl.StartsWith("http") && !i.ImageUrl.StartsWith("poster-api://")) || i.ImageBlob == null)
             .ExecuteDeleteAsync();
 
         if (deletedCacheEntries > 0)
@@ -144,5 +162,26 @@ public class ImageCacheService : IImageCacheService
             .ExecuteUpdateAsync(s => s.SetProperty(m => m.ThumbnailUrl, (string?)null));
 
         return (deletedCacheEntries, nulledPlaceholderThumbnails);
+    }
+
+    public async Task<(int deletedCacheEntries, int resetPosterUrls)> DumpBigImagesAsync()
+    {
+        // Step 1: Reset PosterUrl → ThumbnailUrl on all refs that pointed to a poster-api:// pseudo-URL.
+        var resetPosterUrls = await _context.MediaApiRefs
+            .Where(m => m.PosterUrl != null && m.PosterUrl.StartsWith("poster-api://"))
+            .ExecuteUpdateAsync(s => s.SetProperty(m => m.PosterUrl, m => m.ThumbnailUrl));
+
+        if (resetPosterUrls > 0)
+            _logger.LogInformation("ImageCache: Reset {Count} MediaApiRef.PosterUrl values to ThumbnailUrl.", resetPosterUrls);
+
+        // Step 2: Delete all ImageCache blobs stored under poster-api:// keys.
+        var deletedCacheEntries = await _context.ImageCaches
+            .Where(i => i.ImageUrl.StartsWith("poster-api://"))
+            .ExecuteDeleteAsync();
+
+        if (deletedCacheEntries > 0)
+            _logger.LogInformation("ImageCache: Deleted {Count} poster-api:// cache entries.", deletedCacheEntries);
+
+        return (deletedCacheEntries, resetPosterUrls);
     }
 }

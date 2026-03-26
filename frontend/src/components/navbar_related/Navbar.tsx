@@ -228,9 +228,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
                 <MinimizableIconTextButton title="About" icon="ⓘ" label="About" onClick={() => navigate("/about")} mode={effectiveMinimized ? "minimized" : "expanded"} isTop={isTop} />
 
-                {/* Search bar + filter dropdown — only shown when logged in (search requires auth) */}
-                {userName && (
-                    effectiveMinimized ? (
+                {effectiveMinimized ? (
                         <button
                             title="Search"
                             onClick={() => navigate("/search")}
@@ -258,7 +256,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                             />
                         </div>
                     )
-                )}
+                }
 
 
                 {!userName &&

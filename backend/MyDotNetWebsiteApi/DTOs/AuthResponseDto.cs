@@ -6,4 +6,6 @@ public class AuthResponseDto
     public string AccessToken { get; init; } = string.Empty;
     public string RoleLevel { get; init; } = string.Empty;
     public string UserName { get; init; } = string.Empty;
+    // Null means the user has no saved preference (use app/OS default).
+    public string? PreferredTheme { get; init; }
 }

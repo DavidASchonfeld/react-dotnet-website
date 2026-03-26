@@ -9,6 +9,8 @@ public record SubscriptionPlan
     public required string PeriodType { get; init; }
     public int? RequestLimit { get; init; }
     public int? WarningThreshold { get; init; }
+    // True when this plan tier grants access to the API's high-res poster endpoint.
+    public bool SupportsPosterApi { get; init; } = false;
 }
 
 public record ExternalApiMetadata
@@ -131,6 +133,7 @@ public static class ExternalApiRegistry
                     PeriodType = kvp.Value.PeriodType,
                     RequestLimit = kvp.Value.RequestLimit,
                     WarningThreshold = kvp.Value.WarningThreshold,
+                    SupportsPosterApi = kvp.Value.SupportsPosterApi,  // propagated from ApiPlan config
                 }
             );
 

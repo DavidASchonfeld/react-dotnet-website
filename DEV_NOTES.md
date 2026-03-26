@@ -125,3 +125,6 @@ Whether cached or fresh, all responses have this structure:
     cachedAt: "2026-03-24T10:30:00Z"        // When cached?
   }
 }
+
+## API Notes:
+- Creator info is not available in OMDB search results

@@ -12,6 +12,9 @@ const CARD_SLOTS = [
     { left: '42%', top: '50%', rotation:  6, z: 3 },
 ];
 
+// Slots sorted front-to-back so the first list item gets the highest z-index.
+const CARD_SLOTS_BY_Z = [...CARD_SLOTS].sort((a, b) => b.z - a.z);
+
 const CARD_SHADOWS = [
     '0 2px 6px rgba(0,0,0,0.35), 0 10px 28px rgba(0,0,0,0.28)',
     '0 2px 6px rgba(0,0,0,0.30), 0 8px 22px rgba(0,0,0,0.32)',
@@ -34,7 +37,7 @@ export default function FeaturedCollage({ featuredItems, isLoading }: Props) {
     return (
         <div className="polaroid-pile">
             {isLoading
-                ? CARD_SLOTS.map((slot, i) => (
+                ? CARD_SLOTS_BY_Z.map((slot, i) => (
                     <div
                         key={i}
                         className="polaroid-card animate-pulse"
@@ -51,7 +54,8 @@ export default function FeaturedCollage({ featuredItems, isLoading }: Props) {
                     </div>
                 ))
                 : featuredItems.map((item, i) => {
-                    const slot = CARD_SLOTS[i] ?? CARD_SLOTS[0];
+                    // Earlier list items map to higher-z slots so they appear in front.
+                    const slot = CARD_SLOTS_BY_Z[i] ?? CARD_SLOTS_BY_Z[0];
                     return (
                         <FeaturedCollageCard
                             key={item.id}

@@ -102,4 +102,17 @@ public class UserService : IUserService
     }
 
 
+    public async Task<ServiceResult<string?>> UpdateUserThemeAsync(string userId, string? theme)
+    {
+        // Find the user who owns this preference
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return ServiceResult<string?>.NotFound();
+
+        user.PreferredTheme = theme;
+        await _context.SaveChangesAsync();
+
+        return ServiceResult<string?>.Ok(user.PreferredTheme);
+    }
+
+
 }

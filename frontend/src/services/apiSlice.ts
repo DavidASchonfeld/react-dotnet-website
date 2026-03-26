@@ -694,6 +694,25 @@ export const apiSlice = createApi({
             },
         }),
 
+        // Flips UsePosterApi for one API source — only shown when the plan supports it. Admin-only.
+        togglePosterApi: builder.mutation<
+            { id: number; apiName: string; usePosterApi: boolean },
+            number  // externalApiSourceId
+        >({
+            query: (id) => ({
+                url: `/api/externalapisource/${id}/toggle-poster-api`,
+                method: 'PATCH',
+            }),
+            invalidatesTags: ['ExternalApiSource'],
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
+                    loading: 'Updating...',
+                    success: (result) => `Poster API ${result.data.usePosterApi ? 'enabled' : 'disabled'}`,
+                    error: '',
+                })
+            },
+        }),
+
         // Returns global app settings. Admin-only.
         getAppGlobalSettings: builder.query<AppGlobalSettings, void>({
             query: () => '/api/appsettings',
@@ -741,6 +760,28 @@ export const apiSlice = createApi({
         }),
 
 
+        // Removes all poster-api:// blobs and resets affected MediaApiRef.PosterUrl values. Admin-only.
+        deleteBigImages: builder.mutation<{ deletedCacheEntries: number; resetPosterUrls: number }, void>({
+            query: () => ({
+                url: '/api/imagecache/big-images',
+                method: 'DELETE',
+            }),
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
+                    loading: 'Dumping big images...',
+                    success: (result) => {
+                        const { deletedCacheEntries, resetPosterUrls } = result.data
+                        const parts = []
+                        if (deletedCacheEntries > 0) parts.push(`${deletedCacheEntries} cached ${deletedCacheEntries === 1 ? 'image' : 'images'} removed`)
+                        if (resetPosterUrls > 0) parts.push(`${resetPosterUrls} ${resetPosterUrls === 1 ? 'item' : 'items'} reset to thumbnail`)
+                        return parts.length > 0 ? parts.join(', ') : 'Nothing to dump'
+                    },
+                    error: '',
+                })
+            },
+        }),
+
+
         // ---- MediaType Endpoints ----
 
         getAllApprovedMediaTypes: builder.query<MediaTypeSummary[], void>({
@@ -751,6 +792,18 @@ export const apiSlice = createApi({
         getMediaTypeById: builder.query<MediaTypeDetail, number>({
             query: (id) => `/api/mediatype/${id}`,
             providesTags: (_, __, id) => [{ type: 'MediaType', id }],
+        }),
+
+
+        // ---- User Preference Endpoints ----
+
+        // Persists the authenticated user's chosen theme to their account on the backend.
+        updateUserTheme: builder.mutation<string | null, string | null>({
+            query: (theme) => ({
+                url: '/api/user/me/theme',
+                method: 'PATCH',
+                body: { theme },
+            }),
         }),
     }),
 })
@@ -796,14 +849,18 @@ export const {
     useGetApiUsageStatsQuery,
     useToggleApiDisabledMutation,
     useToggleApiNonSearchCacheMutation,
+    useTogglePosterApiMutation,           // toggles UsePosterApi on a per-source basis
     // App Global Settings
     useGetAppGlobalSettingsQuery,
     useToggleGlobalNonSearchCacheMutation,
     // ImageCache
     useDeleteImageCachePlaceholdersMutation,
+    useDeleteBigImagesMutation,           // removes poster-api:// blobs + resets PosterUrl values
     // ExternalApiSource
     useGetActiveApiSourcesQuery,
     // MediaType
     useGetAllApprovedMediaTypesQuery,
     useGetMediaTypeByIdQuery,
+    // User Preferences
+    useUpdateUserThemeMutation,
 } = apiSlice

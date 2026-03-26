@@ -39,14 +39,18 @@ public class OmdbApiAdapter : IExternalMediaApiAdapter
             {
                 ExternalId    = item.ImdbID,
                 Name          = item.Title,
-                // OMDB search returns only a 4-digit Year string, not a full date.
-                PublishedDate = DateTime.TryParse(item.Year, out var d) ? d : null,
+                // OMDB returns Year as "2010" or "2010–2016" (series range) — parse the first 4 digits only.
+                PublishedDate = int.TryParse(item.Year.Length >= 4 ? item.Year[..4] : item.Year, out var y) ? new DateTime(y, 1, 1) : (DateTime?)null,
                 // OMDB returns the string "N/A" (not null) when no poster exists.
                 ThumbnailUrl  = item.Poster == "N/A" ? null : item.Poster,
                 CreatorName   = null  // not available from the search endpoint
             })
             .ToList();
     }
+    // OMDB Poster API: constructs the fetch URL for a high-res poster; counts as one shared-limit request.
+    public string? BuildPosterFetchUrl(string externalId) =>
+        $"http://img.omdbapi.com/?apikey={_apiKey}&i={Uri.EscapeDataString(externalId)}";
+
     public async Task<ExternalApiSearchResult?> GetByExternalIdAsync(string externalId)
     {
         // OMDB detail endpoint: ?i= fetches a single item by IMDB ID.
@@ -71,7 +75,7 @@ public class OmdbApiAdapter : IExternalMediaApiAdapter
         {
             ExternalId    = response.ImdbID,
             Name          = response.Title,
-            PublishedDate = DateTime.TryParse(response.Year, out var d) ? d : null,
+            PublishedDate = int.TryParse(response.Year.Length >= 4 ? response.Year[..4] : response.Year, out var y) ? new DateTime(y, 1, 1) : (DateTime?)null,
             ThumbnailUrl  = response.Poster == "N/A" ? null : response.Poster,
             CreatorName   = response.Director == "N/A" ? null : response.Director,
             Poster        = response.Poster == "N/A" ? null : response.Poster,

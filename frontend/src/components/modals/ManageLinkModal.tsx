@@ -3,7 +3,7 @@ import RowItemContent from "../row_item_related/RowItemContent";
 import type { RowItemDisplayProps } from '../../types/rowItemTypes';
 import ConfirmModal from "./ConfirmModal";
 import PaginationControls from "../PaginationControls";
-import AnimatedPage from '../AnimatedPage';
+import DialogOverlay from './DialogOverlay';
 import SearchBarWithFilters from '../SearchBarWithFilters';
 import type { FilterState, SearchType } from '../SearchBarWithFilters';
 import type { ExternalApiSourceSummary } from '../../types/externalApiSource';
@@ -176,8 +176,7 @@ export default function ManageLinkModal({
     return (
         <>
             {/* Backdrop — click outside to close */}
-            <div className="modal-overlay" onClick={() => onClose(linkedIds)}>
-            <AnimatedPage>
+            <DialogOverlay onBackdropClick={() => onClose(linkedIds)}>
             {/* Modal panel */}
             <div className="w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] flex flex-col bg-surface-raised text-text rounded-xl shadow-xl overflow-hidden"
                  onClick={e => e.stopPropagation()}>
@@ -268,8 +267,7 @@ export default function ManageLinkModal({
                     </div>
                 )}
             </div>
-            </AnimatedPage>
-            </div>
+            </DialogOverlay>
 
             {/* The Confirm Modal for Potentially Removing a Link */}
             {pendingRemoveId !== null && (() => {

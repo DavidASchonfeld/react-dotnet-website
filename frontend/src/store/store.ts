@@ -9,6 +9,7 @@ import authReducer from './authSlice'
 import themeReducer from './themeSlice';
 import adminSettingsReducer from './adminSettingsSlice';
 import { apiSlice } from '../services/apiSlice';
+import { listenerMiddleware } from './listenerMiddleware';
 
 
 
@@ -72,7 +73,8 @@ export const store = configureStore({
 
             // This line appends "RTK Query"(Redux Toolkit Query) 's middleware
             // so Redux on my computer can use RTK Query's api library
-        }).concat(apiSlice.middleware)
+            // listenerMiddleware runs before reducers (prepend), so it sees the action before state updates.
+        }).prepend(listenerMiddleware.middleware).concat(apiSlice.middleware)
 });
 
 // persist is the object to pass into <PersistGate> in maint.tsx
