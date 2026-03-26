@@ -87,6 +87,20 @@ export interface AddMediaApiRefToMediaListRequest
     position?: number;
 }
 
+// Sent when adding an external search result to a list from SearchPage.
+// The backend uses externalApiSourceId + externalId to find-or-create the MediaApiRef,
+// then links it to the list idempotently (no error if already in list).
+export interface AddToListByExternalRefRequest {
+    externalApiSourceId: number;
+    externalId: string;
+    name: string;
+    mediaTypeId: number;
+    creatorName?: string | null;
+    publishedDate?: string | null;
+    thumbnailUrl?: string | null;
+    position?: number;
+}
+
 export interface MoveMediaApiRefWithinMediaListRequest
 {
     // These are NOT included here (aka it is commented out) because it will be passed via the URL when I send over this DTO

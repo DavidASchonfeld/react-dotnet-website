@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface Props {
     open: boolean;
@@ -55,7 +56,7 @@ export default function ItemSettingsDrawerModal({open, onClose, preview, childre
         // this modal will not render
         if (!open) return null;
 
-        return (
+        return createPortal(
             <div
 
             // Backdrop - dims everything behind the sheet
@@ -122,7 +123,8 @@ export default function ItemSettingsDrawerModal({open, onClose, preview, childre
 
 
                 </div>
-            </div>
+            </div>,
+            document.body
         );
 }
 

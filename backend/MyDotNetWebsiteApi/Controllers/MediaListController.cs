@@ -68,11 +68,36 @@ public class MediaListController : ControllerBase
         return result.ToActionResult(this);
     }
 
+    // Finds or creates the MediaApiRef using external API identifiers, then links it to the list.
+    // Idempotent: returns success even if the item is already in the list.
+    // Used by SearchPage when the user clicks to add a raw search result to a list.
+    [HttpPost("{mediaListId}/items/by-external")]
+    public async Task<IActionResult> AddMediaApiRefToListByExternal(int mediaListId, [FromBody] AddToListByExternalRefDto dto)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaListService.AddMediaApiRefToListByExternalAsync(mediaListId, dto, requesterUserId);
+        return result.ToActionResult(this);
+    }
+
     [HttpDelete("{mediaListId}/items/{mediaApiRefId}")]
     public async Task<IActionResult> RemoveMediaApiRefFromList(int mediaListId, int mediaApiRefId)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var result = await _mediaListService.RemoveMediaApiRefFromListAsync(mediaListId, mediaApiRefId, requesterUserId);
+        return result.ToActionResult(this);
+    }
+
+    // Removes a MediaApiRef from a list, identified by its external API key.
+    // Idempotent: returns success if the item is not in the DB or not in the list.
+    // Used by SearchPage when the user clicks to remove a raw search result from a list.
+    [HttpDelete("{mediaListId}/items/by-external")]
+    public async Task<IActionResult> RemoveMediaApiRefFromListByExternal(
+        int mediaListId,
+        [FromQuery] int externalApiSourceId,
+        [FromQuery] string externalId)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaListService.RemoveMediaApiRefFromListByExternalAsync(mediaListId, externalApiSourceId, externalId, requesterUserId);
         return result.ToActionResult(this);
     }
 

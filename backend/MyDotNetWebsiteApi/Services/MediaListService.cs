@@ -353,6 +353,148 @@ public class MediaListService : IMediaListService
     }
 
 
+    // Combines find-or-create for the MediaApiRef with adding it to the list.
+    // Idempotent: if the item is already in the list, returns success instead of 409.
+    // Called from SearchPage when adding an external search result to a list.
+    public async Task<ServiceResult<MediaListSummaryDto>> AddMediaApiRefToListByExternalAsync(
+        int mediaListId, AddToListByExternalRefDto dto, string requesterUserId)
+    {
+        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
+
+        if (mediaList == null)     return ServiceResult<MediaListSummaryDto>.NotFound();
+        if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
+        if (forbidden)             return ServiceResult<MediaListSummaryDto>.Forbidden();
+
+
+        //// Validate that the external API source exists
+        var apiSource = await _context.ExternalApiSources.FindAsync(dto.ExternalApiSourceId);
+        if (apiSource == null)
+            return ServiceResult<MediaListSummaryDto>.NotFound("External API source not found.");
+
+
+        //// Find or create the MediaApiRef (mirrors GetOrCreateMediaApiRefAsync in MediaApiRefService)
+        var mediaApiRef = await _context.MediaApiRefs
+            .FirstOrDefaultAsync(r =>
+                r.ExternalApiSourceId == dto.ExternalApiSourceId &&
+                r.ExternalId == dto.ExternalId);
+
+        if (mediaApiRef == null)
+        {
+            mediaApiRef = new MediaApiRef
+            {
+                Name                = dto.Name,
+                MediaTypeId         = dto.MediaTypeId,
+                CreatorName         = dto.CreatorName,
+                PublishedDate       = dto.PublishedDate,
+                ExternalApiSourceId = dto.ExternalApiSourceId,
+                ExternalId          = dto.ExternalId,
+                ThumbnailUrl        = dto.ThumbnailUrl,
+                DateAdded           = DateTime.UtcNow,
+            };
+            _context.MediaApiRefs.Add(mediaApiRef);
+            await _context.SaveChangesAsync();
+        }
+
+
+        //// Idempotent: if already in list, return success (not 409)
+        bool alreadyInList = await _context.LinkMediaApiRefToMediaListTable
+            .AnyAsync(l => l.HostListId == mediaListId && l.MediaApiRefId == mediaApiRef.Id);
+
+        if (alreadyInList)
+        {
+            int existingCount = await GetItemCountAsync(mediaListId);
+            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, existingCount));
+        }
+
+
+        //// If target is a status list, auto-remove the item from any other status list the owner has
+        if (mediaList.IsDefault && _mutuallyExclusiveListNames.Contains(mediaList.Name))
+        {
+            var otherStatusListIds = await _context.MediaLists
+                .Where(l => l.SubmittedById == mediaList.SubmittedById
+                         && l.IsDefault
+                         && l.Id != mediaListId
+                         && _mutuallyExclusiveListNames.Contains(l.Name))
+                .Select(l => l.Id)
+                .ToListAsync();
+
+            var staleLinks = await _context.LinkMediaApiRefToMediaListTable
+                .Where(l => otherStatusListIds.Contains(l.HostListId) && l.MediaApiRefId == mediaApiRef.Id)
+                .ToListAsync();
+
+            foreach (var staleLink in staleLinks)
+            {
+                await ShiftPositionsAsync(staleLink.Position + 1, staleLink.HostListId, isAdding: false);
+                _context.LinkMediaApiRefToMediaListTable.Remove(staleLink);
+            }
+        }
+
+
+        //// Position handling + insert
+        int position = await ClampPositionAsync(mediaListId, dto.Position, isAdding: true);
+        await ShiftPositionsAsync(position, mediaListId, isAdding: true);
+
+        _context.LinkMediaApiRefToMediaListTable.Add(new LinkMediaApiRefToMediaList
+        {
+            HostListId    = mediaListId,
+            MediaApiRefId = mediaApiRef.Id,
+            Position      = position,
+        });
+        await _context.SaveChangesAsync();
+
+        int count = await GetItemCountAsync(mediaListId);
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count));
+    }
+
+
+    // Removes a MediaApiRef from a list, identified by its external API key instead of its DB id.
+    // Idempotent: if the item is not in the DB, or not in the list, returns success.
+    // Called from SearchPage when removing an external search result from a list.
+    public async Task<ServiceResult<MediaListSummaryDto>> RemoveMediaApiRefFromListByExternalAsync(
+        int mediaListId, int externalApiSourceId, string externalId, string requesterUserId)
+    {
+        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
+
+        if (mediaList == null)     return ServiceResult<MediaListSummaryDto>.NotFound();
+        if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
+        if (forbidden)             return ServiceResult<MediaListSummaryDto>.Forbidden();
+
+
+        //// Find (do NOT create) the MediaApiRef
+        var mediaApiRef = await _context.MediaApiRefs
+            .FirstOrDefaultAsync(r =>
+                r.ExternalApiSourceId == externalApiSourceId &&
+                r.ExternalId == externalId);
+
+        if (mediaApiRef == null)
+        {
+            // Item not in DB → cannot be in any list → return success (idempotent)
+            int count0 = await GetItemCountAsync(mediaListId);
+            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count0));
+        }
+
+
+        var linkRow = await _context.LinkMediaApiRefToMediaListTable
+            .Where(l => l.HostListId == mediaListId && l.MediaApiRefId == mediaApiRef.Id)
+            .FirstOrDefaultAsync();
+
+        if (linkRow == null)
+        {
+            // Not in list → return success (idempotent)
+            int count0 = await GetItemCountAsync(mediaListId);
+            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count0));
+        }
+
+
+        await ShiftPositionsAsync(linkRow.Position + 1, mediaListId, isAdding: false);
+        _context.LinkMediaApiRefToMediaListTable.Remove(linkRow);
+        await _context.SaveChangesAsync();
+
+        int count = await GetItemCountAsync(mediaListId);
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count));
+    }
+
+
     public async Task<ServiceResult<MediaListSummaryDto>> MoveMediaApiRefWithinMediaListAsync(int mediaListId, int mediaApiRefId, MoveMediaApiRefWithinMediaListDto dto, string requesterUserId)
     {
 

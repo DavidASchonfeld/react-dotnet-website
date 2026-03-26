@@ -23,6 +23,7 @@ import type {
     CreateMediaListRequest,
     UpdateMediaListNotListContentRequest,
     AddMediaApiRefToMediaListRequest,
+    AddToListByExternalRefRequest,
     MoveMediaApiRefWithinMediaListRequest,
 } from '../types/mediaList'
 import type { MediaTypeSummary, MediaTypeDetail } from '../types/mediaType'
@@ -365,6 +366,55 @@ export const apiSlice = createApi({
             },
         }),
 
+        // Finds or creates the MediaApiRef by external key, then links it to the list.
+        // Idempotent: returns success even if the item is already in the list.
+        // Used by SearchPage for raw external search results (no local DB id yet).
+        addMediaApiRefToListByExternalRef: builder.mutation<
+            MediaListSummary,
+            { listId: number; data: AddToListByExternalRefRequest }
+        >({
+            query: ({ listId, data }) => ({
+                url: `/api/medialist/${listId}/items/by-external`,
+                method: 'POST',
+                body: data,
+            }),
+            invalidatesTags: (_, __, { listId }) => [
+                { type: 'MediaList', id: listId },
+                'MediaList',
+            ],
+            onQueryStarted: async (_, { queryFulfilled }) => {
+                await safeToast.promise(queryFulfilled, {
+                    loading: 'Adding...',
+                    success: 'Item added to list',
+                    error: '',   // suppressed — baseQueryWithErrorHandling handles errors
+                })
+            },
+        }),
+
+        // Removes a MediaApiRef from a list, identified by its external API key.
+        // Idempotent: returns success if the item is not in the DB or not in the list.
+        // Used by SearchPage for raw external search results (no local DB id yet).
+        removeMediaApiRefFromListByExternalRef: builder.mutation<
+            MediaListSummary,
+            { listId: number; externalApiSourceId: number; externalId: string }
+        >({
+            query: ({ listId, externalApiSourceId, externalId }) => ({
+                url: `/api/medialist/${listId}/items/by-external?externalApiSourceId=${externalApiSourceId}&externalId=${encodeURIComponent(externalId)}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: (_, __, { listId }) => [
+                { type: 'MediaList', id: listId },
+                'MediaList',
+            ],
+            onQueryStarted: async (_, { queryFulfilled }) => {
+                await safeToast.promise(queryFulfilled, {
+                    loading: 'Removing...',
+                    success: 'Item removed from list',
+                    error: '',   // suppressed — baseQueryWithErrorHandling handles errors
+                })
+            },
+        }),
+
         reorderMediaListItems: builder.mutation<
             void,
             { mediaListId: number; orderedItemIds: number[] }
@@ -672,7 +722,9 @@ export const {
     useDeleteMediaListMutation,
     usePatchListBasicInfoMutation,
     useAddMediaApiRefToListMutation,
+    useAddMediaApiRefToListByExternalRefMutation,
     useRemoveMediaApiRefFromListMutation,
+    useRemoveMediaApiRefFromListByExternalRefMutation,
     useReorderMediaListItemsMutation,
     useMoveMediaApiRefWithinMediaListMutation,
     useSearchMediaListsQuery,

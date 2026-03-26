@@ -10,9 +10,9 @@ import {
     useSearchMediaListsQuery,
     useLazySearchMediaListsQuery,
     useLazySearchCustomTagsQuery,
-    useAddMediaApiRefToListMutation,
+    useAddMediaApiRefToListByExternalRefMutation,
+    useRemoveMediaApiRefFromListByExternalRefMutation,
     useAddTagToMediaApiRefMutation,
-    useRemoveMediaApiRefFromListMutation,
     useRemoveTagFromMediaApiRefMutation,
 } from '../services/apiSlice'
 import AnimatedPage from '../components/AnimatedPage'
@@ -74,9 +74,9 @@ export default function SearchPage() {
     // Lazy queries + mutations for the link modal
     const [triggerSearchLists, { data: listSearchData, isFetching: isSearchingLists }] = useLazySearchMediaListsQuery()
     const [triggerSearchTags, { data: tagSearchData, isFetching: isSearchingTags }] = useLazySearchCustomTagsQuery()
-    const [addToList] = useAddMediaApiRefToListMutation()
+    const [addToListByExternalRef] = useAddMediaApiRefToListByExternalRefMutation()
+    const [removeFromListByExternalRef] = useRemoveMediaApiRefFromListByExternalRefMutation()
     const [addTag] = useAddTagToMediaApiRefMutation()
-    const [removeFromList] = useRemoveMediaApiRefFromListMutation()
     const [removeTag] = useRemoveTagFromMediaApiRefMutation()
 
     // API queries
@@ -304,39 +304,57 @@ export default function SearchPage() {
                 candidatesLoading={isSearchingLists || isSearchingTags}
                 initialLinkedIds={[]}  // unknown without findOrCreate; empty is safe
                 onAdd={async (id) => {
-                    // Ensure the MediaApiRef exists in our DB before linking
                     const source = activeSources?.find(s => s.mediaTypeId === mediaTypeId)
                     if (!source) return
-                    const ref = await findOrCreate({
-                        externalApiSourceId: source.id,
-                        externalId: selectedResult.externalId,
-                        name: selectedResult.name,
-                        mediaTypeId: mediaTypeId!,
-                        creatorName: selectedResult.creatorName,
-                        publishedDate: selectedResult.publishedDate,
-                        thumbnailUrl: selectedResult.thumbnailUrl,
-                    }).unwrap()
                     if (activeModalType === 'lists') {
-                        await addToList({ listId: parseInt(id), mediaApiRefId: ref.id }).unwrap()
+                        // Single backend call: finds or creates the MediaApiRef then links it idempotently
+                        await addToListByExternalRef({
+                            listId: parseInt(id),
+                            data: {
+                                externalApiSourceId: source.id,
+                                externalId: selectedResult.externalId,
+                                name: selectedResult.name,
+                                mediaTypeId: mediaTypeId!,
+                                creatorName: selectedResult.creatorName,
+                                publishedDate: selectedResult.publishedDate,
+                                thumbnailUrl: selectedResult.thumbnailUrl,
+                            },
+                        }).unwrap()
                     } else {
+                        // Tags: ensure MediaApiRef exists first, then tag it
+                        const ref = await findOrCreate({
+                            externalApiSourceId: source.id,
+                            externalId: selectedResult.externalId,
+                            name: selectedResult.name,
+                            mediaTypeId: mediaTypeId!,
+                            creatorName: selectedResult.creatorName,
+                            publishedDate: selectedResult.publishedDate,
+                            thumbnailUrl: selectedResult.thumbnailUrl,
+                        }).unwrap()
                         await addTag({ tagId: parseInt(id), mediaApiRefId: ref.id }).unwrap()
                     }
                 }}
                 onRemove={async (id) => {
                     const source = activeSources?.find(s => s.mediaTypeId === mediaTypeId)
                     if (!source) return
-                    const ref = await findOrCreate({
-                        externalApiSourceId: source.id,
-                        externalId: selectedResult.externalId,
-                        name: selectedResult.name,
-                        mediaTypeId: mediaTypeId!,
-                        creatorName: selectedResult.creatorName,
-                        publishedDate: selectedResult.publishedDate,
-                        thumbnailUrl: selectedResult.thumbnailUrl,
-                    }).unwrap()
                     if (activeModalType === 'lists') {
-                        await removeFromList({ listId: parseInt(id), mediaApiRefId: ref.id }).unwrap()
+                        // Single backend call: finds the MediaApiRef by external key and removes idempotently
+                        await removeFromListByExternalRef({
+                            listId: parseInt(id),
+                            externalApiSourceId: source.id,
+                            externalId: selectedResult.externalId,
+                        }).unwrap()
                     } else {
+                        // Tags: ensure MediaApiRef exists first, then untag it
+                        const ref = await findOrCreate({
+                            externalApiSourceId: source.id,
+                            externalId: selectedResult.externalId,
+                            name: selectedResult.name,
+                            mediaTypeId: mediaTypeId!,
+                            creatorName: selectedResult.creatorName,
+                            publishedDate: selectedResult.publishedDate,
+                            thumbnailUrl: selectedResult.thumbnailUrl,
+                        }).unwrap()
                         await removeTag({ tagId: parseInt(id), mediaApiRefId: ref.id }).unwrap()
                     }
                 }}
