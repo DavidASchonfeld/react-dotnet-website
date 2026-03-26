@@ -9,7 +9,7 @@ import SearchBar from "../SearchBar";
 import SearchFilterDropdown from "./SearchFilterDropdown";
 import DropdownMenuButton from "./DropdownMenuButton";
 import MinimizableIconTextButton from "../MinimizableIconTextButton";
-import RoleBadge from "../RoleBadge";
+import RoleBadge from "../administrator_related/RoleBadge";
 import { NAVBAR_AUTO_MINIMIZE_BREAKPOINT } from "../../constants";
 import { useGetActiveApiSourcesQuery } from "../../services/apiSlice";
 

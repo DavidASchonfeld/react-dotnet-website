@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import SearchBar from './SearchBar'
-import RoleBadge from './RoleBadge'
+import RoleBadge from './administrator_related/RoleBadge'
 import { API_SUBTYPES, SEARCH_MIN_CHARS, SITE_TYPE_SUBTYPES } from '../constants'
 import type { ExternalApiSourceSummary } from '../types/externalApiSource'
 

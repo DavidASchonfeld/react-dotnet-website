@@ -1,7 +1,7 @@
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { CacheStatusPill } from './CacheStatusPill';
-import RoleBadge from '../RoleBadge';
+import RoleBadge from './RoleBadge';
 import { RefInDbPill } from './RefInDbPill';
 import type { CacheMetadata } from '../../types/cacheMetadata';
 
