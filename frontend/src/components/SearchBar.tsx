@@ -8,6 +8,8 @@ import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_CHARS } from '../constants'
 import RowItemContent from './row_item_related/RowItemContent'
 import { routes } from '../utils/routes'
+import { canSearch } from '../utils/searchUtils'
+import type { SearchType } from '../utils/searchUtils'
 
 interface SearchBarProps {
     // 'typeahead': live dropdown as you type (used in Navbar)
@@ -17,6 +19,7 @@ interface SearchBarProps {
     effectiveMinimized: boolean  // collapse the bar when navbar is minimized
     defaultQuery?: string        // pre-fill from URL params (on-submit mode)
     defaultApiSourceId?: number  // pre-fill from URL params (on-submit mode)
+    searchType?: SearchType      // undefined defaults to 'media' for backward compat
     // apiSourceId is optional — Navbar passes only query (filter dropdown handles type/scope separately)
     onSubmit?: (query: string, apiSourceId?: number) => void
     // When false, hides the API source pill selector (Navbar uses its own SearchFilterDropdown instead)
@@ -31,6 +34,7 @@ export default function SearchBar({
     effectiveMinimized,
     defaultQuery = '',
     defaultApiSourceId,
+    searchType,
     onSubmit,
     showApiSourcePills = true, // default true preserves backward compat for SearchResultsPage
     showSearchButton = true,
@@ -98,9 +102,9 @@ export default function SearchBar({
 
     // ---- On-Submit handler (Enter key or Search button) ----
     const handleSubmit = useCallback(() => {
-        if (inputQuery.length < SEARCH_MIN_CHARS || effectiveSelectedApiSourceId === null) return
-        onSubmit?.(inputQuery, effectiveSelectedApiSourceId)
-    }, [inputQuery, effectiveSelectedApiSourceId, onSubmit])
+        if (!canSearch(inputQuery, searchType ?? 'media', effectiveSelectedApiSourceId)) return
+        onSubmit?.(inputQuery, effectiveSelectedApiSourceId ?? undefined)
+    }, [inputQuery, searchType, effectiveSelectedApiSourceId, onSubmit])
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') handleSubmit()
@@ -152,7 +156,7 @@ export default function SearchBar({
                     value={inputQuery}
                     onChange={e => handleInputChange(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={selectedSource ? `${selectedSource.apiName}…` : 'Search…'}
+                    placeholder={selectedSource ? `${selectedSource.apiName}…` : searchType === 'lists' ? 'Lists…' : searchType === 'tags' ? 'Tags…' : 'Search…'}
                     className="form-input pl-3 pr-8 py-1 text-sm w-full rounded-lg"
                 />
                 <span className="absolute right-2 flex items-center text-text/50 hover:text-text/70 transition-colors duration-200 cursor-pointer"
@@ -203,7 +207,7 @@ export default function SearchBar({
             {mode === 'on-submit' && showSearchButton && (
                 <button
                     onClick={handleSubmit}
-                    disabled={inputQuery.length < SEARCH_MIN_CHARS || effectiveSelectedApiSourceId === null}
+                    disabled={!canSearch(inputQuery, searchType ?? 'media', effectiveSelectedApiSourceId)}
                     className="btn text-sm py-1 px-3 shrink-0 disabled:opacity-40"
                 >
                     Search

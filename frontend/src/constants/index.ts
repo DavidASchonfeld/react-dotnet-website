@@ -17,6 +17,9 @@ export const SEARCH_DEBOUNCE_MS = 300;
 export const SEARCH_MIN_CHARS = 2;      // Matches AppConstants.SearchMinQueryLength
 export const SEARCH_DEFAULT_LIMIT = 10; // Per-keystroke result cap sent to the backend (backend also enforces its own cap)
 
+// Default scope for non-media search types (Lists, Tags). Used in SearchBarWithFilters and SearchPage.
+export const DEFAULT_SITE_SEARCH_SUBTYPE = 'mine'
+
 // Options for non-media (aka non-3rd-Party-API) Search Types (Lists, Tags).
 // Keys match SearchType values; mirrors the API_SUBTYPES pattern below.
 export const SITE_TYPE_SUBTYPES: Record<string, { value: string; label: string }[]> = {

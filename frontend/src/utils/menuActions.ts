@@ -28,8 +28,12 @@ export function makeGoToDetailsAction(navigate: NavigateFunction, path: string):
     return { icon: '📄', label: 'Go to Details', onClick: () => navigate(path) };
 }
 
-export function makeManageListsTagsAction(onOpen: () => void): MenuAction {
-    return { icon: '📋', label: 'Manage Lists / Tags for This Item', onClick: onOpen };
+export function makeManageListsAction(onOpen: () => void): MenuAction {
+    return { icon: '📋', label: 'Manage Lists for This Item', onClick: onOpen };
+}
+
+export function makeManageTagsAction(onOpen: () => void): MenuAction {
+    return { icon: '🏷️', label: 'Manage Tags for This Item', onClick: onOpen };
 }
 
 export function makeManageListContentsAction(onOpen: () => void): MenuAction {
@@ -38,6 +42,10 @@ export function makeManageListContentsAction(onOpen: () => void): MenuAction {
 
 export function makeEditBasicInfo(onOpen: () => void): MenuAction {
     return { icon: '✏️', label: 'Name & Details', onClick: onOpen };
+}
+
+export function makeDeleteAction(onDelete: () => void): MenuAction {
+    return { icon: '🗑️', label: 'Delete', onClick: onDelete };
 }
 // ── Preset builders ────────────────────────────────────────────────────
 // A preset builder returns the full standard MenuAction[] for a given item type.
@@ -49,13 +57,15 @@ export function mediaApiRefActions(item: {
     externalId: string;
     name: string;
     navigate: NavigateFunction;
-    onManageListsTagsOpen: () => void;
+    onManageListsOpen: () => void;
+    onManageTagsOpen: () => void;
     includeGoToDetails?: boolean;
 }): MenuAction[] {
     const path = routes.mediaApiRef(item.apiName, item.externalId);
     return [
         makeShareAction(item.name, path),
-        makeManageListsTagsAction(item.onManageListsTagsOpen),
+        makeManageListsAction(item.onManageListsOpen),
+        makeManageTagsAction(item.onManageTagsOpen),
 
         // if includeGoToDetails == false, do NOT include the link to the object's details page
         ...(item.includeGoToDetails !== false ? [makeGoToDetailsAction(item.navigate, path)] : []),
@@ -66,19 +76,23 @@ export function mediaListActions(item: {
     id: number;
     name: string;
     navigate: NavigateFunction;
-    onManageListContentsOpen: () => void;
+    onManageListContentsOpen?: () => void;
     includeGoToDetails?: boolean;
     onEditBasicInfoOpen?: () => void;
+    onDeleteOpen?: () => void;
 }): MenuAction[] {
     const path = routes.mediaList(item.id);
     return [
         makeShareAction(item.name, path),
-        makeManageListContentsAction(item.onManageListContentsOpen),
+        ...(item.onManageListContentsOpen ? [makeManageListContentsAction(item.onManageListContentsOpen)] : []),
 
         // Make "Edit Basic Info" action only available if the caller passes in an action.
         //   This is also helpful because we do not want for "Edit Basic Info" menus to open
         //   when people click Public lists that they do not have edit status for
         ...(item.onEditBasicInfoOpen ? [makeEditBasicInfo(item.onEditBasicInfoOpen)] : []),
+
+        // Delete action only available if the caller passes in an action (e.g. not for default lists)
+        ...(item.onDeleteOpen ? [makeDeleteAction(item.onDeleteOpen)] : []),
 
         // if includeGoToDetails == false, do NOT include the link to the object's details page
         ...(item.includeGoToDetails !== false ? [makeGoToDetailsAction(item.navigate, path)] : []),
@@ -89,10 +103,14 @@ export function tagActions(item: {
     id: number;
     name: string;
     navigate: NavigateFunction;
+    onEditOpen?: () => void;
+    onDeleteOpen?: () => void;
 }): MenuAction[] {
     const path = routes.tag(item.id);
     return [
         makeShareAction(item.name, path),
+        ...(item.onEditOpen ? [makeEditBasicInfo(item.onEditOpen)] : []),
+        ...(item.onDeleteOpen ? [makeDeleteAction(item.onDeleteOpen)] : []),
         makeGoToDetailsAction(item.navigate, path),
     ];
 }

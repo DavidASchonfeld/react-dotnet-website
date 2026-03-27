@@ -5,7 +5,6 @@ export const routePaths = {
     mediaApiRef: '/mediaapiref/:apiName/:externalId',
     mediaList:   '/medialist/:id',
     tag:         '/tags/:tagId',
-    tagItems:    '/tags/:tagId/items',
 } as const;
 
 // To build those strings for other places
@@ -14,5 +13,4 @@ export const routes = {
         `/mediaapiref/${encodeURIComponent(apiName)}/${encodeURIComponent(externalId)}`,
     mediaList:   (id: number) => `/medialist/${id}`,
     tag:         (id: number) => `/tags/${id}`,
-    tagItems:    (id: number) => `/tags/${id}/items`,
 } as const;

@@ -6,8 +6,6 @@ import {
     useGetMediaApiRefTagsQuery,
     useRefreshMediaApiRefDetailsMutation,
     useFindOrCreateMediaApiRefMutation,
-    useLazySearchMediaListsQuery,
-    useLazySearchCustomTagsQuery,
     useAddMediaApiRefToListMutation,
     useRemoveMediaApiRefFromListMutation,
     useAddTagToMediaApiRefMutation,
@@ -23,10 +21,11 @@ import { AdminItemStatusPanel } from '../components/administrator_related/AdminI
 import ImageCacheIndicatorDot from '../components/administrator_related/ImageCacheIndicatorDot';
 import ItemActionsButton from '../components/row_item_related/ItemActionsButton';
 import { mediaApiRefActions } from '../utils/menuActions';
+import { mediaApiRefToRowItemProps } from '../utils/mediaApiRefAdapter';
 import { routes } from '../utils/routes';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import type { SearchType } from '../components/SearchBarWithFilters';
-import { SEARCH_DEFAULT_LIMIT } from '../constants';
+import { useManageLinkModalSearch } from '../hooks/useManageLinkModalSearch';
 
 
 export default function MediaApiRefDetailPage() {
@@ -57,6 +56,9 @@ export default function MediaApiRefDetailPage() {
     // Tracks which type is active so the modal remounts on switch (fresh linkedIds)
     const [activeModalType, setActiveModalType] = useState<SearchType>('lists');
 
+    // All search/pagination logic for the modal — candidates, loading, pagination, onSearch, onPageChange
+    const modalSearch = useManageLinkModalSearch(activeModalType, showLinkModal);
+
     const { data: lists } = useGetMediaApiRefListsQuery(
         effectiveMediaApiRefId,
         { skip: !isInDb }
@@ -65,10 +67,6 @@ export default function MediaApiRefDetailPage() {
         effectiveMediaApiRefId,
         { skip: !isInDb }
     );
-
-    // Lazy search queries for the link modal
-    const [triggerSearchLists, { data: listSearchData, isFetching: isSearchingLists }] = useLazySearchMediaListsQuery();
-    const [triggerSearchTags, { data: tagSearchData, isFetching: isSearchingTags }] = useLazySearchCustomTagsQuery();
 
     const [addToList] = useAddMediaApiRefToListMutation();
     const [removeFromList] = useRemoveMediaApiRefFromListMutation();
@@ -91,7 +89,7 @@ export default function MediaApiRefDetailPage() {
     })()
 
     // Lazy findOrCreate: called when user opens the manage modal but the item isn't in the DB yet.
-    const handleOpenManageModal = async () => {
+    const handleOpenManageModal = async (mode: SearchType) => {
         if (!detail) return;
         if (!isInDb) {
             try {
@@ -109,6 +107,7 @@ export default function MediaApiRefDetailPage() {
                 return;
             }
         }
+        setActiveModalType(mode);
         setShowLinkModal(true);
     };
 
@@ -129,15 +128,15 @@ export default function MediaApiRefDetailPage() {
                 <BackButton />
                 <ItemActionsButton
                     buttonClassName="btn btn-secondary w-10 h-10 flex items-center justify-center"
-                    firstString={detail.name}
-                    secondString={detail.creatorName ?? undefined}
+                    {...mediaApiRefToRowItemProps(detail, { includeYear: false, secondStringField: 'date' })}
                     labelPill={<MediaTypeLabel mediaTypeId={detail.mediaTypeId} faded={true} />}
                     onMenuClick={mediaApiRefActions({
                         apiName: detail.apiSourceName,
                         externalId: detail.externalId,
                         name: detail.name,
                         navigate,
-                        onManageListsTagsOpen: handleOpenManageModal,
+                        onManageListsOpen: () => handleOpenManageModal('lists'),
+                        onManageTagsOpen: () => handleOpenManageModal('tags'),
                         includeGoToDetails: false,
                     })}
                 />
@@ -251,17 +250,8 @@ export default function MediaApiRefDetailPage() {
             <ManageLinkModal
                 key={activeModalType}  // remount on type switch so linkedIds reset for the new type
                 modalTitle={activeModalType === 'lists' ? 'Add to Lists' : 'Tag this Item'}
-                allowedSearchTypes={['lists', 'tags']}
-                onSearch={(query, filters) => {
-                    // Update active type first so candidates/initialLinkedIds stay in sync
-                    if (filters.searchType !== activeModalType) setActiveModalType(filters.searchType)
-                    if (filters.searchType === 'lists') triggerSearchLists({ query, limit: SEARCH_DEFAULT_LIMIT });
-                    else triggerSearchTags({ query, limit: SEARCH_DEFAULT_LIMIT });
-                }}
-                candidates={activeModalType === 'lists'
-                    ? (listSearchData ?? []).map(l => ({ id: String(l.id), firstString: l.name, secondString: l.description ?? undefined }))
-                    : (tagSearchData ?? []).map(t => ({ id: String(t.id), firstString: t.name }))}
-                candidatesLoading={isSearchingLists || isSearchingTags}
+                allowedSearchTypes={[activeModalType]}
+                {...modalSearch}
                 initialLinkedIds={activeModalType === 'lists'
                     ? (lists ?? []).map(l => String(l.id))
                     : (appliedTags ?? []).map(t => String(t.id))}

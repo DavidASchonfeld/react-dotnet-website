@@ -18,12 +18,10 @@ import FallbackToaster from './components/FallbackToaster'
 import About from './pages/About'
 import Navbar from './components/navbar_related/Navbar'
 import LoginOrRegisterPage from './pages/LoginOrRegisterPage'
-import MyMediaListsPage from './pages/MyMediaListsPage'
 import MediaListDetailPage from './pages/MediaListDetailPage'
 import AdminManageAllUsersPage from './pages/AdminManageAllUsersPage'
 import AdminApiUsagePage from './pages/AdminApiUsagePage'
 import AdminEditFeaturedPage from './pages/AdminEditFeaturedPage'
-import AdminSettingsPage from './pages/AdminSettingsPage'
 
 // Other of My Code
 import { routePaths } from './utils/routes'
@@ -31,8 +29,6 @@ import type { AppDispatch, RootState } from './store/store'
 import { useGetAllApprovedMediaTypesQuery } from './services/apiSlice'
 import AdminRoute from './components/route_protections/AdminRoute'
 import MediaApiRefDetailPage from './pages/MediaApiRefDetailPage'
-import MyCustomTagsPage from './pages/MyCustomTagsPage'
-import ExploreByTagPage from './pages/ExploreByTagPage'
 import TagDetailPage from './pages/TagDetailPage'
 import HomePage from './pages/HomePage'
 import SearchPage from './pages/SearchPage'
@@ -140,12 +136,6 @@ function App() {
         <Route path = "/" element = {<HomePage />} />
         <Route path = "/about" element = {<About />} />
         <Route path = "/login" element = {<LoginOrRegisterPage />} />
-        <Route path = "/my-medialists" element = {
-          <ProtectedRoute>
-              <MyMediaListsPage />
-          </ProtectedRoute>
-        } />
-
         {/* The ":id means that you can pass any variable there,
         and React will catch the value into the variable "id". */}
         <Route path={routePaths.mediaList} element={<MediaListDetailPage />} />
@@ -154,13 +144,6 @@ function App() {
 
         <Route path={routePaths.mediaApiRef} element={<MediaApiRefDetailPage />} />
 
-        <Route path = "/my-tags" element = {
-          <ProtectedRoute>
-            <MyCustomTagsPage />
-          </ProtectedRoute>
-        } />
-
-        <Route path={routePaths.tagItems} element={<ExploreByTagPage />} />
         <Route path={routePaths.tag} element={<TagDetailPage />} />
 
         <Route path = "/search" element = {<SearchPage />} />
@@ -197,11 +180,6 @@ function App() {
           </AdminRoute>
         } />
 
-        <Route path = "/admin/settings" element = {
-          <AdminRoute>
-            <AdminSettingsPage />
-          </AdminRoute>
-        } />
 
 
       </Routes>

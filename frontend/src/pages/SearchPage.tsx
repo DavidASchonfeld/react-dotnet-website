@@ -8,12 +8,17 @@ import {
     useGetActiveApiSourcesQuery,
     useSearchCustomTagsQuery,
     useSearchMediaListsQuery,
-    useLazySearchMediaListsQuery,
-    useLazySearchCustomTagsQuery,
     useAddMediaApiRefToListByExternalRefMutation,
     useRemoveMediaApiRefFromListByExternalRefMutation,
     useAddTagToMediaApiRefMutation,
     useRemoveTagFromMediaApiRefMutation,
+    useGetMyMediaListsQuery,
+    useCreateMediaListMutation,
+    useDeleteMediaListMutation,
+    useGetMyCustomTagsQuery,
+    useCreateCustomTagMutation,
+    usePatchCustomTagMutation,
+    useDeleteCustomTagMutation,
 } from '../services/apiSlice'
 import AnimatedPage from '../components/AnimatedPage'
 import SearchBarWithFilters from '../components/SearchBarWithFilters'
@@ -22,10 +27,16 @@ import RowItemStyling from '../components/row_item_related/RowItemStyling'
 import RowItemContent from '../components/row_item_related/RowItemContent'
 import { AdminItemStatusPanel } from '../components/administrator_related/AdminItemStatusPanel'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
-import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES } from '../constants'
+import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES, DEFAULT_SITE_SEARCH_SUBTYPE } from '../constants'
 import ManageLinkModal from '../components/modals/ManageLinkModal'
+import { useManageLinkModalSearch } from '../hooks/useManageLinkModalSearch'
+import MediaListFormModal from '../components/modals/MediaListFormModal'
+import ConfirmModal from '../components/modals/ConfirmModal'
+import BadgePill from '../components/BadgePill'
 import { routes } from '../utils/routes'
-import { mediaApiRefActions } from '../utils/menuActions'
+import { mediaApiRefActions, mediaListActions, tagActions } from '../utils/menuActions'
+import { mediaApiRefToRowItemProps } from '../utils/mediaApiRefAdapter'
+import { VisibilityStatus, MediaListCategory } from '../types/enums'
 
 const PAGE_SIZE = SEARCH_DEFAULT_LIMIT
 
@@ -42,11 +53,11 @@ export default function SearchPage() {
     const showFiltersParam = searchParams.get('showFilters') === 'true'
     const page = Math.max(1, parseInt(pageParam ?? '1') || 1)
 
-    const shouldShowFilters = showFiltersParam || !query
-
     const urlSearchType = (searchParams.get('type') ?? 'media') as SearchType
+
+    const shouldShowFilters = showFiltersParam || (!query && urlSearchType === 'media')
     // For media: API-specific subtype. For tags/lists: scope ('all' | 'mine'), defaulting to 'all'.
-    const subtypeForNonMedia = subtypeParam ?? 'all'
+    const subtypeForNonMedia = subtypeParam ?? DEFAULT_SITE_SEARCH_SUBTYPE
 
     const { data: activeSources } = useGetActiveApiSourcesQuery()
 
@@ -71,9 +82,8 @@ export default function SearchPage() {
     // Tracks which type is active so the modal remounts on switch (fresh linkedIds)
     const [activeModalType, setActiveModalType] = useState<SearchType>('lists')
 
-    // Lazy queries + mutations for the link modal
-    const [triggerSearchLists, { data: listSearchData, isFetching: isSearchingLists }] = useLazySearchMediaListsQuery()
-    const [triggerSearchTags, { data: tagSearchData, isFetching: isSearchingTags }] = useLazySearchCustomTagsQuery()
+    // All search/pagination logic for the modal — candidates, loading, pagination, onSearch, onPageChange
+    const modalSearch = useManageLinkModalSearch(activeModalType, !!selectedResult)
     const [addToListByExternalRef] = useAddMediaApiRefToListByExternalRefMutation()
     const [removeFromListByExternalRef] = useRemoveMediaApiRefFromListByExternalRefMutation()
     const [addTag] = useAddTagToMediaApiRefMutation()
@@ -88,17 +98,72 @@ export default function SearchPage() {
 
     const { data: tagResults, isLoading: tagsLoading, isFetching: tagsFetching } =
         useSearchCustomTagsQuery(
-            { query, limit: PAGE_SIZE, mineOnly: subtypeForNonMedia === 'mine' },
+            { query, limit: PAGE_SIZE, mineOnly: subtypeForNonMedia === 'mine', page },
             { skip: !shouldFetch || urlSearchType !== 'tags' }
         )
 
     const { data: listResults, isLoading: listsLoading, isFetching: listsFetching } =
         useSearchMediaListsQuery(
-            { query, limit: PAGE_SIZE, mineOnly: subtypeForNonMedia === 'mine' },
+            { query, limit: PAGE_SIZE, mineOnly: subtypeForNonMedia === 'mine', page },
             { skip: !shouldFetch || urlSearchType !== 'lists' }
         )
 
     const [findOrCreate] = useFindOrCreateMediaApiRefMutation()
+
+    // ── My Lists (mine+no-query state) ────────────────────────────────────
+    const [showCreateModal, setShowCreateModal] = useState(false)
+    const [listToDelete, setListToDelete] = useState<{ id: number; name: string } | null>(null)
+    const [createList] = useCreateMediaListMutation()
+    const [deleteList] = useDeleteMediaListMutation()
+
+    const { data: myListsResult, isLoading: myListsLoading } = useGetMyMediaListsQuery(
+        { page },
+        { skip: urlSearchType !== 'lists' || subtypeForNonMedia !== 'mine' || shouldFetch }
+    )
+
+    async function handleCreateMediaList(name: string, description: string, visibility: VisibilityStatus) {
+        try {
+            const newList = await createList({ name, description: description || undefined, visibilityStatus: visibility }).unwrap()
+            setShowCreateModal(false)
+            navigate(routes.mediaList(newList.id))
+
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    async function confirmDelete() {
+        if (listToDelete === null) return
+        try {
+            await deleteList(listToDelete.id).unwrap()
+            setListToDelete(null)
+        } catch (err) {
+            console.error(err)
+            setListToDelete(null)
+        }
+    }
+
+    // ── My Tags (mine+no-query state) ─────────────────────────────────────
+    const [showCreateTagForm, setShowCreateTagForm] = useState(false)
+    const [newTagName, setNewTagName] = useState('')
+    const [newTagVisibility, setNewTagVisibility] = useState<VisibilityStatus>(VisibilityStatus.Private)
+    const [editingTag, setEditingTag] = useState<{ id: number; name: string } | null>(null)
+    const [tagToDelete, setTagToDelete] = useState<{ id: number; name: string } | null>(null)
+    const [createTag] = useCreateCustomTagMutation()
+    const [patchTag] = usePatchCustomTagMutation()
+    const [deleteTag] = useDeleteCustomTagMutation()
+
+    const { data: myTagsResult, isLoading: myTagsLoading } = useGetMyCustomTagsQuery(
+        { page },
+        { skip: urlSearchType !== 'tags' || subtypeForNonMedia !== 'mine' || shouldFetch }
+    )
+
+    async function handleCreateTag() {
+        if (!newTagName.trim()) return
+        await createTag({ name: newTagName.trim(), visibilityStatus: newTagVisibility }).unwrap()
+        setNewTagName('')
+        setShowCreateTagForm(false)
+    }
 
     const handleSearch = (newQuery: string, filters: FilterState, bypassCache: boolean) => {
         setActiveBypassCache(bypassCache)
@@ -113,7 +178,7 @@ export default function SearchPage() {
                 params.delete('api')
             }
             // For media: store API subtype. For tags/lists: store scope — omit 'all' (it's the default).
-            if (filters.subtype && filters.subtype !== 'all') {
+            if (filters.subtype && filters.subtype !== DEFAULT_SITE_SEARCH_SUBTYPE) {
                 params.set('subtype', filters.subtype)
             } else {
                 params.delete('subtype')
@@ -134,11 +199,16 @@ export default function SearchPage() {
     }
 
     // Derived display state
+    const isListsSearch = urlSearchType === 'lists'
+    const isTagsSearch = urlSearchType === 'tags'
+    const isMineMode = subtypeForNonMedia === 'mine'
     const isLoading = mediaLoading || mediaFetching || tagsLoading || tagsFetching || listsLoading || listsFetching
     const mediaHasResults = mediaResults && mediaResults.data.length > 0
     const tagsHasResults = tagResults && tagResults.length > 0
     const listsHasResults = listResults && listResults.length > 0
     const hasNextPage = mediaResults && mediaResults.data.length === PAGE_SIZE
+    const tagsHasNextPage = tagResults && tagResults.length === PAGE_SIZE
+    const listsHasNextPage = listResults && listResults.length === PAGE_SIZE
     const hasPrevPage = page > 1
 
     return (
@@ -161,7 +231,7 @@ export default function SearchPage() {
             {/* Results section */}
             <div className="mt-4">
                 {/* No query entered */}
-                {!shouldFetch && (
+                {!shouldFetch && !isListsSearch && !(isTagsSearch && isMineMode) && (
                     <p className="text-text/50 text-sm">
                         {urlSearchType === 'media'
                             ? 'Search for movies, games, books, and more'
@@ -193,13 +263,7 @@ export default function SearchPage() {
                                     {mediaResults.data.map(result => (
                                         <RowItemStyling key={result.externalId} variant="larger">
                                             <RowItemContent
-                                                firstString={
-                                                    result.publishedDate
-                                                        ? `${result.name} (${new Date(result.publishedDate).getFullYear()})`
-                                                        : result.name
-                                                }
-                                                secondString={result.creatorName ?? undefined}
-                                                photographOnLeft={result.thumbnailUrl ?? undefined}
+                                                {...mediaApiRefToRowItemProps(result, { includeYear: false, secondStringField: 'date' })}
                                                 larger
                                                 onClick={() => navigate(routes.mediaApiRef(selectedSource!.apiName, result.externalId))}
                                                 onMenuClick={mediaApiRefActions({
@@ -207,9 +271,13 @@ export default function SearchPage() {
                                                     externalId: result.externalId,
                                                     name: result.name,
                                                     navigate,
-                                                    onManageListsTagsOpen: () => {
+                                                    onManageListsOpen: () => {
                                                         setSelectedResult(result)
                                                         setActiveModalType('lists')
+                                                    },
+                                                    onManageTagsOpen: () => {
+                                                        setSelectedResult(result)
+                                                        setActiveModalType('tags')
                                                     },
                                                 })}
                                             />
@@ -249,7 +317,7 @@ export default function SearchPage() {
                                 {tagResults.map(tag => (
                                     <RowItemStyling
                                         key={tag.id}
-                                        onClick={() => navigate(routes.tagItems(tag.id))}
+                                        onClick={() => navigate(routes.tag(tag.id))}
                                     >
                                         <RowItemContent
                                             firstString={tag.name}
@@ -259,11 +327,200 @@ export default function SearchPage() {
                                 ))}
                             </div>
                         )}
+                        <div className="flex items-center gap-3 mt-4">
+                            <button
+                                className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
+                                disabled={!hasPrevPage}
+                                onClick={() => handlePageChange(page - 1)}
+                            >
+                                ← Prev
+                            </button>
+                            <span className="text-sm text-text/60">Page {page}</span>
+                            <button
+                                className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
+                                disabled={!tagsHasNextPage}
+                                onClick={() => handlePageChange(page + 1)}
+                            >
+                                Next →
+                            </button>
+                        </div>
                     </>
                 )}
 
-                {/* Lists results */}
-                {urlSearchType === 'lists' && shouldFetch && !isLoading && (
+                {/* Tags — Create button (mine mode only) */}
+                {isTagsSearch && isMineMode && (
+                    <button className="btn btn-secondary w-fit" onClick={() => setShowCreateTagForm(v => !v)}>
+                        + Create Tag
+                    </button>
+                )}
+
+                {/* Tags — Create Tag inline form */}
+                {isTagsSearch && isMineMode && showCreateTagForm && (
+                    <div className="flex flex-wrap gap-2 items-end mb-2">
+                        <input
+                            className="input input-bordered"
+                            placeholder="New tag name..."
+                            value={newTagName}
+                            onChange={e => setNewTagName(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleCreateTag()}
+                            autoFocus
+                        />
+                        <select
+                            className="select select-bordered"
+                            value={newTagVisibility}
+                            onChange={e => setNewTagVisibility(Number(e.target.value) as VisibilityStatus)}
+                        >
+                            <option value={VisibilityStatus.Private}>Private</option>
+                            <option value={VisibilityStatus.Public}>Public</option>
+                        </select>
+                        <button className="btn btn-primary" onClick={handleCreateTag} disabled={!newTagName.trim()}>
+                            Create
+                        </button>
+                        <button className="btn btn-secondary" onClick={() => setShowCreateTagForm(false)}>
+                            Cancel
+                        </button>
+                    </div>
+                )}
+
+                {/* Tags — no-query state: show all user's tags */}
+                {isTagsSearch && isMineMode && !shouldFetch && (
+                    <>
+                        {myTagsLoading && <p className="text-text/50 text-sm">Loading your tags…</p>}
+                        {!myTagsLoading && myTagsResult && myTagsResult.items.length === 0 && (
+                            <p className="text-text/50 text-sm">You have no tags yet.</p>
+                        )}
+                        {!myTagsLoading && myTagsResult && myTagsResult.items.length > 0 && (
+                            <div className="rounded-lg border border-border overflow-hidden">
+                                {myTagsResult.items.map(tag => (
+                                    <RowItemStyling key={tag.id}>
+                                        {editingTag?.id === tag.id ? (
+                                            <form className="flex gap-2 w-full" onSubmit={async (e) => {
+                                                e.preventDefault()
+                                                await patchTag({ tagId: tag.id, data: { name: editingTag.name } })
+                                                setEditingTag(null)
+                                            }}>
+                                                <input
+                                                    className="input input-bordered flex-1"
+                                                    value={editingTag.name}
+                                                    onChange={e => setEditingTag({ ...editingTag, name: e.target.value })}
+                                                    autoFocus
+                                                />
+                                                <button type="submit" className="btn btn-primary btn-sm">Save</button>
+                                                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEditingTag(null)}>Cancel</button>
+                                            </form>
+                                        ) : (
+                                            <RowItemContent
+                                                firstString={tag.name}
+                                                secondString={tag.visibilityStatus === VisibilityStatus.Public ? 'Public' : 'Private'}
+                                                onClick={() => navigate(routes.tag(tag.id))}
+                                                onMenuClick={tagActions({
+                                                    id: tag.id,
+                                                    name: tag.name,
+                                                    navigate,
+                                                    onEditOpen: () => setEditingTag({ id: tag.id, name: tag.name }),
+                                                    onDeleteOpen: () => setTagToDelete({ id: tag.id, name: tag.name }),
+                                                })}
+                                            />
+                                        )}
+                                    </RowItemStyling>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
+                {isTagsSearch && isMineMode && !shouldFetch && myTagsResult && myTagsResult.totalPages > 1 && (
+                    <div className="flex items-center gap-3 mt-4">
+                        <button
+                            className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
+                            disabled={!hasPrevPage}
+                            onClick={() => handlePageChange(page - 1)}
+                        >
+                            ← Prev
+                        </button>
+                        <span className="text-sm text-text/60">Page {page}</span>
+                        <button
+                            className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
+                            disabled={page >= myTagsResult.totalPages}
+                            onClick={() => handlePageChange(page + 1)}
+                        >
+                            Next →
+                        </button>
+                    </div>
+                )}
+
+                {/* Lists — Create button (mine mode only) */}
+                {isListsSearch && isMineMode && (
+                    <button className="btn btn-secondary w-fit" onClick={() => setShowCreateModal(true)}>
+                        + Create List
+                    </button>
+                )}
+
+                {/* Lists — no-query state: show all user's lists */}
+                {isListsSearch && isMineMode && !shouldFetch && (
+                    <>
+                        {myListsLoading && (
+                            <p className="text-text/50 text-sm">Loading your lists…</p>
+                        )}
+                        {!myListsLoading && myListsResult && myListsResult.items.length === 0 && (
+                            <p className="text-text/50 text-sm">You have no lists yet.</p>
+                        )}
+                        {!myListsLoading && myListsResult && myListsResult.items.length > 0 && (
+                            <div className="rounded-lg border border-border overflow-hidden">
+                                {myListsResult.items.map(list => (
+                                    <RowItemStyling key={list.id} variant="larger">
+                                        <RowItemContent
+                                            firstString={list.name}
+                                            secondString={`${list.itemCount} items`}
+                                            thirdString={list.description ?? undefined}
+                                            larger
+                                            labelPill={list.category !== MediaListCategory.Standard ? <BadgePill label={
+                                                list.category === MediaListCategory.ReadingStatus ? "Reading Status" :
+                                                list.category === MediaListCategory.Library ? "Library" :
+                                                list.category === MediaListCategory.Featured ? "Featured" : ""
+                                            } /> : undefined}
+                                            onClick={() => navigate(routes.mediaList(list.id))}
+                                            onMenuClick={mediaListActions({
+                                                id: list.id,
+                                                name: list.name,
+                                                navigate,
+                                                // Only Standard lists can be deleted; all other categories are protected
+                                                ...(list.category === MediaListCategory.Standard ? { onDeleteOpen: () => setListToDelete({ id: list.id, name: list.name }) } : {}),
+                                            })}
+                                        />
+                                    </RowItemStyling>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {isListsSearch && isMineMode && !shouldFetch && myListsResult && myListsResult.totalPages > 1 && (
+                    <div className="flex items-center gap-3 mt-4">
+                        <button
+                            className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
+                            disabled={!hasPrevPage}
+                            onClick={() => handlePageChange(page - 1)}
+                        >
+                            ← Prev
+                        </button>
+                        <span className="text-sm text-text/60">Page {page}</span>
+                        <button
+                            className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
+                            disabled={page >= myListsResult.totalPages}
+                            onClick={() => handlePageChange(page + 1)}
+                        >
+                            Next →
+                        </button>
+                    </div>
+                )}
+
+                {/* Lists — no-query state: all-lists mode placeholder */}
+                {isListsSearch && !isMineMode && !shouldFetch && (
+                    <p className="text-text/50 text-sm">Search for lists.</p>
+                )}
+
+                {/* Lists — search results */}
+                {isListsSearch && shouldFetch && !isLoading && (
                     <>
                         {listResults && listResults.length === 0 && (
                             <p className="text-text/50 text-sm">No lists found for "{query}".</p>
@@ -271,15 +528,37 @@ export default function SearchPage() {
                         {listsHasResults && (
                             <div className="rounded-lg border border-border overflow-hidden">
                                 {listResults.map(list => (
-                                    <RowItemStyling
-                                        key={list.id}
-                                        onClick={() => navigate(routes.mediaList(list.id))}
-                                    >
-                                        <RowItemContent firstString={list.name} />
+                                    <RowItemStyling key={list.id}>
+                                        <RowItemContent
+                                            firstString={list.name}
+                                            onClick={() => navigate(routes.mediaList(list.id))}
+                                            onMenuClick={mediaListActions({
+                                                id: list.id,
+                                                name: list.name,
+                                                navigate,
+                                            })}
+                                        />
                                     </RowItemStyling>
                                 ))}
                             </div>
                         )}
+                        <div className="flex items-center gap-3 mt-4">
+                            <button
+                                className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
+                                disabled={!hasPrevPage}
+                                onClick={() => handlePageChange(page - 1)}
+                            >
+                                ← Prev
+                            </button>
+                            <span className="text-sm text-text/60">Page {page}</span>
+                            <button
+                                className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
+                                disabled={!listsHasNextPage}
+                                onClick={() => handlePageChange(page + 1)}
+                            >
+                                Next →
+                            </button>
+                        </div>
                     </>
                 )}
             </div>
@@ -290,16 +569,8 @@ export default function SearchPage() {
             <ManageLinkModal
                 key={activeModalType}  // remount on type switch so linkedIds reset
                 modalTitle={activeModalType === 'lists' ? 'Add to Lists' : 'Tag this Item'}
-                allowedSearchTypes={['lists', 'tags']}
-                onSearch={(query, filters) => {
-                    if (filters.searchType !== activeModalType) setActiveModalType(filters.searchType)
-                    if (filters.searchType === 'lists') triggerSearchLists({ query, limit: SEARCH_DEFAULT_LIMIT });
-                    else triggerSearchTags({ query, limit: SEARCH_DEFAULT_LIMIT });
-                }}
-                candidates={activeModalType === 'lists'
-                    ? (listSearchData ?? []).map(l => ({ id: String(l.id), firstString: l.name, secondString: l.description ?? undefined }))
-                    : (tagSearchData ?? []).map(t => ({ id: String(t.id), firstString: t.name }))}
-                candidatesLoading={isSearchingLists || isSearchingTags}
+                allowedSearchTypes={[activeModalType]}
+                {...modalSearch}
                 initialLinkedIds={[]}  // unknown without findOrCreate; empty is safe
                 onAdd={async (id) => {
                     const source = activeSources?.find(s => s.mediaTypeId === mediaTypeId)
@@ -359,6 +630,37 @@ export default function SearchPage() {
                 removeConfirmTitle={activeModalType === 'lists' ? 'Remove from list?' : 'Remove tag?'}
                 getRemoveConfirmMessage={(item) => `Remove "${item.firstString}"?`}
                 onClose={() => setSelectedResult(null)}
+            />
+        )}
+
+        {showCreateModal && (
+            <MediaListFormModal
+                mode="create"
+                onConfirm={handleCreateMediaList}
+                onCancel={() => setShowCreateModal(false)}
+            />
+        )}
+
+        {listToDelete !== null && (
+            <ConfirmModal
+                title={`Delete "${listToDelete.name}"?`}
+                message="This cannot be undone."
+                confirmLabel="Delete"
+                onConfirm={confirmDelete}
+                onCancel={() => setListToDelete(null)}
+            />
+        )}
+
+        {tagToDelete !== null && (
+            <ConfirmModal
+                title={`Delete tag "${tagToDelete.name}"?`}
+                message="This will remove the tag from all items it has been applied to."
+                confirmLabel="Delete"
+                onConfirm={async () => {
+                    await deleteTag(tagToDelete.id)
+                    setTagToDelete(null)
+                }}
+                onCancel={() => setTagToDelete(null)}
             />
         )}
 

@@ -22,7 +22,10 @@ import {
     useGetActiveApiSourcesQuery,
 } from '../services/apiSlice';
 import type { MediaApiRefSummary } from '../types/mediaApiRef';
+import { MediaListCategory } from '../types/enums';
+import { mediaApiRefToRowItemProps } from '../utils/mediaApiRefAdapter';
 import MediaTypeLabel from '../components/MediaTypeLabel';
+import BadgePill from '../components/BadgePill';
 import SwipeReorderRowItem from '../components/row_item_related/SwipeReorderRowItem';
 import RowItemContent from '../components/row_item_related/RowItemContent';
 import { ErrorBoundary } from '../components/ErrorBoundary';
@@ -150,10 +153,8 @@ export default function MediaListDetailPage() {
                 swipeRightAction={{ label: '📑 Details', onPress: () => navigate(routes.mediaApiRef(item.apiSourceName, item.externalId)) }}
             >
                 <RowItemContent
-                    firstString={item.name}
-                    secondString={item.creatorName ?? undefined}
+                    {...mediaApiRefToRowItemProps(item, { includeYear: false, secondStringField: 'date' })}
                     labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
-                    photographOnLeft={item.thumbnailUrl ?? undefined}
                     onMenuClick={[
                         makeShareAction(item.name, routes.mediaApiRef(item.apiSourceName, item.externalId)),
                         makeGoToDetailsAction(navigate, routes.mediaApiRef(item.apiSourceName, item.externalId)),
@@ -210,11 +211,10 @@ export default function MediaListDetailPage() {
 
             {/* -- List Info -- */}
             <h1 className="h1-styling">{selectedMediaListDetail.name}</h1>
-            {selectedMediaListDetail.isDefault && (
-                <span className="text-xs px-2 py-1 rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] select-none">
-                    Default List
-                </span>
-            )}
+            {/* Show a category badge for any non-Standard list */}
+            {selectedMediaListDetail.category === MediaListCategory.ReadingStatus && <BadgePill label="Reading Status" />}
+            {selectedMediaListDetail.category === MediaListCategory.Library && <BadgePill label="Library" />}
+            {selectedMediaListDetail.category === MediaListCategory.Featured && <BadgePill label="Featured" />}
             <br />
             <p>{selectedMediaListDetail.description}</p>
             <br/>

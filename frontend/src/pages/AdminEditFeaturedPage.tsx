@@ -6,7 +6,9 @@ import {
 } from '../services/apiSlice';
 import MediaListFormModal from '../components/modals/MediaListFormModal';
 import AnimatedPage from '../components/AnimatedPage';
+import RowItemStyling from '../components/row_item_related/RowItemStyling';
 import RowItemContent from '../components/row_item_related/RowItemContent';
+import BadgePill from '../components/BadgePill';
 import { routes } from '../utils/routes';
 
 
@@ -62,34 +64,21 @@ export default function AdminEditFeaturedPage() {
                 </button>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="rounded-lg border border-border overflow-hidden">
                 {featuredLists.length === 0 && (
                     <p className="text-center text-[var(--color-text-muted)]">No featured lists yet.</p>
                 )}
                 {featuredLists.map(list => (
-                    <div
-                        key={list.id}
-                        className="card flex justify-between items-stretch cursor-pointer"
-                        onClick={() => navigate(routes.mediaList(list.id))}
-                    >
+                    <RowItemStyling key={list.id} variant="larger">
                         <RowItemContent
                             firstString={list.name}
                             secondString={`${list.listContent.length} items`}
-                            larger={true}
                             thirdString={list.description ?? undefined}
+                            larger
+                            labelPill={<BadgePill label="Featured" />}
+                            onClick={() => navigate(routes.mediaList(list.id))}
                         />
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs px-2 py-1 rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] select-none">
-                                Featured
-                            </span>
-                            <button
-                                className="btn btn-secondary w-fit"
-                                onClick={(e) => { e.stopPropagation(); navigate(routes.mediaList(list.id)); }}
-                            >
-                                Edit
-                            </button>
-                        </div>
-                    </div>
+                    </RowItemStyling>
                 ))}
             </div>
 

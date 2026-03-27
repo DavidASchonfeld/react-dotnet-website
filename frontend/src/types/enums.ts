@@ -7,3 +7,12 @@ export enum VisibilityStatus {
     Public = 1,
     Shared = 2
 }
+
+// Mirror of backend MediaListCategory enum — determines list behavior, badge display, and deletion rules
+// NOTE: Uses string values to match what the backend's JsonStringEnumConverter serializes (e.g. "ReadingStatus", not 1)
+export enum MediaListCategory {
+    Standard = 'Standard',           // Regular user list — can be freely created and deleted
+    ReadingStatus = 'ReadingStatus',  // One of the per-user mutually exclusive status lists (e.g. "Want to Read")
+    Library = 'Library',              // Per-user protected singleton — remembers items without implying reading intent
+    Featured = 'Featured',            // Admin-owned, site-wide — contents may be surfaced in special site sections
+}

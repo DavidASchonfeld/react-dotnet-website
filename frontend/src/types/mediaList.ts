@@ -6,7 +6,7 @@
 // For Example: "/backend/DTOs/MediaListDTOs/CreateUpdate/CreateMediaListDto.cs"
 // is implemented here in the "CreateMediaListRequest" object listed below.
 
-import type { VisibilityStatus } from "./enums";
+import type { VisibilityStatus, MediaListCategory } from "./enums";
 import type { MediaApiRefSummary } from "./mediaApiRef";
 
 
@@ -25,8 +25,7 @@ export interface MediaListSummary
     visibilityStatus: VisibilityStatus;
     itemCount: number;
     canEdit: boolean;
-    isDefault: boolean;
-    isFeatured: boolean;
+    category: MediaListCategory; // Drives UI badges and whether the list can be deleted
 }
 
 export interface MediaListDetail
@@ -37,8 +36,7 @@ export interface MediaListDetail
     description: string | null;
     visibilityStatus: VisibilityStatus;
     canEdit: boolean;
-    isDefault: boolean;
-    isFeatured: boolean;
+    category: MediaListCategory; // Drives UI badges and whether the list can be deleted
 
     listContent: MediaApiRefSummary[];
 }

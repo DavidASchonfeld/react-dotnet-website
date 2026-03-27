@@ -2,8 +2,12 @@ using Microsoft.EntityFrameworkCore;
 
 public static class DefaultMediaListSeederService
 {
-    private static readonly string[] DefaultListNames =
-        ["Want to Read", "Currently Reading", "Read", "Did Not Finish", "My Library"];
+    // The 4 mutually exclusive reading status lists seeded for every user
+    private static readonly string[] ReadingStatusListNames =
+        ["Want to Read", "Currently Reading", "Read", "Did Not Finish"];
+
+    // The standalone library list seeded for every user (not mutually exclusive)
+    private static readonly string LibraryListName = "My Library";
 
     // Called at startup to ensure all existing users have their default lists
     public static async Task SeedDefaultListsForAllUsersAsync(AppDbContext db, ILogger logger)
@@ -19,18 +23,33 @@ public static class DefaultMediaListSeederService
     // Does NOT call SaveChangesAsync — the caller is responsible for flushing.
     public static async Task SeedDefaultListsForUserAsync(AppDbContext db, AppUser user)
     {
-        var existingDefaultNames = await db.MediaLists
-            .Where(l => l.SubmittedById == user.Id && l.IsDefault)
+        // Fetch all existing protected list names for this user in one query
+        var existingProtectedNames = await db.MediaLists
+            .Where(l => l.SubmittedById == user.Id && l.Category != MediaListCategory.Standard)
             .Select(l => l.Name)
             .ToListAsync();
 
-        foreach (var name in DefaultListNames)
+        // Seed the ReadingStatus lists if they don't already exist
+        foreach (var name in ReadingStatusListNames)
         {
-            if (existingDefaultNames.Contains(name)) continue;
+            if (existingProtectedNames.Contains(name)) continue;
             db.MediaLists.Add(new MediaList
             {
                 Name = name,
-                IsDefault = true,
+                Category = MediaListCategory.ReadingStatus, // Mutually exclusive per-user status tracker
+                SubmittedById = user.Id,
+                VisibilityStatus = VisibilityStatus.Private,
+                DateSubmitted = DateTime.UtcNow
+            });
+        }
+
+        // Seed the Library list if it doesn't already exist
+        if (!existingProtectedNames.Contains(LibraryListName))
+        {
+            db.MediaLists.Add(new MediaList
+            {
+                Name = LibraryListName,
+                Category = MediaListCategory.Library, // Standalone protected list, not mutually exclusive
                 SubmittedById = user.Id,
                 VisibilityStatus = VisibilityStatus.Private,
                 DateSubmitted = DateTime.UtcNow

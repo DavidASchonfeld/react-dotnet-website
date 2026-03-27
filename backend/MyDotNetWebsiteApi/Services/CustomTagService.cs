@@ -28,6 +28,7 @@ public class CustomTagService : ICustomTagService
             {
                 Id = t.Id,
                 Name = t.Name,
+                Description = t.Description,
                 VisibilityStatus = t.VisibilityStatus,
                 CreatedById = t.CreatedById
             })
@@ -51,6 +52,7 @@ public class CustomTagService : ICustomTagService
         var newTag = new CustomTag
         {
             Name = dto.Name,
+            Description = dto.Description,
             VisibilityStatus = dto.VisibilityStatus,
             CreatedById = requesterUserId,
             DateCreated = DateTime.UtcNow
@@ -75,6 +77,7 @@ public class CustomTagService : ICustomTagService
             return ServiceResult<CustomTagSummaryDto>.Forbidden();
 
         if (dto.Name != null) tag.Name = dto.Name;
+        if (dto.Description != null) tag.Description = dto.Description;
         if (dto.VisibilityStatus != null) tag.VisibilityStatus = dto.VisibilityStatus.Value;
 
         await _context.SaveChangesAsync();
@@ -99,7 +102,7 @@ public class CustomTagService : ICustomTagService
     }
 
 
-    public async Task<ServiceResult<List<CustomTagSummaryDto>>> SearchTagsAsync(string query, int limit, string requesterUserId, bool mineOnly = false)
+    public async Task<ServiceResult<List<CustomTagSummaryDto>>> SearchTagsAsync(string query, int limit, string requesterUserId, bool mineOnly = false, int page = 1)
     {
         if (query.Length < AppConstants.SearchMinQueryLength)
             return ServiceResult<List<CustomTagSummaryDto>>.BadRequest("Search query must be at least 2 characters.");
@@ -118,11 +121,13 @@ public class CustomTagService : ICustomTagService
                     ? t.CreatedById == requesterUserId
                     : (t.CreatedById == requesterUserId || t.VisibilityStatus == VisibilityStatus.Public)))
             .OrderBy(t => t.Name)
+            .Skip((page - 1) * limit)
             .Take(limit)
             .Select(t => new CustomTagSummaryDto
             {
                 Id = t.Id,
                 Name = t.Name,
+                Description = t.Description,
                 VisibilityStatus = t.VisibilityStatus,
                 CreatedById = t.CreatedById
             })
@@ -132,7 +137,7 @@ public class CustomTagService : ICustomTagService
     }
 
 
-    public async Task<ServiceResult<bool>> AddTagToMediaApiRefAsync(int tagId, int mediaApiRefId, string requesterUserId)
+    public async Task<ServiceResult<bool>> AddTagToMediaApiRefAsync(int tagId, int mediaApiRefId, string requesterUserId, AddTagToMediaApiRefDto? dto = null)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<bool>.Unauthorized();
@@ -157,6 +162,7 @@ public class CustomTagService : ICustomTagService
         {
             CustomTagId = tagId,
             MediaApiRefId = mediaApiRefId,
+            Note = dto?.Note,
             AddedById = requesterUserId,
             DateAdded = DateTime.UtcNow
         });
@@ -191,17 +197,17 @@ public class CustomTagService : ICustomTagService
     }
 
 
-    public async Task<ServiceResult<PaginatedResultDto<MediaApiRefSummaryDto>>> GetItemsByTagAsync(int tagId, string requesterUserId, int page, int pageSize)
+    public async Task<ServiceResult<PaginatedResultDto<TaggedMediaApiRefDto>>> GetItemsByTagAsync(int tagId, string requesterUserId, int page, int pageSize)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<PaginatedResultDto<MediaApiRefSummaryDto>>.Unauthorized();
+        if (requesterUser == null) return ServiceResult<PaginatedResultDto<TaggedMediaApiRefDto>>.Unauthorized();
 
         var tag = await _context.CustomTags.FindAsync(tagId);
-        if (tag == null) return ServiceResult<PaginatedResultDto<MediaApiRefSummaryDto>>.NotFound("Tag not found.");
+        if (tag == null) return ServiceResult<PaginatedResultDto<TaggedMediaApiRefDto>>.NotFound("Tag not found.");
 
         // Can only view items for a tag if it's public or the requester created it
         if (tag.VisibilityStatus == VisibilityStatus.Private && tag.CreatedById != requesterUserId)
-            return ServiceResult<PaginatedResultDto<MediaApiRefSummaryDto>>.Forbidden();
+            return ServiceResult<PaginatedResultDto<TaggedMediaApiRefDto>>.Forbidden();
 
         var tagQuery = _context.LinkCustomTagToMediaApiRefTable
             .Where(l => l.CustomTagId == tagId);
@@ -214,19 +220,23 @@ public class CustomTagService : ICustomTagService
             .OrderBy(l => l.MediaApiRefId)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(l => new MediaApiRefSummaryDto
+            .Select(l => new TaggedMediaApiRefDto
             {
-                Id = l.MediaApiRef.Id,
-                Name = l.MediaApiRef.Name,
-                MediaTypeId = l.MediaApiRef.MediaTypeId,
-                CreatorName = l.MediaApiRef.CreatorName,
-                PublishedDate = l.MediaApiRef.PublishedDate,
-                ExternalId = l.MediaApiRef.ExternalId,
-                ApiSourceName = l.MediaApiRef.ApiSource.ApiName
+                TagNote = l.Note,
+                Item = new MediaApiRefSummaryDto
+                {
+                    Id = l.MediaApiRef.Id,
+                    Name = l.MediaApiRef.Name,
+                    MediaTypeId = l.MediaApiRef.MediaTypeId,
+                    CreatorName = l.MediaApiRef.CreatorName,
+                    PublishedDate = l.MediaApiRef.PublishedDate,
+                    ExternalId = l.MediaApiRef.ExternalId,
+                    ApiSourceName = l.MediaApiRef.ApiSource.ApiName
+                }
             })
             .ToListAsync();
 
-        return ServiceResult<PaginatedResultDto<MediaApiRefSummaryDto>>.Ok(new PaginatedResultDto<MediaApiRefSummaryDto>
+        return ServiceResult<PaginatedResultDto<TaggedMediaApiRefDto>>.Ok(new PaginatedResultDto<TaggedMediaApiRefDto>
         {
             Items = items,
             Page = page,
@@ -241,6 +251,7 @@ public class CustomTagService : ICustomTagService
     {
         Id = t.Id,
         Name = t.Name,
+        Description = t.Description,
         VisibilityStatus = t.VisibilityStatus,
         CreatedById = t.CreatedById
     };

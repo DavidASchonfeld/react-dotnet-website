@@ -14,7 +14,7 @@ interface Props extends RowItemDisplayProps {
 }
 
 // Generic row content for any named object.
-// Layout: [Photo or placeholder] | [flex-col: [firstString + labelPill] / [secondString] / [thirdString (larger only)]]
+// Layout: [Photo or placeholder] | [flex-col: [firstString] / [secondString] / [thirdString (larger only)]] | [labelPill] | [ItemActionsButton]
 // Used as the children of SwipeReorderRowItem (swipe + drag) and RowItemStyling (visual styling only), and other pages/modals.
 export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, useDirectUrl, labelPill, onClick, onMenuClick, preview }: Props) {
 
@@ -57,30 +57,9 @@ export default function RowItemContent({ firstString, secondString, thirdString,
             {/* Rows stacked */}
             <div className={`flex flex-col flex-1 min-w-0  ${larger ? 'gap-1' : ''}`}>
 
-                {/* Top Row: main name (truncated) + optional icon pinned to the right
-                    truncate: If this text-filled item becomes too squished horizontally, the non-cut off text ends with "..."
-                    items-start (not items-center): top-aligns the title and labelPill so the title text starts
-                    flush with py-2, giving equal 8px padding above title and below the last text row.
-                    (items-center would add 2px of extra space above the title when labelPill is taller than text.)
-                */}
+                {/* Top Row: main name (truncated) */}
                 <div className="flex items-start gap-1 min-w-0">
-
-                    {/*
-                        Tailwind:
-                        flex VS flex-1:
-                        -- flex    : in CSS, sets "display: flex", making that object
-                                       a flex container for its children.
-                                       This affects nothing about how this item itself
-                                       will grow or shrink within its own parent
-                        -- flex-1  : about how an item behaves inside a flex container
-                                     In CSS, sets "flex: 1 1 0%" which means:
-                                      -- CSS: "flex-grow: 1"  : it grows to fill available space
-                                      -- CSS: "flex-shrink: 1": it shrinks when space is tight
-                                      -- CSS: "flex-basis: 0%": it starts from a base size of 0
-                                                  rather than its natural content size.
-                    */}
                     <span className="truncate text-[15px] font-medium flex-1 text-left text-text leading-tight">{firstString}</span>
-                    {labelPill}
                 </div>
 
                 {/* Second Row: optional secondary string (e.g. content rating + creators) */}
@@ -98,6 +77,10 @@ export default function RowItemContent({ firstString, secondString, thirdString,
                 )}
 
             </div>
+
+            {labelPill && (
+                <div className="self-center shrink-0">{labelPill}</div>
+            )}
 
             {onMenuClick && (
                 // No infinite loop: ItemActionsButton builds its own preview from these display props,

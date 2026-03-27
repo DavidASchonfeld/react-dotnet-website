@@ -18,6 +18,7 @@ import type {
     CustomTagSummary,
     CreateCustomTagRequest,
     UpdateCustomTagRequest,
+    TaggedMediaApiRef,
 } from '../types/customTag'
 import type {
     MediaListDetail,
@@ -482,14 +483,15 @@ export const apiSlice = createApi({
 
         searchMediaLists: builder.query<
             MediaListSummary[],
-            { query: string; limit?: number; ownedByUserId?: string; mineOnly?: boolean }
+            { query: string; limit?: number; ownedByUserId?: string; mineOnly?: boolean; page?: number }
         >({
-            query: ({ query, limit = 10, ownedByUserId, mineOnly }) => {
+            query: ({ query, limit = 10, ownedByUserId, mineOnly, page }) => {
                 const params = new URLSearchParams({ q: query, limit: String(limit) })
                 if (ownedByUserId !== undefined) params.set('ownedByUserId', ownedByUserId)
                 // mineOnly=true tells the backend to filter by the requesting user's own lists
                 // (avoids needing to pass a GUID userId from the frontend)
                 if (mineOnly) params.set('mineOnly', 'true')
+                if (page && page > 1) params.set('page', String(page))
                 return `/api/medialist/search?${params}`
             },
         }),
@@ -583,23 +585,25 @@ export const apiSlice = createApi({
 
         searchCustomTags: builder.query<
             CustomTagSummary[],
-            { query: string; limit?: number; mineOnly?: boolean }
+            { query: string; limit?: number; mineOnly?: boolean; page?: number }
         >({
-            query: ({ query, limit = 10, mineOnly }) => {
+            query: ({ query, limit = 10, mineOnly, page }) => {
                 const params = new URLSearchParams({ q: query, limit: String(limit) })
                 // mineOnly=true tells the backend to return only the current user's tags (skip public tags from others)
                 if (mineOnly) params.set('mineOnly', 'true')
+                if (page && page > 1) params.set('page', String(page))
                 return `/api/customtag/search?${params}`
             },
         }),
 
         addTagToMediaApiRef: builder.mutation<
             void,
-            { tagId: number; mediaApiRefId: number }
+            { tagId: number; mediaApiRefId: number; note?: string }
         >({
-            query: ({ tagId, mediaApiRefId }) => ({
+            query: ({ tagId, mediaApiRefId, note }) => ({
                 url: `/api/customtag/${tagId}/items/${mediaApiRefId}`,
                 method: 'POST',
+                body: note !== undefined ? { note } : undefined,
             }),
             invalidatesTags: (_, __, { mediaApiRefId }) => [
                 { type: 'CustomTag', id: `ref-${mediaApiRefId}` },
@@ -633,7 +637,7 @@ export const apiSlice = createApi({
             },
         }),
 
-        getItemsByTag: builder.query<PaginatedResult<MediaApiRefSummary>, { tagId: number; page?: number; pageSize?: number }>({
+        getItemsByTag: builder.query<PaginatedResult<TaggedMediaApiRef>, { tagId: number; page?: number; pageSize?: number }>({
             query: ({ tagId, page = 1, pageSize = 10 }) => {
                 const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
                 return `/api/customtag/${tagId}/items?${params}`

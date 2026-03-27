@@ -27,8 +27,8 @@ public static class PermissionHelper
 
     //// Featured lists require admin; regular lists require ownership or mod/admin
     public static bool CanModifyOrDeleteList(AppUser requester, MediaList listObject) =>
-        listObject.IsFeatured
-            ? IsAdministrator(requester)
+        listObject.Category == MediaListCategory.Featured
+            ? IsAdministrator(requester)  // Only admins can edit or delete featured (site-wide) lists
             : listObject.SubmittedById == requester.Id || IsModeratorOrAdmin(requester);
     
 

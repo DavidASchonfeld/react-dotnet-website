@@ -54,18 +54,19 @@ public class CustomTagController : ControllerBase
     public async Task<IActionResult> SearchTags(
         [FromQuery] string q,
         [FromQuery] int limit = 10,
-        [FromQuery] bool mineOnly = false) // when true, returns only the requester's own tags
+        [FromQuery] bool mineOnly = false, // when true, returns only the requester's own tags
+        [FromQuery] int page = 1)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _customTagService.SearchTagsAsync(q, limit, requesterUserId, mineOnly);
+        var result = await _customTagService.SearchTagsAsync(q, limit, requesterUserId, mineOnly, page);
         return result.ToActionResult(this);
     }
 
     [HttpPost("{tagId}/items/{mediaApiRefId}")]
-    public async Task<IActionResult> AddTagToItem(int tagId, int mediaApiRefId)
+    public async Task<IActionResult> AddTagToItem(int tagId, int mediaApiRefId, [FromBody] AddTagToMediaApiRefDto? dto = null)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _customTagService.AddTagToMediaApiRefAsync(tagId, mediaApiRefId, requesterUserId);
+        var result = await _customTagService.AddTagToMediaApiRefAsync(tagId, mediaApiRefId, requesterUserId, dto);
         return result.ToActionResult(this);
     }
 

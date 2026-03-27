@@ -3,10 +3,13 @@ using Microsoft.EntityFrameworkCore;
 public class MediaListService : IMediaListService
 
 {
-    private static readonly HashSet<string> _mutuallyExclusiveListNames =
-        new() { "Want to Read", "Currently Reading", "Read", "Did Not Finish" };
-
     private readonly AppDbContext _context;
+
+    // Returns true if lists in this category enforce mutual exclusivity per user
+    // (adding to one auto-removes the item from all other lists in the same category)
+    private static bool IsExclusiveGroupCategory(MediaListCategory category) =>
+        category == MediaListCategory.ReadingStatus;
+        // Add future mutually exclusive categories here, e.g.: || category == MediaListCategory.FeelingStatus
 
     public MediaListService(AppDbContext context)
     {
@@ -76,8 +79,7 @@ public class MediaListService : IMediaListService
         VisibilityStatus = mediaListObject.VisibilityStatus,
         ItemCount = itemCount,
         CanEdit = canEdit,
-        IsDefault = mediaListObject.IsDefault,
-        IsFeatured = mediaListObject.IsFeatured
+        Category = mediaListObject.Category  // Drives UI badges and deletion protection on the frontend
     };
 
 
@@ -106,8 +108,7 @@ public class MediaListService : IMediaListService
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
                 CanEdit = true,  // GetMyLists only returns lists the user submitted, so they always own them
-                IsDefault = l.IsDefault,
-                IsFeatured = l.IsFeatured
+                Category = l.Category
             })
             .ToListAsync();
 
@@ -149,8 +150,7 @@ public class MediaListService : IMediaListService
             SubmittedById = mediaList_withIncludes.SubmittedById,
             VisibilityStatus = mediaList_withIncludes.VisibilityStatus,
             CanEdit = PermissionHelper.CanModifyOrDeleteList(requesterUser, targetMediaList),
-            IsDefault = mediaList_withIncludes.IsDefault,
-            IsFeatured = mediaList_withIncludes.IsFeatured,
+            Category = mediaList_withIncludes.Category,
             ListContent = mediaList_withIncludes.ItemLinks
                 .OrderBy(link => link.Position)  // Sorts Ascending by Default, which is what I want
                 .Select(link => new MediaApiRefSummaryDto
@@ -214,8 +214,8 @@ public class MediaListService : IMediaListService
         if (mediaList == null) return ServiceResult<bool>.NotFound();
         if (requesterUser == null) return ServiceResult<bool>.Unauthorized();
         if (forbidden) return ServiceResult<bool>.Forbidden();
-        if (mediaList.IsDefault) return ServiceResult<bool>.Forbidden();
-        if (mediaList.IsFeatured) return ServiceResult<bool>.Forbidden();
+        // Only Standard lists can be deleted; all other categories are protected
+        if (mediaList.Category != MediaListCategory.Standard) return ServiceResult<bool>.Forbidden();
 
         // Implement the Change:
         _context.MediaLists.Remove(mediaList);
@@ -275,14 +275,14 @@ public class MediaListService : IMediaListService
             return ServiceResult<MediaListSummaryDto>.Conflict("This item is already inside this list.");
 
 
-        //// If target is a status list, auto-remove the item from any other status list the owner has
-        if (mediaList.IsDefault && _mutuallyExclusiveListNames.Contains(mediaList.Name))
+        //// If the target list belongs to a mutually exclusive group, auto-remove the item from all other lists in that group
+        if (IsExclusiveGroupCategory(mediaList.Category))
         {
+            // Find all other lists in the same exclusive group owned by this user
             var otherStatusListIds = await _context.MediaLists
                 .Where(l => l.SubmittedById == mediaList.SubmittedById
-                         && l.IsDefault
-                         && l.Id != mediaListId
-                         && _mutuallyExclusiveListNames.Contains(l.Name))
+                         && l.Category == mediaList.Category
+                         && l.Id != mediaListId)
                 .Select(l => l.Id)
                 .ToListAsync();
 
@@ -407,14 +407,14 @@ public class MediaListService : IMediaListService
         }
 
 
-        //// If target is a status list, auto-remove the item from any other status list the owner has
-        if (mediaList.IsDefault && _mutuallyExclusiveListNames.Contains(mediaList.Name))
+        //// If the target list belongs to a mutually exclusive group, auto-remove the item from all other lists in that group
+        if (IsExclusiveGroupCategory(mediaList.Category))
         {
+            // Find all other lists in the same exclusive group owned by this user
             var otherStatusListIds = await _context.MediaLists
                 .Where(l => l.SubmittedById == mediaList.SubmittedById
-                         && l.IsDefault
-                         && l.Id != mediaListId
-                         && _mutuallyExclusiveListNames.Contains(l.Name))
+                         && l.Category == mediaList.Category
+                         && l.Id != mediaListId)
                 .Select(l => l.Id)
                 .ToListAsync();
 
@@ -602,7 +602,7 @@ public class MediaListService : IMediaListService
     // ownedByUserId = someOtherUserId   : that user's public lists (or all of their lists if requester is admin)
     //
     // Note: visibility bypass is admin-only (not moderator) — matches CanSeeList() which uses IsAdministrator, not IsModeratorOrAdmin.
-    public async Task<ServiceResult<List<MediaListSummaryDto>>> SearchListsAsync(string query, int limit, string? ownedByUserId, string requesterUserId)
+    public async Task<ServiceResult<List<MediaListSummaryDto>>> SearchListsAsync(string query, int limit, string? ownedByUserId, string requesterUserId, int page = 1)
     {
         if (query.Length < AppConstants.SearchMinQueryLength)
             return ServiceResult<List<MediaListSummaryDto>>.BadRequest("Search query must be at least 2 characters.");
@@ -643,6 +643,7 @@ public class MediaListService : IMediaListService
         var results = await baseQuery
             .Where(l => l.Name.ToLower().Contains(queryLower))
             .OrderBy(l => l.Name)
+            .Skip((page - 1) * limit)
             .Take(limit)
             .Select(l => new MediaListSummaryDto
             {
@@ -653,8 +654,7 @@ public class MediaListService : IMediaListService
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
                 CanEdit = l.SubmittedById == requesterUserId || canModify,
-                IsDefault = l.IsDefault,
-                IsFeatured = l.IsFeatured
+                Category = l.Category
             })
             .ToListAsync();
 
@@ -665,7 +665,7 @@ public class MediaListService : IMediaListService
     public async Task<ServiceResult<List<MediaListDetailDto>>> GetFeaturedListsAsync()
     {
         var lists = await _context.MediaLists
-            .Where(l => l.IsFeatured)
+            .Where(l => l.Category == MediaListCategory.Featured) // Only return admin-owned, site-wide lists
             .OrderBy(l => l.Id)
             .Include(l => l.ItemLinks)
                 .ThenInclude(link => link.MediaApiRef)
@@ -679,9 +679,8 @@ public class MediaListService : IMediaListService
             SubmittedById = l.SubmittedById,
             Description = l.Description,
             VisibilityStatus = l.VisibilityStatus,
-            CanEdit = false,
-            IsDefault = l.IsDefault,
-            IsFeatured = true,
+            CanEdit = false,  // Featured lists are managed through the admin panel only
+            Category = l.Category,
             ListContent = l.ItemLinks
                 .OrderBy(link => link.Position)
                 .Select(link => new MediaApiRefSummaryDto
@@ -712,7 +711,7 @@ public class MediaListService : IMediaListService
         {
             Name = dto.Name,
             Description = dto.Description,
-            IsFeatured = true,
+            Category = MediaListCategory.Featured, // Admin-owned, site-wide — not tied to any user
             SubmittedById = null,
             VisibilityStatus = VisibilityStatus.Public,
             DateSubmitted = DateTime.UtcNow

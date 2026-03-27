@@ -6,6 +6,7 @@ public class LinkCustomTagToMediaApiRef
     public int CustomTagId {get; set;}
     public int MediaApiRefId {get; set;}
 
+    public string? Note {get; set;}
     public string? AddedById {get; set;}
     public DateTime DateAdded {get; set;} = DateTime.UtcNow;
 

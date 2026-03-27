@@ -5,7 +5,7 @@ interface BackButtonProps {
     label?: string;
 }
 
-export default function BackButton({ onClick, label = '⬅︎ Back' }: BackButtonProps) {
+export default function BackButton({ onClick, label = '← Back' }: BackButtonProps) {
     const navigate = useNavigate();
     return (
         <button

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import SearchBar from './SearchBar'
 import RoleBadge from './administrator_related/RoleBadge'
-import { API_SUBTYPES, SEARCH_MIN_CHARS, SITE_TYPE_SUBTYPES } from '../constants'
+import { API_SUBTYPES, SITE_TYPE_SUBTYPES, DEFAULT_SITE_SEARCH_SUBTYPE } from '../constants'
 import type { ExternalApiSourceSummary } from '../types/externalApiSource'
+import { canSearch } from '../utils/searchUtils'
+import type { SearchType } from '../utils/searchUtils'
 
-export type SearchType = 'media' | 'tags' | 'lists'
+export type { SearchType }
 
 export interface FilterState {
     searchType: SearchType
@@ -108,7 +110,7 @@ export default function SearchBarWithFilters({
             ...prev,
             searchType: newType,
             apiSourceId: newType === 'media' ? prev.apiSourceId : null,
-            subtype: newType === 'media' ? undefined : 'all',
+            subtype: newType === 'media' ? undefined : DEFAULT_SITE_SEARCH_SUBTYPE,
         }))
     }
 
@@ -152,7 +154,8 @@ export default function SearchBarWithFilters({
                     isTop={false}
                     effectiveMinimized={false}
                     defaultQuery={query}
-                    defaultApiSourceId={defaultApiSourceId ?? undefined}
+                    defaultApiSourceId={filters.searchType === 'media' ? (selectedFilterThirdPartyApiId ?? undefined) : undefined}
+                    searchType={filters.searchType}
                     onSubmit={handleSearchBarSubmit}
                     showApiSourcePills={false}
                     showSearchButton={false}
@@ -160,7 +163,7 @@ export default function SearchBarWithFilters({
             </div>
 
             {/* "Results for" chips — shown whenever a search is active */}
-            {query.length >= SEARCH_MIN_CHARS && (
+            {canSearch(query, urlFilters.searchType) && (
                 <div className="mt-2 flex items-center gap-2 flex-wrap">
                     <span className="text-xs text-text/50">Results for:</span>
                     {urlChips.map(chip => (

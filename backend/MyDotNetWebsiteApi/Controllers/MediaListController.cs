@@ -120,12 +120,13 @@ public class MediaListController : ControllerBase
         [FromQuery] string q,
         [FromQuery] int limit = 10,
         [FromQuery] string? ownedByUserId = null,
-        [FromQuery] bool mineOnly = false) // when true, overrides ownedByUserId with requester's own ID
+        [FromQuery] bool mineOnly = false, // when true, overrides ownedByUserId with requester's own ID
+        [FromQuery] int page = 1)
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         // mineOnly is a convenience flag so the frontend never needs to know the user's GUID
         var resolvedOwnerId = mineOnly ? requesterUserId : ownedByUserId;
-        var result = await _mediaListService.SearchListsAsync(q, limit, resolvedOwnerId, requesterUserId);
+        var result = await _mediaListService.SearchListsAsync(q, limit, resolvedOwnerId, requesterUserId, page);
         return result.ToActionResult(this);
     }
 

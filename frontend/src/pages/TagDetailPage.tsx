@@ -20,6 +20,7 @@ import PaginationControls from '../components/PaginationControls';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import { SEARCH_DEFAULT_LIMIT } from '../constants';
 import { routes } from '../utils/routes';
+import { mediaApiRefToRowItemProps } from '../utils/mediaApiRefAdapter';
 
 export default function TagDetailPage() {
     const { tagId } = useParams<{ tagId: string }>();
@@ -79,8 +80,7 @@ export default function TagDetailPage() {
                     {items.map(item => (
                         <RowItemStyling key={item.id} onClick={() => navigate(routes.mediaApiRef(item.apiSourceName, item.externalId))}>
                             <RowItemContent
-                                firstString={item.name}
-                                secondString={item.creatorName ?? undefined}
+                                {...mediaApiRefToRowItemProps(item, { includeYear: false, secondStringField: 'date' })}
                                 labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
                             />
                         </RowItemStyling>

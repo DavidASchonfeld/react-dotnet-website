@@ -53,3 +53,12 @@ public enum CreatorRole
     Publisher,
     TBD
 }
+
+// Determines a MediaList's special behavior: protection from deletion, mutual exclusivity, and site-wide visibility
+public enum MediaListCategory
+{
+    Standard = 0,      // Regular user list — can be freely created and deleted
+    ReadingStatus = 1, // One of the per-user mutually exclusive status lists (e.g. "Want to Read", "Currently Reading")
+    Library = 2,       // Per-user protected singleton — remembers items without implying reading intent (like Spotify's "Liked Songs")
+    Featured = 3,      // Admin-owned, site-wide, always Public — contents may be surfaced in special site sections
+}
