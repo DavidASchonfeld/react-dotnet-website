@@ -38,6 +38,7 @@ import AnimatedPage from '../components/AnimatedPage';
 import BackButton from '../components/BackButton';
 import ItemActionsButton from '../components/row_item_related/ItemActionsButton';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
+import ListCollageThumb from '../components/ListCollageThumb';
 import { routes } from '../utils/routes';
 import { makeShareAction, makeGoToDetailsAction, mediaListActions } from '../utils/menuActions';
 
@@ -211,6 +212,14 @@ export default function MediaListDetailPage() {
 
             {/* -- List Info -- */}
             <h1 className="h1-styling">{selectedMediaListDetail.name}</h1>
+            {/* Collage thumbnail — first 4 items' images in a 2×2 square grid */}
+            {orderedItems.length > 0 && (
+                <div className="w-32 h-32 rounded overflow-hidden my-2">
+                    <ListCollageThumb
+                        urls={orderedItems.slice(0, 4).map(i => i.thumbnailUrl).filter((u): u is string => !!u)}
+                    />
+                </div>
+            )}
             {/* Show a category badge for any non-Standard list */}
             {selectedMediaListDetail.category === MediaListCategory.ReadingStatus && <BadgePill label="Reading Status" />}
             {selectedMediaListDetail.category === MediaListCategory.Library && <BadgePill label="Library" />}
@@ -284,6 +293,7 @@ export default function MediaListDetailPage() {
                 <ManageLinkModal
                     modalTitle="Add Items to List"
                     allowedSearchTypes={['media']}
+                    focusedItem={{ firstString: selectedMediaListDetail.name, secondString: selectedMediaListDetail.description ?? undefined }}
                     activeApiSources={activeApiSources}
                     defaultApiSourceId={activeApiSources?.[0]?.id ?? null}
                     onSearch={(query, filters) => {

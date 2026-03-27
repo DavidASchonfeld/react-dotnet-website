@@ -6,6 +6,9 @@ public class ApiUsageStatsDto
     public int? RequestsRemaining { get; set; }     // null = no configured limit for this API
     public double? PercentUsed { get; set; }        // null = no configured limit for this API
     public bool IsApproachingLimit { get; set; }    // true if RequestsUsed >= the warning threshold
+    public bool IsAutoBlocked { get; set; }         // true if RequestsUsed >= the auto-block threshold (computed)
+    public int? AutoBlockThreshold { get; set; }    // null = no auto-block configured for this plan
+    public int? WarningThreshold { get; set; }      // null = no warning configured for this plan
     public string PeriodType { get; set; } = string.Empty;  // "Daily" or "Monthly"
     public DateTime PeriodStart { get; set; }       // UTC start of the current billing period
     public DateTime PeriodEnd { get; set; }         // UTC end of the current billing period (exclusive)

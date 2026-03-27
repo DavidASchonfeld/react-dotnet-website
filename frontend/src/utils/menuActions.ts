@@ -47,6 +47,14 @@ export function makeEditBasicInfo(onOpen: () => void): MenuAction {
 export function makeDeleteAction(onDelete: () => void): MenuAction {
     return { icon: '🗑️', label: 'Delete', onClick: onDelete };
 }
+
+export function makeManageTagItemsAction(onOpen: () => void): MenuAction {
+    return { icon: '🏷️', label: 'Add / Remove Items', onClick: onOpen };
+}
+
+export function makeRemoveFromTagAction(onRemove: () => void): MenuAction {
+    return { icon: '🏷️‍💥', label: 'Remove from Tag', onClick: onRemove };
+}
 // ── Preset builders ────────────────────────────────────────────────────
 // A preset builder returns the full standard MenuAction[] for a given item type.
 // Convenience wrappers for the most common per-type action sets.
@@ -103,6 +111,7 @@ export function tagActions(item: {
     id: number;
     name: string;
     navigate: NavigateFunction;
+    onTagItemsOpen?: () => void;
     onEditOpen?: () => void;
     onDeleteOpen?: () => void;
     includeGoToDetails?: boolean;
@@ -110,6 +119,7 @@ export function tagActions(item: {
     const path = routes.tag(item.id);
     return [
         makeShareAction(item.name, path),
+        ...(item.onTagItemsOpen ? [makeManageTagItemsAction(item.onTagItemsOpen)] : []),
         ...(item.onEditOpen ? [makeEditBasicInfo(item.onEditOpen)] : []),
         ...(item.onDeleteOpen ? [makeDeleteAction(item.onDeleteOpen)] : []),
         ...(item.includeGoToDetails !== false ? [makeGoToDetailsAction(item.navigate, path)] : []),

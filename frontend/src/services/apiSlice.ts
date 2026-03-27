@@ -19,6 +19,7 @@ import type {
     CreateCustomTagRequest,
     UpdateCustomTagRequest,
     TaggedMediaApiRef,
+    AppliedTag,
 } from '../types/customTag'
 import type {
     MediaListDetail,
@@ -260,6 +261,11 @@ export const apiSlice = createApi({
 
         getMediaApiRefTags: builder.query<CustomTagSummary[], number>({
             query: (mediaApiRefId) => `/api/mediaapiref/${mediaApiRefId}/tags`,
+            providesTags: (_, __, mediaApiRefId) => [{ type: 'CustomTag', id: `ref-${mediaApiRefId}` }],
+        }),
+
+        getAppliedTagsWithNotes: builder.query<AppliedTag[], number>({
+            query: (mediaApiRefId) => `/api/mediaapiref/${mediaApiRefId}/applied-tags`,
             providesTags: (_, __, mediaApiRefId) => [{ type: 'CustomTag', id: `ref-${mediaApiRefId}` }],
         }),
 
@@ -532,6 +538,11 @@ export const apiSlice = createApi({
 
         // ---- CustomTag Endpoints ----
 
+        getCustomTag: builder.query<CustomTagSummary, number>({
+            query: (tagId) => `/api/customtag/${tagId}`,
+            providesTags: (_, __, tagId) => [{ type: 'CustomTag', id: tagId }],
+        }),
+
         getMyCustomTags: builder.query<PaginatedResult<CustomTagSummary>, { page?: number; pageSize?: number }>({
             query: ({ page = 1, pageSize = 10 }) => {
                 const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
@@ -612,8 +623,9 @@ export const apiSlice = createApi({
                 method: 'POST',
                 body: note !== undefined ? { note } : undefined,
             }),
-            invalidatesTags: (_, __, { mediaApiRefId }) => [
+            invalidatesTags: (_, __, { tagId, mediaApiRefId }) => [
                 { type: 'CustomTag', id: `ref-${mediaApiRefId}` },
+                { type: 'CustomTag', id: tagId },
             ],
             onQueryStarted: (_, { queryFulfilled }) => {
                 safeToast.promise(queryFulfilled, {
@@ -632,8 +644,9 @@ export const apiSlice = createApi({
                 url: `/api/customtag/${tagId}/items/${mediaApiRefId}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: (_, __, { mediaApiRefId }) => [
+            invalidatesTags: (_, __, { tagId, mediaApiRefId }) => [
                 { type: 'CustomTag', id: `ref-${mediaApiRefId}` },
+                { type: 'CustomTag', id: tagId },
             ],
             onQueryStarted: (_, { queryFulfilled }) => {
                 safeToast.promise(queryFulfilled, {
@@ -825,6 +838,7 @@ export const {
     useFindOrCreateMediaApiRefMutation,
     useGetMediaApiRefListsQuery,
     useGetMediaApiRefTagsQuery,
+    useGetAppliedTagsWithNotesQuery,
     useRefreshMediaApiRefDetailsMutation,
     // MediaList
     useGetMyMediaListsQuery,
@@ -845,6 +859,7 @@ export const {
     useGetFeaturedListsQuery,
     useCreateFeaturedListMutation,
     // CustomTag
+    useGetCustomTagQuery,
     useGetMyCustomTagsQuery,
     useCreateCustomTagMutation,
     usePatchCustomTagMutation,

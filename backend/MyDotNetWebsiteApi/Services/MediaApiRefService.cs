@@ -8,15 +8,17 @@ public class MediaApiRefService : IMediaApiRefService
     private readonly IApiUsageService _apiUsageService;
     private readonly ICacheItemService _cacheItemService;
     private readonly IImageCacheService _imageCacheService;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<MediaApiRefService> _logger;
 
-    public MediaApiRefService(AppDbContext context, ExternalMediaApiAdapterFactory adapterFactory, IApiUsageService apiUsageService, ICacheItemService cacheItemService, IImageCacheService imageCacheService, ILogger<MediaApiRefService> logger)
+    public MediaApiRefService(AppDbContext context, ExternalMediaApiAdapterFactory adapterFactory, IApiUsageService apiUsageService, ICacheItemService cacheItemService, IImageCacheService imageCacheService, IServiceScopeFactory scopeFactory, ILogger<MediaApiRefService> logger)
     {
         _context = context;
         _adapterFactory = adapterFactory;
         _apiUsageService = apiUsageService;
         _cacheItemService = cacheItemService;
         _imageCacheService = imageCacheService;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -65,8 +67,8 @@ public class MediaApiRefService : IMediaApiRefService
                 ToDetailDto(mediaApiRef, cachedDetails, requesterUser), cachedItem.CreatedAt);
         }
 
-        // Cache miss — if the API is disabled, return what we have from the DB without calling the adapter
-        if (mediaApiRef.ApiSource.IsDisabledByAdmin)
+        // Cache miss — if the API is disabled or auto-blocked, return what we have from the DB without calling the adapter
+        if (mediaApiRef.ApiSource.IsDisabledByAdmin || await _apiUsageService.IsAutoBlockedAsync(mediaApiRef.ApiSource.ApiName))
             return ServiceResult<MediaApiRefDetailDto>.Ok(
                 ToDetailDto(mediaApiRef, null, requesterUser, isApiDisabled: true));
 
@@ -135,6 +137,10 @@ public class MediaApiRefService : IMediaApiRefService
         if (activeSource.IsDisabledByAdmin)
             return ServiceResult<List<ExternalApiSearchResult>>.ServiceUnavailable(
                 $"The {activeSource.ApiName} API is temporarily disabled for all users.");
+
+        if (await _apiUsageService.IsAutoBlockedAsync(activeSource.ApiName))
+            return ServiceResult<List<ExternalApiSearchResult>>.ServiceUnavailable(
+                $"The {activeSource.ApiName} API has been automatically suspended until the next billing period.");
 
         var adapter = _adapterFactory.GetAdapter(activeSource.ApiName);
         if (adapter == null)
@@ -213,6 +219,10 @@ public class MediaApiRefService : IMediaApiRefService
         if (source.IsDisabledByAdmin)
             return ServiceResult<ExternalApiSearchResult>.ServiceUnavailable(
                 $"The {source.ApiName} API is temporarily disabled for all users.");
+
+        if (await _apiUsageService.IsAutoBlockedAsync(source.ApiName))
+            return ServiceResult<ExternalApiSearchResult>.ServiceUnavailable(
+                $"The {source.ApiName} API has been automatically suspended until the next billing period.");
 
         var adapter = _adapterFactory.GetAdapter(source.ApiName);
         if (adapter == null)
@@ -435,6 +445,35 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
+    public async Task<ServiceResult<List<AppliedTagDto>>> GetAppliedTagsWithNotesAsync(int mediaApiRefId, string requesterUserId)
+    {
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return ServiceResult<List<AppliedTagDto>>.Unauthorized();
+
+        var appliedTags = await _context.LinkCustomTagToMediaApiRefTable
+            .Include(l => l.CustomTag)
+            .Where(l =>
+                l.MediaApiRefId == mediaApiRefId &&
+                (l.CustomTag.CreatedById == requesterUserId ||
+                 l.CustomTag.VisibilityStatus == VisibilityStatus.Public))
+            .Select(l => new AppliedTagDto
+            {
+                Note = l.Note,
+                Tag = new CustomTagSummaryDto
+                {
+                    Id = l.CustomTag.Id,
+                    Name = l.CustomTag.Name,
+                    Description = l.CustomTag.Description,
+                    VisibilityStatus = l.CustomTag.VisibilityStatus,
+                    CreatedById = l.CustomTag.CreatedById
+                }
+            })
+            .ToListAsync();
+
+        return ServiceResult<List<AppliedTagDto>>.Ok(appliedTags);
+    }
+
+
     // Fire-and-forget: pre-warm ImageCache for all thumbnail URLs in search results.
     // Called in both cache-hit and fresh-fetch paths since image TTL is independent of query cache TTL.
     private void PrewarmThumbnails(IEnumerable<ExternalApiSearchResult> results)
@@ -443,7 +482,23 @@ public class MediaApiRefService : IMediaApiRefService
         if (urls.Count == 0) return;
         _ = Task.WhenAll(urls.Select(url => Task.Run(async () =>
         {
-            try { await _imageCacheService.GetOrFetchImageAsync(url!); }
+            // We can't use the injected _imageCacheService here, even though it's available in scope.
+            // Reason: _imageCacheService is a *scoped* service — it was created when the HTTP request
+            // started and it shares its AppDbContext instance with the rest of that request. AppDbContext
+            // is not thread-safe: it tracks entity state internally, and using it from multiple threads
+            // simultaneously (the request thread + these background Task.Run threads) will cause
+            // corrupted change-tracker state or exceptions.
+            //
+            // Task.Run() also escapes the request's DI scope lifetime: by the time these tasks run,
+            // the request may have already completed and the scope (including _imageCacheService and
+            // its DbContext) may have been disposed — making any call on it throw ObjectDisposedException.
+            //
+            // The fix: create a brand-new IServiceScope for each background task. This gives each task
+            // its own fresh ImageCacheService instance backed by its own isolated AppDbContext, with no
+            // shared state and no dependency on the originating request's lifetime.
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var svc = scope.ServiceProvider.GetRequiredService<IImageCacheService>();
+            try { await svc.GetOrFetchImageAsync(url!); }
             catch { /* best-effort; don't fail the search if an image fetch fails */ }
         })));
     }
@@ -452,7 +507,12 @@ public class MediaApiRefService : IMediaApiRefService
     private void PrewarmPoster(string posterUrl) =>
         _ = Task.Run(async () =>
         {
-            try { await _imageCacheService.GetOrFetchImageAsync(posterUrl); }
+            // Must create a fresh scope here for the same reason as PrewarmThumbnails above —
+            // the injected _imageCacheService shares a DbContext with the request and may be
+            // disposed by the time this background task runs.
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var svc = scope.ServiceProvider.GetRequiredService<IImageCacheService>();
+            try { await svc.GetOrFetchImageAsync(posterUrl); }
             catch { /* best-effort */ }
         });
 

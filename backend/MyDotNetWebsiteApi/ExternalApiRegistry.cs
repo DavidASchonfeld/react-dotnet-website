@@ -9,6 +9,7 @@ public record SubscriptionPlan
     public required string PeriodType { get; init; }
     public int? RequestLimit { get; init; }
     public int? WarningThreshold { get; init; }
+    public int? AutoBlockThreshold { get; init; }
     // True when this plan tier grants access to the API's high-res poster endpoint.
     public bool SupportsPosterApi { get; init; } = false;
 }
@@ -42,7 +43,9 @@ internal record ApiMetadataBase
 
 public static class ExternalApiRegistry
 {
-    // Base API metadata (without plans — those come from configuration)
+    // Base API metadata (without plans — those come from configuration).
+    // To add a new API: follow the HOW TO ADD A NEW 3RD-PARTY API guide in ExternalMediaApiAdapterFactory.cs,
+    // then add a new entry here with its homepage, API info URL, optional key path, and data/license rules.
     private static readonly Dictionary<string, ApiMetadataBase> ApiMetadataBases = new()
     {
         ["OMDB"] = new ApiMetadataBase
@@ -67,32 +70,7 @@ public static class ExternalApiRegistry
                 "API Legal Notice: We do not claim ownership of any of the images or data provided by the API. We remove infringing content when properly notified. Any data and/or images one might upload to RAWG is expressly granted a license to use. You are prohibited from using the images and/or data in connection with libelous, defamatory, obscene, pornographic, abusive or otherwise offensive content.",
             ],
         },
-        ["TVMaze"] = new ApiMetadataBase
-        {
-            Name = "TVMaze",
-            HomepageUrl = "https://www.tvmaze.com",
-            ApiInfoUrl = "https://www.tvmaze.com/api",
-            ApiKeyConfigPath = null,
-            DataRules =
-            [
-                "CC BY-SA — https://www.tvmaze.com/api#licensing",
-                "Must link back to TVMaze as the source of the data within your application or website.",
-            ],
-        },
-        ["OpenLibrary"] = new ApiMetadataBase
-        {
-            Name = "OpenLibrary",
-            HomepageUrl = "https://openlibrary.org",
-            ApiInfoUrl = "https://openlibrary.org/developers/api",
-            ApiKeyConfigPath = null,
-            DataRules =
-            [
-                "AGPL v3+ — a non-profit Internet Archive initiative.",
-                "Must include a User-Agent header with your application name and contact information.",
-                "Prohibits HTML scraping, bulk data harvesting, and use as a backend for high-traffic commercial services.",
-                "Prioritizes open-source and mission-aligned projects, library and education tools.",
-            ],
-        },
+        // Add new API metadata entries here — see the guide in ExternalMediaApiAdapterFactory.cs.
     };
 
     // Initialized at startup via InitializeFromConfiguration()
@@ -133,6 +111,7 @@ public static class ExternalApiRegistry
                     PeriodType = kvp.Value.PeriodType,
                     RequestLimit = kvp.Value.RequestLimit,
                     WarningThreshold = kvp.Value.WarningThreshold,
+                    AutoBlockThreshold = kvp.Value.AutoBlockThreshold,
                     SupportsPosterApi = kvp.Value.SupportsPosterApi,  // propagated from ApiPlan config
                 }
             );

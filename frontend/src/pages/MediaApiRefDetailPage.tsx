@@ -5,6 +5,7 @@ import {
     useGetMediaApiRefByExternalQuery,
     useGetMediaApiRefListsQuery,
     useGetMediaApiRefTagsQuery,
+    useGetAppliedTagsWithNotesQuery,
     useRefreshMediaApiRefDetailsMutation,
     useFindOrCreateMediaApiRefMutation,
     useAddMediaApiRefToListMutation,
@@ -70,6 +71,13 @@ export default function MediaApiRefDetailPage() {
     const { data: appliedTags } = useGetMediaApiRefTagsQuery(
         effectiveMediaApiRefId,
         { skip: !isInDb }
+    );
+    const { data: appliedTagsWithNotes } = useGetAppliedTagsWithNotesQuery(
+        effectiveMediaApiRefId,
+        { skip: !isInDb || !showLinkModal || activeModalType !== 'tags' }
+    );
+    const tagLinkNotes: Record<string, string | null | undefined> = Object.fromEntries(
+        (appliedTagsWithNotes ?? []).map(a => [String(a.tag.id), a.note])
     );
 
     const [addToList] = useAddMediaApiRefToListMutation();
@@ -274,6 +282,8 @@ export default function MediaApiRefDetailPage() {
                 key={activeModalType}  // remount on type switch so linkedIds reset for the new type
                 modalTitle={activeModalType === 'lists' ? 'Add to Lists' : 'Tag this Item'}
                 allowedSearchTypes={[activeModalType]}
+                focusedItem={{ firstString: detail.name, secondString: detail.creatorName ?? undefined, photographOnLeft: detail.thumbnailUrl ?? undefined }}
+                linkNotes={activeModalType === 'tags' ? tagLinkNotes : undefined}
                 {...modalSearch}
                 initialLinkedIds={activeModalType === 'lists'
                     ? (lists ?? []).map(l => String(l.id))

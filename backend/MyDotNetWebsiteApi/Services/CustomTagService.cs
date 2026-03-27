@@ -197,6 +197,21 @@ public class CustomTagService : ICustomTagService
     }
 
 
+    public async Task<ServiceResult<CustomTagSummaryDto>> GetTagAsync(int tagId, string requesterUserId)
+    {
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return ServiceResult<CustomTagSummaryDto>.Unauthorized();
+
+        var tag = await _context.CustomTags.FindAsync(tagId);
+        if (tag == null) return ServiceResult<CustomTagSummaryDto>.NotFound();
+
+        if (tag.VisibilityStatus == VisibilityStatus.Private && tag.CreatedById != requesterUserId)
+            return ServiceResult<CustomTagSummaryDto>.Forbidden();
+
+        return ServiceResult<CustomTagSummaryDto>.Ok(ToSummaryDto(tag));
+    }
+
+
     public async Task<ServiceResult<PaginatedResultDto<TaggedMediaApiRefDto>>> GetItemsByTagAsync(int tagId, string requesterUserId, int page, int pageSize)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
@@ -231,7 +246,8 @@ public class CustomTagService : ICustomTagService
                     CreatorName = l.MediaApiRef.CreatorName,
                     PublishedDate = l.MediaApiRef.PublishedDate,
                     ExternalId = l.MediaApiRef.ExternalId,
-                    ApiSourceName = l.MediaApiRef.ApiSource.ApiName
+                    ApiSourceName = l.MediaApiRef.ApiSource.ApiName,
+                    ThumbnailUrl = l.MediaApiRef.ThumbnailUrl  // include thumbnail so frontend rows can display it
                 }
             })
             .ToListAsync();

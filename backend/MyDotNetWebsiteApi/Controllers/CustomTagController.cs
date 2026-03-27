@@ -78,6 +78,14 @@ public class CustomTagController : ControllerBase
         return result.ToActionResult(this);
     }
 
+    [HttpGet("{tagId}")]
+    public async Task<IActionResult> GetTag(int tagId)
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _customTagService.GetTagAsync(tagId, requesterUserId);
+        return result.ToActionResult(this);
+    }
+
     // Returns all MediaApiRef items that have the given tag (paginated)
     [HttpGet("{tagId}/items")]
     public async Task<IActionResult> GetItemsByTag(int tagId, [FromQuery] int page = 1, [FromQuery] int pageSize = AppConstants.DefaultPageSize)

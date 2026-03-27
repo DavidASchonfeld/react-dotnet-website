@@ -25,6 +25,7 @@ import SearchBarWithFilters from '../components/SearchBarWithFilters'
 import type { FilterState, SearchType } from '../components/SearchBarWithFilters'
 import RowItemStyling from '../components/row_item_related/RowItemStyling'
 import RowItemContent from '../components/row_item_related/RowItemContent'
+import ListCollageThumb from '../components/ListCollageThumb'
 import { AdminItemStatusPanel } from '../components/administrator_related/AdminItemStatusPanel'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES, DEFAULT_SITE_SEARCH_SUBTYPE } from '../constants'
@@ -156,8 +157,8 @@ export default function SearchPage() {
         { skip: urlSearchType !== 'tags' || subtypeForNonMedia !== 'mine' || shouldFetch }
     )
 
-    async function handleCreateTag(name: string, _description: string, visibility: VisibilityStatus) {
-        await createTag({ name: name.trim(), visibilityStatus: visibility }).unwrap()
+    async function handleCreateTag(name: string, description: string, visibility: VisibilityStatus) {
+        await createTag({ name: name.trim(), description: description.trim() || undefined, visibilityStatus: visibility }).unwrap()
         setShowCreateTagModal(false)
     }
 
@@ -437,6 +438,7 @@ export default function SearchPage() {
                                         <RowItemContent
                                             firstString={list.name}
                                             secondString={`${list.itemCount} items`}
+                                            customLeftElement={<ListCollageThumb urls={list.previewThumbnailUrls} />}
                                             thirdString={list.description ?? undefined}
                                             larger
                                             labelPill={list.category !== MediaListCategory.Standard ? <BadgePill label={
@@ -497,6 +499,7 @@ export default function SearchPage() {
                                     <RowItemStyling key={list.id}>
                                         <RowItemContent
                                             firstString={list.name}
+                                            customLeftElement={<ListCollageThumb urls={list.previewThumbnailUrls} />}
                                             onClick={() => navigate(routes.mediaList(list.id))}
                                             onMenuClick={mediaListActions({
                                                 id: list.id,
@@ -536,6 +539,7 @@ export default function SearchPage() {
                 key={activeModalType}  // remount on type switch so linkedIds reset
                 modalTitle={activeModalType === 'lists' ? 'Add to Lists' : 'Tag this Item'}
                 allowedSearchTypes={[activeModalType]}
+                focusedItem={{ firstString: selectedResult.name, secondString: selectedResult.creatorName ?? undefined, photographOnLeft: selectedResult.thumbnailUrl ?? undefined }}
                 {...modalSearch}
                 initialLinkedIds={[]}  // unknown without findOrCreate; empty is safe
                 onAdd={async (id) => {
@@ -610,7 +614,7 @@ export default function SearchPage() {
         {showCreateTagModal && (
             <NameAndDescriptionModal
                 mode="create"
-                showDescription={false}
+                showDescription={true}
                 showVisibility={true}
                 onConfirm={handleCreateTag}
                 onCancel={() => setShowCreateTagModal(false)}

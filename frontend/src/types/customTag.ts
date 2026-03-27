@@ -31,3 +31,9 @@ export interface TaggedMediaApiRef {
     tagNote?: string | null;
     item: MediaApiRefSummary;
 }
+
+// Reverse of TaggedMediaApiRef: a tag applied to a media item, with the per-link note
+export interface AppliedTag {
+    note?: string | null;
+    tag: CustomTagSummary;
+}

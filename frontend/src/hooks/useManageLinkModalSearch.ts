@@ -1,8 +1,13 @@
 // Encapsulates all data-fetching, pagination, and search logic for ManageLinkModal.
 //
-// Two-mode behaviour (mirrors the SearchPage "mine" no-query pattern):
-//   - Empty search bar  → getMyMediaLists / getMyCustomTags   (show all user's items)
-//   - Query ≥ SEARCH_MIN_CHARS → lazy search endpoints, mineOnly=true
+// Three-mode behaviour:
+//   'lists' / 'tags':
+//     - Empty search bar  → getMyMediaLists / getMyCustomTags   (show all user's items)
+//     - Query ≥ SEARCH_MIN_CHARS → lazy search endpoints, mineOnly=true
+//   'media':
+//     - Always lazy external-API search (no "show all" mode; results only appear after a search)
+//     - Also returns activeApiSources, currentApiSource, and mediaSearchResults
+//       so the caller's onAdd handler can upsert MediaApiRef correctly.
 //
 // Usage:
 //   const modalSearch = useManageLinkModalSearch(activeModalType, showModal)
@@ -14,23 +19,43 @@ import {
     useGetMyCustomTagsQuery,
     useLazySearchMediaListsQuery,
     useLazySearchCustomTagsQuery,
+    useLazySearchExternalApiQuery,
+    useGetActiveApiSourcesQuery,
 } from '../services/apiSlice'
 import type { FilterState, SearchType } from '../components/SearchBarWithFilters'
 import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT } from '../constants'
 import { MediaListCategory } from '../types/enums'
+import type { ExternalApiSourceSummary } from '../types/externalApiSource'
+import type { ExternalApiSearchResult } from '../types/externalApiSearch'
+import type { DetailItemType } from '../components/modals/detail_panels/DetailSidePanel'
 
 const EXCLUDED_LIST_CATEGORIES = [MediaListCategory.ReadingStatus, MediaListCategory.Featured]
 
+// Candidate shape — includes optional detail metadata so the modal can open a side panel
+interface Candidate {
+    id: string;
+    firstString: string;
+    secondString?: string;
+    photographOnLeft?: string;
+    detailType?: DetailItemType;   // drives which detail panel to show
+    apiSourceName?: string;        // mediaApiRef only — needed for route link
+}
+
 interface ManageLinkModalSearchResult {
-    candidates: { id: string; firstString: string; secondString?: string }[]
+    candidates: Candidate[]
     candidatesLoading: boolean
-    pagination: { page: number; hasNextPage: boolean; hasPreviousPage: boolean; totalPages?: number }
+    // undefined in 'media' mode before the first search (so ManageLinkModal hides pagination)
+    pagination: { page: number; hasNextPage: boolean; hasPreviousPage: boolean; totalPages?: number } | undefined
     onSearch: (query: string, filters: FilterState, bypassCache: boolean) => void
     onPageChange: (newPage: number) => void
+    // Media-mode only (undefined when activeType is 'lists' or 'tags')
+    activeApiSources?: ExternalApiSourceSummary[]
+    currentApiSource?: ExternalApiSourceSummary | null
+    mediaSearchResults?: ExternalApiSearchResult[]
 }
 
 export function useManageLinkModalSearch(
-    activeType: SearchType, // 'lists' | 'tags' — drives which queries fire
+    activeType: SearchType, // 'lists' | 'tags' | 'media' — drives which queries fire
     enabled: boolean        // false while the modal is closed; prevents background fetches
 ): ManageLinkModalSearchResult {
     const [page, setPage] = useState(1)
@@ -41,11 +66,17 @@ export function useManageLinkModalSearch(
     // This is React's recommended alternative to useEffect+setState for prop-driven resets
     // (one synchronous re-render, no extra effect pass or cascade).
     const [prevActiveType, setPrevActiveType] = useState(activeType)
+    const [currentApiSource, setCurrentApiSource] = useState<ExternalApiSourceSummary | null>(null)
+    const [lastMediaSearchParams, setLastMediaSearchParams] = useState<{ query: string; mediaTypeId: number } | null>(null)
     if (prevActiveType !== activeType) {
         setPrevActiveType(activeType)
         setPage(1)
         setQuery('')
+        setCurrentApiSource(null)
+        setLastMediaSearchParams(null)
     }
+
+    // --- Lists / tags mode ---
 
     // No-query mode: fetch all the user's lists (skipped while a search query is active)
     const { data: myListsResult, isFetching: myListsFetching } = useGetMyMediaListsQuery(
@@ -62,8 +93,25 @@ export function useManageLinkModalSearch(
     const [triggerSearchLists, { data: listSearchData, isFetching: isSearchingLists }] = useLazySearchMediaListsQuery()
     const [triggerSearchTags, { data: tagSearchData, isFetching: isSearchingTags }] = useLazySearchCustomTagsQuery()
 
+    // --- Media mode ---
+
+    const { data: activeApiSources } = useGetActiveApiSourcesQuery(undefined, {
+        skip: !enabled || activeType !== 'media',
+    })
+    const [triggerSearchMedia, { data: mediaSearchData, isFetching: isSearchingMedia }] = useLazySearchExternalApiQuery()
+    const mediaResults = mediaSearchData?.data ?? []
+
     // Called by ManageLinkModal's search bar on submit (bypassCache not needed here)
     function onSearch(newQuery: string, filters: FilterState) {
+        if (activeType === 'media') {
+            const source = activeApiSources?.find(s => s.id === filters.apiSourceId) ?? activeApiSources?.[0]
+            if (!source) return
+            setCurrentApiSource(source)
+            setPage(1)
+            setLastMediaSearchParams({ query: newQuery, mediaTypeId: source.mediaTypeId })
+            triggerSearchMedia({ query: newQuery, mediaTypeId: source.mediaTypeId, limit: SEARCH_DEFAULT_LIMIT, page: 1 })
+            return
+        }
         setQuery(newQuery)
         setPage(1) // always reset to page 1 on a new search
         if (newQuery.length >= SEARCH_MIN_CHARS) {
@@ -75,6 +123,12 @@ export function useManageLinkModalSearch(
     // Called by ManageLinkModal's PaginationControls
     function onPageChange(newPage: number) {
         setPage(newPage)
+        if (activeType === 'media') {
+            if (lastMediaSearchParams) {
+                triggerSearchMedia({ ...lastMediaSearchParams, limit: SEARCH_DEFAULT_LIMIT, page: newPage })
+            }
+            return
+        }
         if (shouldFetch) {
             // Re-run the active search at the new page
             if (activeType === 'lists') triggerSearchLists({ query, limit: SEARCH_DEFAULT_LIMIT, mineOnly: true, page: newPage })
@@ -83,13 +137,43 @@ export function useManageLinkModalSearch(
         // No-query path: changing `page` causes useGetMyMediaListsQuery/useGetMyCustomTagsQuery to re-fire automatically
     }
 
+    // --- Media mode early return ---
+
+    if (activeType === 'media') {
+        return {
+            candidates: mediaResults.map(r => ({
+                id: r.externalId,
+                firstString: r.name,
+                secondString: r.creatorName ?? undefined,
+                photographOnLeft: r.thumbnailUrl ?? undefined,
+                detailType: 'mediaApiRef' as DetailItemType,
+                // store the source so the panel can build a route link
+                apiSourceName: currentApiSource?.apiName ?? '',
+            })),
+            candidatesLoading: isSearchingMedia,
+            // Hide pagination until the first search has been made
+            pagination: lastMediaSearchParams ? {
+                page,
+                hasNextPage: mediaResults.length >= SEARCH_DEFAULT_LIMIT,
+                hasPreviousPage: page > 1,
+            } : undefined,
+            onSearch,
+            onPageChange,
+            activeApiSources,
+            currentApiSource,
+            mediaSearchResults: mediaResults,
+        }
+    }
+
+    // --- Lists / tags mode ---
+
     // Switch between "all mine" items and search results depending on whether a query is active
-    const candidates = activeType === 'lists'
+    const candidates: Candidate[] = activeType === 'lists'
         ? (shouldFetch ? listSearchData ?? [] : myListsResult?.items ?? [])
             .filter(l => !EXCLUDED_LIST_CATEGORIES.includes(l.category))
-            .map(l => ({ id: String(l.id), firstString: l.name, secondString: l.description ?? undefined }))
+            .map(l => ({ id: String(l.id), firstString: l.name, secondString: l.description ?? undefined, detailType: 'mediaList' as DetailItemType }))
         : (shouldFetch ? tagSearchData ?? [] : myTagsResult?.items ?? [])
-            .map(t => ({ id: String(t.id), firstString: t.name }))
+            .map(t => ({ id: String(t.id), firstString: t.name, detailType: 'tag' as DetailItemType }))
 
     // Next-page exists if the last batch was full (search) or there are more pages in the paginated result (no-query)
     const hasNextPage = shouldFetch

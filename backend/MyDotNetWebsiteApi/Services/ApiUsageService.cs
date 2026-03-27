@@ -6,13 +6,14 @@ public class ApiUsageService : IApiUsageService
 
     // Derived from ExternalApiRegistry so there is exactly one place to add/update API config.
     // Note: Accesses plan data through CurrentPlan to support multi-tier plans.
-    private static readonly Dictionary<string, (string PeriodType, int? Limit, int? WarningThreshold, bool SupportsPosterApi)> _apiConfig =
+    private static readonly Dictionary<string, (string PeriodType, int? Limit, int? WarningThreshold, int? AutoBlockThreshold, bool SupportsPosterApi)> _apiConfig =
         ExternalApiRegistry.Apis.ToDictionary(
             kvp => kvp.Key,
             kvp => (
                 kvp.Value.CurrentPlan?.PeriodType ?? "Daily",
                 kvp.Value.CurrentPlan?.RequestLimit,
                 kvp.Value.CurrentPlan?.WarningThreshold,
+                kvp.Value.CurrentPlan?.AutoBlockThreshold,
                 kvp.Value.CurrentPlan?.SupportsPosterApi ?? false
             )
         );
@@ -54,6 +55,20 @@ public class ApiUsageService : IApiUsageService
     }
 
 
+    // Returns true if the current period's request count has reached the auto-block threshold.
+    public async Task<bool> IsAutoBlockedAsync(string apiName)
+    {
+        if (!_apiConfig.TryGetValue(apiName, out var config)) return false;
+        if (!config.AutoBlockThreshold.HasValue) return false;
+
+        var periodStart = GetCurrentPeriodStart(config.PeriodType);
+        var record = await _context.ApiUsageRecords
+            .FirstOrDefaultAsync(r => r.ApiName == apiName && r.PeriodStart == periodStart);
+
+        return (record?.RequestCount ?? 0) >= config.AutoBlockThreshold.Value;
+    }
+
+
     // Returns a stats snapshot for every API in _apiConfig.
     // RequestsUsed is 0 when no requests have been made in the current period.
     public async Task<List<ApiUsageStatsDto>> GetAllUsageStatsAsync()
@@ -87,6 +102,9 @@ public class ApiUsageService : IApiUsageService
                     ? Math.Round((double)used / config.Limit.Value * 100, 1)
                     : null,
                 IsApproachingLimit = config.WarningThreshold.HasValue && used >= config.WarningThreshold.Value,
+                IsAutoBlocked = config.AutoBlockThreshold.HasValue && used >= config.AutoBlockThreshold.Value,
+                AutoBlockThreshold = config.AutoBlockThreshold,
+                WarningThreshold = config.WarningThreshold,
                 PeriodType = config.PeriodType,
                 PeriodStart = periodStart,
                 PeriodEnd = periodEnd,

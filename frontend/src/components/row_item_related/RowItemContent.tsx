@@ -11,12 +11,13 @@ interface Props extends RowItemDisplayProps {
     onClick?: () => void;
     onMenuClick?: MenuAction[];
     preview?: ReactNode;  // overrides the auto-generated drawer preview; only used when onMenuClick is set
+    customLeftElement?: ReactNode;  // replaces the photo slot with a custom element (e.g. list collage)
 }
 
 // Generic row content for any named object.
 // Layout: [Photo or placeholder] | [flex-col: [firstString] / [secondString] / [thirdString (larger only)]] | [labelPill] | [ItemActionsButton]
 // Used as the children of SwipeReorderRowItem (swipe + drag) and RowItemStyling (visual styling only), and other pages/modals.
-export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, useDirectUrl, labelPill, onClick, onMenuClick, preview }: Props) {
+export default function RowItemContent({ firstString, secondString, thirdString, larger, photographOnLeft, useDirectUrl, labelPill, onClick, onMenuClick, preview, customLeftElement }: Props) {
 
     const imageSrc = photographOnLeft
         ? (useDirectUrl || !photographOnLeft.startsWith('http')
@@ -27,32 +28,43 @@ export default function RowItemContent({ firstString, secondString, thirdString,
     return (
         <div className={`flex flex-row items-stretch gap-3 w-full min-w-0${onClick ? ' cursor-pointer' : ''}`} onClick={onClick}>
 
-            {/* Photograph — fixed size; placeholder shown if no URL.
+            {/* Photograph / custom left element — fixed size; placeholder shown if no URL.
                 larger mode: self-stretch (height) + w-16 (fixed width) fills the card height flush.
                              Parent must use items-stretch for this to work. */}
-            <div className={`shrink-0 bg-border flex items-center justify-center overflow-hidden relative
-                ${larger
-                    ? 'self-stretch w-16 rounded'
-                    : 'rounded aspect-square w-10 h-10'
-                }`}>
-                {photographOnLeft && (
-                    <img
-                        src={imageSrc!}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        onError={e => {
-                            const img = e.currentTarget as HTMLImageElement;
-                            if (!img.dataset.retried) {
-                                img.dataset.retried = 'true';
-                                setTimeout(() => { img.src = photographOnLeft; }, 1500);
-                            } else {
-                                img.src = '/placeholder-thumbnail.svg';
-                            }
-                        }}
-                    />
-                )}
-                <ImageCacheIndicatorDot src={imageSrc ?? ''} />
-            </div>
+            {customLeftElement ? (
+                // Custom left element (e.g. list collage) — same sizing as the regular photo slot
+                <div className={`shrink-0 overflow-hidden
+                    ${larger
+                        ? 'self-stretch w-16 rounded'
+                        : 'rounded aspect-square w-10 h-10'
+                    }`}>
+                    {customLeftElement}
+                </div>
+            ) : (
+                <div className={`shrink-0 bg-border flex items-center justify-center overflow-hidden relative
+                    ${larger
+                        ? 'self-stretch w-16 rounded'
+                        : 'rounded aspect-square w-10 h-10'
+                    }`}>
+                    {photographOnLeft && (
+                        <img
+                            src={imageSrc!}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={e => {
+                                const img = e.currentTarget as HTMLImageElement;
+                                if (!img.dataset.retried) {
+                                    img.dataset.retried = 'true';
+                                    setTimeout(() => { img.src = photographOnLeft; }, 1500);
+                                } else {
+                                    img.src = '/placeholder-thumbnail.svg';
+                                }
+                            }}
+                        />
+                    )}
+                    <ImageCacheIndicatorDot src={imageSrc ?? ''} />
+                </div>
+            )}
 
             {/* Rows stacked */}
             <div className={`flex flex-col flex-1 min-w-0  ${larger ? 'gap-1' : ''}`}>

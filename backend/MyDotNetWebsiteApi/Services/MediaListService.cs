@@ -69,8 +69,17 @@ public class MediaListService : IMediaListService
         .Where(l => l.HostListId == mediaListId)
         .CountAsync();
 
+    // Fetches the first 4 thumbnail URLs (by position) for the list collage
+    private async Task<List<string>> GetPreviewThumbnailUrlsAsync(int mediaListId) =>
+        await _context.LinkMediaApiRefToMediaListTable
+            .Where(l => l.HostListId == mediaListId && l.MediaApiRef.ThumbnailUrl != null)
+            .OrderBy(l => l.Position)
+            .Select(l => l.MediaApiRef.ThumbnailUrl!)
+            .Take(4)
+            .ToListAsync();
 
-    private static MediaListSummaryDto ToSummaryDto(MediaList mediaListObject, int itemCount, bool canEdit = true) => new()
+
+    private static MediaListSummaryDto ToSummaryDto(MediaList mediaListObject, int itemCount, List<string> previewThumbnailUrls, bool canEdit = true) => new()
     {
         Id = mediaListObject.Id,
         Name = mediaListObject.Name,
@@ -79,7 +88,8 @@ public class MediaListService : IMediaListService
         VisibilityStatus = mediaListObject.VisibilityStatus,
         ItemCount = itemCount,
         CanEdit = canEdit,
-        Category = mediaListObject.Category  // Drives UI badges and deletion protection on the frontend
+        Category = mediaListObject.Category,  // Drives UI badges and deletion protection on the frontend
+        PreviewThumbnailUrls = previewThumbnailUrls
     };
 
 
@@ -108,7 +118,14 @@ public class MediaListService : IMediaListService
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
                 CanEdit = true,  // GetMyLists only returns lists the user submitted, so they always own them
-                Category = l.Category
+                Category = l.Category,
+                // First 4 thumbnail URLs ordered by position for the collage
+                PreviewThumbnailUrls = l.ItemLinks
+                    .Where(link => link.MediaApiRef.ThumbnailUrl != null)
+                    .OrderBy(link => link.Position)
+                    .Take(4)
+                    .Select(link => link.MediaApiRef.ThumbnailUrl!)
+                    .ToList()
             })
             .ToListAsync();
 
@@ -201,7 +218,7 @@ public class MediaListService : IMediaListService
         await _context.SaveChangesAsync();  // Flush changes
 
         // Passing in itemCount = 0 since a newly created MediaList always starts with 0 items inside.
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(newMediaList, 0));
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(newMediaList, 0, new List<string>()));
     }
 
 
@@ -249,7 +266,8 @@ public class MediaListService : IMediaListService
         await _context.SaveChangesAsync();  // Flush changes
 
         int count = await GetItemCountAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count));
+        var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
     }
 
 
@@ -317,7 +335,8 @@ public class MediaListService : IMediaListService
         await _context.SaveChangesAsync();  // Flush the changes
 
         int count = await GetItemCountAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count));
+        var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
     }
 
 
@@ -349,7 +368,8 @@ public class MediaListService : IMediaListService
         await _context.SaveChangesAsync();  // Flush changes
 
         int count = await GetItemCountAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count));
+        var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
     }
 
 
@@ -403,7 +423,8 @@ public class MediaListService : IMediaListService
         if (alreadyInList)
         {
             int existingCount = await GetItemCountAsync(mediaListId);
-            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, existingCount));
+            var existingThumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
+            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, existingCount, existingThumbnails));
         }
 
 
@@ -443,7 +464,8 @@ public class MediaListService : IMediaListService
         await _context.SaveChangesAsync();
 
         int count = await GetItemCountAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count));
+        var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
     }
 
 
@@ -470,7 +492,8 @@ public class MediaListService : IMediaListService
         {
             // Item not in DB → cannot be in any list → return success (idempotent)
             int count0 = await GetItemCountAsync(mediaListId);
-            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count0));
+            var thumbnails0 = await GetPreviewThumbnailUrlsAsync(mediaListId);
+            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count0, thumbnails0));
         }
 
 
@@ -482,7 +505,8 @@ public class MediaListService : IMediaListService
         {
             // Not in list → return success (idempotent)
             int count0 = await GetItemCountAsync(mediaListId);
-            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count0));
+            var thumbnails0 = await GetPreviewThumbnailUrlsAsync(mediaListId);
+            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count0, thumbnails0));
         }
 
 
@@ -491,7 +515,8 @@ public class MediaListService : IMediaListService
         await _context.SaveChangesAsync();
 
         int count = await GetItemCountAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count));
+        var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
     }
 
 
@@ -528,7 +553,8 @@ public class MediaListService : IMediaListService
         if (destinationPosition == oldPosition)
         {
             int count = await GetItemCountAsync(mediaListId);
-            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count));
+            var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
+            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
         }
 
 
@@ -561,7 +587,8 @@ public class MediaListService : IMediaListService
         await _context.SaveChangesAsync();  // Flush changes
 
         int finalCount = await GetItemCountAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, finalCount));
+        var finalThumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, finalCount, finalThumbnails));
     }
 
     public async Task<ServiceResult<bool>> ReorderItemsAsync(int mediaListId, List<int> orderedItemIds, string requesterUserId)
@@ -654,7 +681,14 @@ public class MediaListService : IMediaListService
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
                 CanEdit = l.SubmittedById == requesterUserId || canModify,
-                Category = l.Category
+                Category = l.Category,
+                // First 4 thumbnail URLs ordered by position for the collage
+                PreviewThumbnailUrls = l.ItemLinks
+                    .Where(link => link.MediaApiRef.ThumbnailUrl != null)
+                    .OrderBy(link => link.Position)
+                    .Take(4)
+                    .Select(link => link.MediaApiRef.ThumbnailUrl!)
+                    .ToList()
             })
             .ToListAsync();
 
@@ -680,7 +714,14 @@ public class MediaListService : IMediaListService
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
                 CanEdit = true,
-                Category = l.Category
+                Category = l.Category,
+                // First 4 thumbnail URLs ordered by position for the collage
+                PreviewThumbnailUrls = l.ItemLinks
+                    .Where(link => link.MediaApiRef.ThumbnailUrl != null)
+                    .OrderBy(link => link.Position)
+                    .Take(4)
+                    .Select(link => link.MediaApiRef.ThumbnailUrl!)
+                    .ToList()
             })
             .ToListAsync();
 
@@ -746,7 +787,7 @@ public class MediaListService : IMediaListService
         _context.MediaLists.Add(list);
         await _context.SaveChangesAsync();
 
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(list, 0));
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(list, 0, new List<string>()));
     }
 
 

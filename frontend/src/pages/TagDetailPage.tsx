@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store/store';
 import {
+    useGetCustomTagQuery,
     useGetItemsByTagQuery,
-    useLazySearchExternalApiQuery,
     useFindOrCreateMediaApiRefMutation,
     useAddTagToMediaApiRefMutation,
     useRemoveTagFromMediaApiRefMutation,
-    useGetActiveApiSourcesQuery,
+    usePatchCustomTagMutation,
+    useDeleteCustomTagMutation,
 } from '../services/apiSlice';
-import type { ExternalApiSourceSummary } from '../types/externalApiSource';
+import { useManageLinkModalSearch } from '../hooks/useManageLinkModalSearch';
 import AnimatedPage from '../components/AnimatedPage';
 import BackButton from '../components/BackButton';
 import RowItemStyling from '../components/row_item_related/RowItemStyling';
@@ -18,31 +19,29 @@ import RowItemContent from '../components/row_item_related/RowItemContent';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import PaginationControls from '../components/PaginationControls';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
+import NameAndDescriptionModal from '../components/modals/NameAndDescriptionModal';
+import ConfirmModal from '../components/modals/ConfirmModal';
 import ItemActionsButton from '../components/row_item_related/ItemActionsButton';
-import { SEARCH_DEFAULT_LIMIT } from '../constants';
 import { routes } from '../utils/routes';
 import { mediaApiRefToRowItemProps } from '../utils/mediaApiRefAdapter';
-import { tagActions } from '../utils/menuActions';
+import { makeShareAction, makeGoToDetailsAction, makeRemoveFromTagAction, tagActions } from '../utils/menuActions';
 
 export default function TagDetailPage() {
     const { tagId } = useParams<{ tagId: string }>();
     const navigate = useNavigate();
-    const location = useLocation();
 
     const parsedTagId = parseInt(tagId ?? '');
-    // Tag name passed via navigation state; falls back gracefully
-    const tagName: string | undefined = (location.state as { tagName?: string } | null)?.tagName;
 
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
     const [page, setPage] = useState(1);
     const [showTagModal, setShowTagModal] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleted, setIsDeleted] = useState(false);
 
-    // Tracks the API source chosen in the last search (needed by onAdd)
-    const [currentApiSource, setCurrentApiSource] = useState<ExternalApiSourceSummary | null>(null);
-    // Pagination state for the ManageLinkModal search results
-    const [searchPage, setSearchPage] = useState(1);
-    const [lastSearchParams, setLastSearchParams] = useState<{ query: string; mediaTypeId: number } | null>(null);
+    const { data: tagDetail } = useGetCustomTagQuery(parsedTagId, { skip: isNaN(parsedTagId) });
+    const tagName = tagDetail?.name ?? `Tag #${parsedTagId}`;
 
     const { data: result, isLoading, error } = useGetItemsByTagQuery(
         { tagId: parsedTagId, page },
@@ -50,41 +49,46 @@ export default function TagDetailPage() {
     );
     const items = result?.items ?? [];
 
-    const { data: activeApiSources } = useGetActiveApiSourcesQuery();
-    const [triggerSearch, { data: searchData, isFetching: isSearching }] = useLazySearchExternalApiQuery();
+    // Fetch all linked items when the modal is open so that initialLinkedIds covers
+    // every page (not just page 1), and onRemove can find items regardless of pagination.
+    const { data: allTagItemsResult } = useGetItemsByTagQuery(
+        { tagId: parsedTagId, page: 1, pageSize: 9999 },
+        { skip: !showTagModal || isNaN(parsedTagId) }
+    );
+    const allTagItems = allTagItemsResult?.items ?? [];
+
+    const modalSearch = useManageLinkModalSearch('media', showTagModal);
     const [findOrCreate] = useFindOrCreateMediaApiRefMutation();
     const [addTag] = useAddTagToMediaApiRefMutation();
     const [removeTag] = useRemoveTagFromMediaApiRefMutation();
+    const [patchTag] = usePatchCustomTagMutation();
+    const [deleteTag] = useDeleteCustomTagMutation();
 
     if (isLoading) return <div>Loading...</div>;
-    if (error) return <div>Error loading tag items. The tag may be private.</div>;
+    if (error && !isDeleted) return <div>Error loading tag items. The tag may be private.</div>;
 
     return (
         <AnimatedPage>
         <div className="page">
             <div className="flex justify-between items-center">
-                <div className="flex gap-2 flex-wrap">
-                    <BackButton />
-                    {/* Only logged-in users can tag items */}
-                    {isAuthenticated && (
-                        <button className="btn btn-secondary w-fit" onClick={() => setShowTagModal(true)}>
-                            + Tag Items
-                        </button>
-                    )}
-                </div>
+                <BackButton />
                 <ItemActionsButton
                     buttonClassName="btn btn-secondary w-10 h-10 flex items-center justify-center"
-                    firstString={tagName ?? `Tag #${parsedTagId}`}
+                    firstString={tagName}
+                    secondString={tagDetail?.description ?? undefined}
                     onMenuClick={tagActions({
                         id: parsedTagId,
-                        name: tagName ?? `Tag #${parsedTagId}`,
+                        name: tagName,
                         navigate,
                         includeGoToDetails: false,
+                        ...(isAuthenticated ? { onTagItemsOpen: () => setShowTagModal(true) } : {}),
+                        ...(isAuthenticated ? { onEditOpen: () => setIsEditModalOpen(true) } : {}),
+                        ...(isAuthenticated ? { onDeleteOpen: () => setIsDeleteModalOpen(true) } : {}),
                     })}
                 />
             </div>
 
-            <h1 className="h1-styling">{tagName ?? `Tag #${parsedTagId}`}</h1>
+            <h1 className="h1-styling">{tagName}</h1>
             <p className="text-sm text-gray-500 mb-4">
                 {result?.totalCount ?? 0} item{result?.totalCount !== 1 ? 's' : ''} with this tag
             </p>
@@ -96,6 +100,13 @@ export default function TagDetailPage() {
                             <RowItemContent
                                 {...mediaApiRefToRowItemProps(item.item, { includeYear: false, secondStringField: 'date' })}
                                 labelPill={<MediaTypeLabel mediaTypeId={item.item.mediaTypeId} faded={true} />}
+                                onMenuClick={[
+                                    makeShareAction(item.item.name, routes.mediaApiRef(item.item.apiSourceName, item.item.externalId)),
+                                    makeGoToDetailsAction(navigate, routes.mediaApiRef(item.item.apiSourceName, item.item.externalId)),
+                                    ...(isAuthenticated ? [makeRemoveFromTagAction(() => {
+                                        removeTag({ tagId: parsedTagId, mediaApiRefId: item.item.id });
+                                    })] : []),
+                                ]}
                             />
                         </RowItemStyling>
                     ))}
@@ -115,64 +126,80 @@ export default function TagDetailPage() {
             )}
 
             {/* Tag Items Modal — searches external API for media to add/remove this tag from */}
-            {showTagModal && (
+            {showTagModal && allTagItemsResult !== undefined && (
                 <ManageLinkModal
                     modalTitle="Tag Items"
                     allowedSearchTypes={['media']}
-                    activeApiSources={activeApiSources}
-                    defaultApiSourceId={activeApiSources?.[0]?.id ?? null}
-                    onSearch={(query, filters) => {
-                        const source = activeApiSources?.find(s => s.id === filters.apiSourceId)
-                            ?? activeApiSources?.[0];
-                        if (!source) return;
-                        setCurrentApiSource(source);
-                        setSearchPage(1);
-                        setLastSearchParams({ query, mediaTypeId: source.mediaTypeId });
-                        triggerSearch({ query, mediaTypeId: source.mediaTypeId, limit: SEARCH_DEFAULT_LIMIT, page: 1 });
-                    }}
-                    candidates={(searchData?.data ?? []).map(item => ({
-                        id: item.externalId,
-                        firstString: item.name,
-                        secondString: item.creatorName ?? undefined,
-                        labelPill: <MediaTypeLabel mediaTypeId={currentApiSource?.mediaTypeId ?? 1} />,
-                    }))}
-                    candidatesLoading={isSearching}
-                    // Best-effort: pre-check items visible on the current page
-                    initialLinkedIds={items.map(i => i.item.externalId ?? String(i.item.id))}
-                    pagination={lastSearchParams ? {
-                        page: searchPage,
-                        hasNextPage: (searchData?.data?.length ?? 0) >= SEARCH_DEFAULT_LIMIT,
-                        hasPreviousPage: searchPage > 1,
-                    } : undefined}
-                    onPageChange={(p) => {
-                        if (!lastSearchParams) return;
-                        setSearchPage(p);
-                        triggerSearch({ query: lastSearchParams.query, mediaTypeId: lastSearchParams.mediaTypeId, limit: SEARCH_DEFAULT_LIMIT, page: p });
-                    }}
-                    onAdd={async (externalId) => {
-                        const item = searchData?.data.find(r => r.externalId === externalId);
-                        if (!currentApiSource || !item) return;
+                    activeApiSources={modalSearch.activeApiSources}
+                    defaultApiSourceId={modalSearch.activeApiSources?.[0]?.id ?? null}
+                    {...modalSearch}
+                    focusedItem={{ firstString: tagName, secondString: tagDetail?.description ?? undefined }}
+                    linkNotes={Object.fromEntries(allTagItems.map(i => [i.item.externalId ?? String(i.item.id), i.tagNote]))}
+                    initialLinkedIds={allTagItems.map(i => i.item.externalId ?? String(i.item.id))}
+                    noteInput={{ label: 'Reason for tagging (optional)', placeholder: 'Why does this item belong under this tag?' }}
+                    onAdd={async (externalId, note) => {
+                        const item = modalSearch.mediaSearchResults?.find(r => r.externalId === externalId);
+                        if (!modalSearch.currentApiSource || !item) return;
                         // Upsert MediaApiRef, then apply the tag
                         const ref = await findOrCreate({
-                            externalApiSourceId: currentApiSource.id,
+                            externalApiSourceId: modalSearch.currentApiSource.id,
                             externalId: item.externalId,
                             name: item.name,
-                            mediaTypeId: currentApiSource.mediaTypeId,
+                            mediaTypeId: modalSearch.currentApiSource.mediaTypeId,
                             creatorName: item.creatorName,
                             publishedDate: item.publishedDate,
                         }).unwrap();
-                        await addTag({ tagId: parsedTagId, mediaApiRefId: ref.id }).unwrap();
+                        await addTag({ tagId: parsedTagId, mediaApiRefId: ref.id, note }).unwrap();
                     }}
                     onRemove={async (externalId) => {
-                        // Find item on the current page by externalId, then remove the tag
-                        const pageItem = items.find(i => i.item.externalId === externalId);
-                        if (pageItem) {
-                            await removeTag({ tagId: parsedTagId, mediaApiRefId: pageItem.item.id }).unwrap();
+                        const taggedItem = allTagItems.find(i => i.item.externalId === externalId)
+                                        ?? items.find(i => i.item.externalId === externalId);
+                        if (taggedItem) {
+                            await removeTag({ tagId: parsedTagId, mediaApiRefId: taggedItem.item.id }).unwrap();
                         }
                     }}
                     removeConfirmTitle="Remove tag from item?"
                     getRemoveConfirmMessage={(item) => `Remove tag from "${item.firstString}"?`}
                     onClose={() => setShowTagModal(false)}
+                />
+            )}
+
+            {/* Edit Tag Modal */}
+            {isEditModalOpen && tagDetail && (
+                <NameAndDescriptionModal
+                    mode="edit"
+                    initialName={tagDetail.name}
+                    initialDescription={tagDetail.description}
+                    initialVisibility={tagDetail.visibilityStatus}
+                    onConfirm={async (name, description, visibility) => {
+                        try {
+                            await patchTag({ tagId: parsedTagId, data: { name, description, visibilityStatus: visibility } }).unwrap();
+                        } catch (err) {
+                            console.error(err);
+                        }
+                        setIsEditModalOpen(false);
+                    }}
+                    onCancel={() => setIsEditModalOpen(false)}
+                />
+            )}
+
+            {/* Delete Tag Confirm Modal */}
+            {isDeleteModalOpen && (
+                <ConfirmModal
+                    title={`Delete "${tagName}"?`}
+                    message="This will permanently delete the tag and remove it from all items."
+                    confirmLabel="Delete"
+                    onConfirm={async () => {
+                        try {
+                            await deleteTag(parsedTagId).unwrap();
+                            setIsDeleted(true);
+                            navigate('/search?type=tags&subtype=mine');
+                        } catch (err) {
+                            console.error(err);
+                        }
+                        setIsDeleteModalOpen(false);
+                    }}
+                    onCancel={() => setIsDeleteModalOpen(false)}
                 />
             )}
         </div>

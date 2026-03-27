@@ -179,13 +179,12 @@ public class AppDbContext : IdentityDbContext<AppUser>
             new MediaType { Id = 4, Name = "Video Game", IsApproved = true, DateSubmitted = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)}
         );
 
-        // External API Sources — one per MediaType, all active by default
-        // These are stubs; real HTTP calls are implemented in the adapter classes
+        // External API Sources — one per MediaType, all active by default.
+        // To add a new API source: follow the guide in ExternalMediaApiAdapterFactory.cs,
+        // then seed a new row here and run: dotnet ef migrations add <YourMigrationName>
         modelBuilder.Entity<ExternalApiSource>().HasData(
-            new ExternalApiSource { Id = 1, ApiName = "OMDB",        MediaTypeId = 1, IsActive = true },
-            new ExternalApiSource { Id = 2, ApiName = "TVMaze",      MediaTypeId = 2, IsActive = true },
-            new ExternalApiSource { Id = 3, ApiName = "OpenLibrary", MediaTypeId = 3, IsActive = true },
-            new ExternalApiSource { Id = 4, ApiName = "RAWG",        MediaTypeId = 4, IsActive = true }
+            new ExternalApiSource { Id = 1, ApiName = "OMDB", MediaTypeId = 1, IsActive = true },
+            new ExternalApiSource { Id = 4, ApiName = "RAWG", MediaTypeId = 4, IsActive = true }
         );
 
         // Global settings singleton — Id is always 1; never insert a second row.

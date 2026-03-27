@@ -26,6 +26,7 @@ export interface MediaListSummary
     itemCount: number;
     canEdit: boolean;
     category: MediaListCategory; // Drives UI badges and whether the list can be deleted
+    previewThumbnailUrls: string[]; // Up to 4 thumbnail URLs from first items (for collage display)
 }
 
 export interface MediaListDetail

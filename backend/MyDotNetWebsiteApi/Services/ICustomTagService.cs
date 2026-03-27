@@ -10,6 +10,8 @@ public interface ICustomTagService
     Task<ServiceResult<bool>> AddTagToMediaApiRefAsync(int tagId, int mediaApiRefId, string requesterUserId, AddTagToMediaApiRefDto? dto = null);
     Task<ServiceResult<bool>> RemoveTagFromMediaApiRefAsync(int tagId, int mediaApiRefId, string requesterUserId);
 
+    Task<ServiceResult<CustomTagSummaryDto>> GetTagAsync(int tagId, string requesterUserId);
+
     // Returns all MediaApiRef items that have the given tag (respects visibility, paginated)
     Task<ServiceResult<PaginatedResultDto<TaggedMediaApiRefDto>>> GetItemsByTagAsync(int tagId, string requesterUserId, int page, int pageSize);
 }

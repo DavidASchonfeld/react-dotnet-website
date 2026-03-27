@@ -174,8 +174,8 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
 
     const hasLimit = api.requestLimit !== null
 
-    // Determine bar colour: red if approaching limit, amber if >75%, otherwise primary
-    const barColor = api.isApproachingLimit
+    // Determine bar colour: red if approaching/auto-block limit, amber if >75%, otherwise primary
+    const barColor = (api.isApproachingLimit || api.isAutoBlocked)
         ? 'bg-red-500'
         : (api.percentUsed ?? 0) > 75
             ? 'bg-amber-500'
@@ -199,6 +199,11 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
                         ⚠ Approaching limit
                     </span>
                 )}
+                {api.isAutoBlocked && (
+                    <span className="text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300 font-medium">
+                        ⛔ Auto-blocked
+                    </span>
+                )}
                 {api.isDisabledByAdmin && (
                     <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 font-medium">
                         Disabled
@@ -209,11 +214,23 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
             {/* Progress bar (only shown when there is a configured limit) */}
             {hasLimit && (
                 <div className="mb-3">
-                    <div className="w-full h-2.5 rounded-full bg-surface overflow-hidden border border-border">
+                    <div className="relative w-full h-2.5 rounded-full bg-surface overflow-visible border border-border">
                         <div
-                            className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                            className={`h-full rounded-full transition-all duration-500 overflow-hidden ${barColor}`}
                             style={{ width: `${Math.min(api.percentUsed ?? 0, 100)}%` }}
                         />
+                        {api.requestLimit && api.warningThreshold && (
+                            <div
+                                className="absolute top-0 h-full w-0.5 bg-amber-400 opacity-80"
+                                style={{ left: `${(api.warningThreshold / api.requestLimit) * 100}%` }}
+                            />
+                        )}
+                        {api.requestLimit && api.autoBlockThreshold && (
+                            <div
+                                className="absolute top-0 h-full w-0.5 bg-orange-500 opacity-90"
+                                style={{ left: `${(api.autoBlockThreshold / api.requestLimit) * 100}%` }}
+                            />
+                        )}
                     </div>
                 </div>
             )}
@@ -224,6 +241,9 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
                 {hasLimit ? (
                     <>
                         <StatItem label="Limit" value={api.requestLimit!.toLocaleString()} />
+                        {api.autoBlockThreshold !== null && (
+                            <StatItem label="Auto-block at" value={api.autoBlockThreshold!.toLocaleString()} />
+                        )}
                         <StatItem label="Remaining" value={api.requestsRemaining!.toLocaleString()} />
                         <StatItem label="% Used" value={`${api.percentUsed?.toFixed(1) ?? '0.0'}%`} />
                     </>

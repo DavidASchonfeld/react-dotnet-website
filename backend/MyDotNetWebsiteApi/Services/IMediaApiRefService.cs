@@ -24,4 +24,7 @@ public interface IMediaApiRefService
     Task<ServiceResult<List<MediaListSummaryDto>>> GetListsContainingRefAsync(int mediaApiRefId, string requesterUserId);
 
     Task<ServiceResult<List<CustomTagSummaryDto>>> GetTagsForRefAsync(int mediaApiRefId, string requesterUserId);
+
+    // Returns all tags applied to a MediaApiRef together with the per-link note from the join table.
+    Task<ServiceResult<List<AppliedTagDto>>> GetAppliedTagsWithNotesAsync(int mediaApiRefId, string requesterUserId);
 }

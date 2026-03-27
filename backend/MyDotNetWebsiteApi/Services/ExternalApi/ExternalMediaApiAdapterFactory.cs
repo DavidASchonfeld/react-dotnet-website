@@ -1,5 +1,16 @@
 // Selects the correct IExternalMediaApiAdapter based on the ApiName stored in ExternalApiSource.
-// To support a new API: add a case here and create the corresponding adapter class.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// HOW TO ADD A NEW 3RD-PARTY API
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. Create a new adapter class in Services/ExternalApi/ that implements
+//    IExternalMediaApiAdapter (use OmdbApiAdapter.cs as a reference).
+// 2. Register its metadata in ApiMetadataBases in ExternalApiRegistry.cs.
+// 3. Add its plan config to appsettings.json under ApiPlanSettings (Plans + SelectedPlans).
+// 4. Add a case in the GetAdapter() switch below; inject any HTTP clients or API keys as needed.
+// 5. Seed an ExternalApiSource row in AppDbContext.cs HasData(), linking the API name to a
+//    MediaTypeId, then run: dotnet ef migrations add <YourMigrationName>
+// ─────────────────────────────────────────────────────────────────────────────
 public class ExternalMediaApiAdapterFactory
 {
     private readonly IHttpClientFactory _httpClientFactory;
@@ -19,11 +30,9 @@ public class ExternalMediaApiAdapterFactory
     public IExternalMediaApiAdapter? GetAdapter(string apiName) => apiName switch
     {
         // OMDB and RAWG need a managed HttpClient and their API key.
-        "OMDB"        => new OmdbApiAdapter(_httpClientFactory.CreateClient(), _omdbApiKey),
-        "RAWG"        => new RawgApiAdapter(_httpClientFactory.CreateClient(), _rawgApiKey),
-        // TVMaze and OpenLibrary are free with no API key required.
-        "TVMaze"      => new TvMazeApiAdapter(),
-        "OpenLibrary" => new OpenLibraryApiAdapter(),
-        _             => null
+        "OMDB" => new OmdbApiAdapter(_httpClientFactory.CreateClient(), _omdbApiKey),
+        "RAWG" => new RawgApiAdapter(_httpClientFactory.CreateClient(), _rawgApiKey),
+        // Add new API cases here — see the HOW TO ADD A NEW 3RD-PARTY API guide above.
+        _      => null
     };
 }

@@ -50,8 +50,7 @@ public static class AppConstants
 
     //// API Usage Tracking — Period Types
     // Used by ApiUsageService to determine the reset cadence per API.
-    public const string OmdbPeriodType = "Daily";           // resets at UTC midnight
-    public const string RawgPeriodType = "Monthly";         // resets on the 1st of each UTC month
-    public const string TvMazePeriodType = "Daily";         // no official limit — tracked for visibility
-    public const string OpenLibraryPeriodType = "Daily";    // no official limit — tracked for visibility
+    public const string OmdbPeriodType = "Daily";    // resets at UTC midnight
+    public const string RawgPeriodType = "Monthly";  // resets on the 1st of each UTC month
+    // Add a new XxxPeriodType constant here when registering a new 3rd-party API.
 }
