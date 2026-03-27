@@ -662,6 +662,32 @@ public class MediaListService : IMediaListService
     }
 
 
+    // Returns all ReadingStatus-category lists for the user — no pagination, since there are always a small fixed number
+    public async Task<ServiceResult<List<MediaListSummaryDto>>> GetMyReadingStatusListsAsync(string requesterUserId)
+    {
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return ServiceResult<List<MediaListSummaryDto>>.Unauthorized();
+
+        var lists = await _context.MediaLists
+            .Where(l => l.SubmittedById == requesterUserId && l.Category == MediaListCategory.ReadingStatus)
+            .OrderBy(l => l.Id)
+            .Select(l => new MediaListSummaryDto
+            {
+                Id = l.Id,
+                Name = l.Name,
+                SubmittedById = l.SubmittedById,
+                Description = l.Description,
+                VisibilityStatus = l.VisibilityStatus,
+                ItemCount = l.ItemLinks.Count,
+                CanEdit = true,
+                Category = l.Category
+            })
+            .ToListAsync();
+
+        return ServiceResult<List<MediaListSummaryDto>>.Ok(lists);
+    }
+
+
     public async Task<ServiceResult<List<MediaListDetailDto>>> GetFeaturedListsAsync()
     {
         var lists = await _context.MediaLists

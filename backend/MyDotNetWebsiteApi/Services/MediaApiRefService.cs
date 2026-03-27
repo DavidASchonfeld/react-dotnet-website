@@ -402,7 +402,8 @@ public class MediaApiRefService : IMediaApiRefService
                 Description = l.Description,
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
-                CanEdit = PermissionHelper.CanModifyOrDeleteList(requesterUser, l)
+                CanEdit = PermissionHelper.CanModifyOrDeleteList(requesterUser, l),
+                Category = l.Category,
             })
             .ToList();
 

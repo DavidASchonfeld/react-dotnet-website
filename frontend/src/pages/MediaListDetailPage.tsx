@@ -32,7 +32,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 
 import { SEARCH_DEFAULT_LIMIT } from '../constants';
 import type { ExternalApiSourceSummary } from '../types/externalApiSource';
-import MediaListFormModal from '../components/modals/MediaListFormModal';
+import NameAndDescriptionModal from '../components/modals/NameAndDescriptionModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import AnimatedPage from '../components/AnimatedPage';
 import BackButton from '../components/BackButton';
@@ -353,7 +353,7 @@ export default function MediaListDetailPage() {
 
             {/* Edit MediaList's Basic Info Modal */}
             {isEditModalOpen && (
-                <MediaListFormModal
+                <NameAndDescriptionModal
                     mode="edit"
                     initialName={selectedMediaListDetail.name}
                     initialDescription={selectedMediaListDetail.description}

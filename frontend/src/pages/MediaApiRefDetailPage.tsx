@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     useGetMediaApiRefByExternalQuery,
@@ -11,6 +12,7 @@ import {
     useAddTagToMediaApiRefMutation,
     useRemoveTagFromMediaApiRefMutation,
 } from '../services/apiSlice';
+import type { RootState } from '../store/store';
 import { BACKEND_BASE_URL } from '../config';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import AnimatedPage from '../components/AnimatedPage';
@@ -26,11 +28,13 @@ import { routes } from '../utils/routes';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import type { SearchType } from '../components/SearchBarWithFilters';
 import { useManageLinkModalSearch } from '../hooks/useManageLinkModalSearch';
+import ReadingStatusButton from '../components/ReadingStatusButton';
 
 
 export default function MediaApiRefDetailPage() {
     const { apiName, externalId } = useParams<{ apiName: string; externalId: string }>();
     const navigate = useNavigate();
+    const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
     const decodedApiName = decodeURIComponent(apiName ?? '');
     const decodedExternalId = decodeURIComponent(externalId ?? '');
@@ -88,25 +92,28 @@ export default function MediaApiRefDetailPage() {
         return undefined
     })()
 
-    // Lazy findOrCreate: called when user opens the manage modal but the item isn't in the DB yet.
+    // Shared helper: ensures item exists in DB, returns its DB ID.
+    // Used by both the manage modal and ReadingStatusButton.
+    const handleEnsureInDb = async (): Promise<number> => {
+        if (effectiveMediaApiRefId > 0) return effectiveMediaApiRefId;
+        if (!detail) throw new Error('No detail loaded');
+        const ref = await findOrCreate({
+            externalApiSourceId: detail.externalApiSourceId,
+            externalId: detail.externalId,
+            name: detail.name,
+            mediaTypeId: detail.mediaTypeId,
+            creatorName: detail.creatorName,
+            publishedDate: detail.publishedDate,
+            thumbnailUrl: detail.thumbnailUrl,
+        }).unwrap();
+        setResolvedId(ref.id);
+        return ref.id;
+    };
+
+    // Opens the manage modal (lists or tags), ensuring item is in DB first.
     const handleOpenManageModal = async (mode: SearchType) => {
         if (!detail) return;
-        if (!isInDb) {
-            try {
-                const ref = await findOrCreate({
-                    externalApiSourceId: detail.externalApiSourceId,
-                    externalId: detail.externalId,
-                    name: detail.name,
-                    mediaTypeId: detail.mediaTypeId,
-                    creatorName: detail.creatorName,
-                    publishedDate: detail.publishedDate,
-                    thumbnailUrl: detail.thumbnailUrl,
-                }).unwrap();
-                setResolvedId(ref.id);
-            } catch {
-                return;
-            }
-        }
+        try { await handleEnsureInDb(); } catch { return; }
         setActiveModalType(mode);
         setShowLinkModal(true);
     };
@@ -142,9 +149,20 @@ export default function MediaApiRefDetailPage() {
                 />
             </div>
 
-            <h1 className="h1-styling">{detail.name}</h1>
+            <h1 className="h1-styling">
+                    {detail.name }
+                    <MediaTypeLabel mediaTypeId={detail.mediaTypeId} />
+            </h1> 
+            {detail.apiHomepageUrl && (
+                    <button
+                    className="btn btn-secondary w-fit"
+                    onClick={() =>
+                        goToExternalWebsite(detail.apiHomepageUrl!)}
+                >Data Source: {detail.apiSourceName} · ID: {detail.externalId}</button>
+            )}
             <AdminItemStatusPanel cacheMetadata={cacheMetadata} isInDb={isInDb} />
-            <MediaTypeLabel mediaTypeId={detail.mediaTypeId} />
+            
+
 
             {/* Staleness hint: admin-only — only visible when adminInfo is populated and data is stale */}
             {detail.adminInfo?.isStale && isInDb && (
@@ -177,6 +195,17 @@ export default function MediaApiRefDetailPage() {
                         onError={e => { (e.currentTarget as HTMLImageElement).src = '/placeholder-poster.svg'; }}
                     />
                     <ImageCacheIndicatorDot src={posterSrc} />
+                </div>
+            )}
+
+            {/* GoodReads-style reading status button — only for authenticated users */}
+            {isAuthenticated && (
+                <div className="flex justify-center">
+                    <ReadingStatusButton
+                        effectiveMediaApiRefId={effectiveMediaApiRefId}
+                        currentLists={lists}
+                        onEnsureInDb={handleEnsureInDb}
+                    />
                 </div>
             )}
 
@@ -215,13 +244,7 @@ export default function MediaApiRefDetailPage() {
             <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 flex flex-col gap-1">
                 {detail.creatorName && <span>Creator: {detail.creatorName}</span>}
                 {detail.publishedDate && <span>Published: {new Date(detail.publishedDate).getFullYear()}</span>}
-                {detail.apiHomepageUrl && (
-                    <button
-                    className="btn btn-secondary w-fit"
-                    onClick={() =>
-                        goToExternalWebsite(detail.apiHomepageUrl!)}
-                >{detail.apiSourceName} · ID: {detail.externalId}</button>
-                )}
+                
             </div>
 
             <hr className="my-4" />

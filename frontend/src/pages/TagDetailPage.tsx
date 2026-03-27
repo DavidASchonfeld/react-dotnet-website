@@ -18,9 +18,11 @@ import RowItemContent from '../components/row_item_related/RowItemContent';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import PaginationControls from '../components/PaginationControls';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
+import ItemActionsButton from '../components/row_item_related/ItemActionsButton';
 import { SEARCH_DEFAULT_LIMIT } from '../constants';
 import { routes } from '../utils/routes';
 import { mediaApiRefToRowItemProps } from '../utils/mediaApiRefAdapter';
+import { tagActions } from '../utils/menuActions';
 
 export default function TagDetailPage() {
     const { tagId } = useParams<{ tagId: string }>();
@@ -60,14 +62,26 @@ export default function TagDetailPage() {
     return (
         <AnimatedPage>
         <div className="page">
-            <div className="flex gap-2 flex-wrap">
-                <BackButton />
-                {/* Only logged-in users can tag items */}
-                {isAuthenticated && (
-                    <button className="btn btn-secondary w-fit" onClick={() => setShowTagModal(true)}>
-                        + Tag Items
-                    </button>
-                )}
+            <div className="flex justify-between items-center">
+                <div className="flex gap-2 flex-wrap">
+                    <BackButton />
+                    {/* Only logged-in users can tag items */}
+                    {isAuthenticated && (
+                        <button className="btn btn-secondary w-fit" onClick={() => setShowTagModal(true)}>
+                            + Tag Items
+                        </button>
+                    )}
+                </div>
+                <ItemActionsButton
+                    buttonClassName="btn btn-secondary w-10 h-10 flex items-center justify-center"
+                    firstString={tagName ?? `Tag #${parsedTagId}`}
+                    onMenuClick={tagActions({
+                        id: parsedTagId,
+                        name: tagName ?? `Tag #${parsedTagId}`,
+                        navigate,
+                        includeGoToDetails: false,
+                    })}
+                />
             </div>
 
             <h1 className="h1-styling">{tagName ?? `Tag #${parsedTagId}`}</h1>
@@ -78,10 +92,10 @@ export default function TagDetailPage() {
             {items.length > 0 ? (
                 <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     {items.map(item => (
-                        <RowItemStyling key={item.id} onClick={() => navigate(routes.mediaApiRef(item.apiSourceName, item.externalId))}>
+                        <RowItemStyling key={item.item.id} onClick={() => navigate(routes.mediaApiRef(item.item.apiSourceName, item.item.externalId))}>
                             <RowItemContent
-                                {...mediaApiRefToRowItemProps(item, { includeYear: false, secondStringField: 'date' })}
-                                labelPill={<MediaTypeLabel mediaTypeId={item.mediaTypeId} faded={true} />}
+                                {...mediaApiRefToRowItemProps(item.item, { includeYear: false, secondStringField: 'date' })}
+                                labelPill={<MediaTypeLabel mediaTypeId={item.item.mediaTypeId} faded={true} />}
                             />
                         </RowItemStyling>
                     ))}
@@ -124,7 +138,7 @@ export default function TagDetailPage() {
                     }))}
                     candidatesLoading={isSearching}
                     // Best-effort: pre-check items visible on the current page
-                    initialLinkedIds={items.map(i => i.externalId ?? String(i.id))}
+                    initialLinkedIds={items.map(i => i.item.externalId ?? String(i.item.id))}
                     pagination={lastSearchParams ? {
                         page: searchPage,
                         hasNextPage: (searchData?.data?.length ?? 0) >= SEARCH_DEFAULT_LIMIT,
@@ -151,9 +165,9 @@ export default function TagDetailPage() {
                     }}
                     onRemove={async (externalId) => {
                         // Find item on the current page by externalId, then remove the tag
-                        const pageItem = items.find(i => i.externalId === externalId);
+                        const pageItem = items.find(i => i.item.externalId === externalId);
                         if (pageItem) {
-                            await removeTag({ tagId: parsedTagId, mediaApiRefId: pageItem.id }).unwrap();
+                            await removeTag({ tagId: parsedTagId, mediaApiRefId: pageItem.item.id }).unwrap();
                         }
                     }}
                     removeConfirmTitle="Remove tag from item?"

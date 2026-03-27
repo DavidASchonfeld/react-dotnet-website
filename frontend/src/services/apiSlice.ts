@@ -255,6 +255,7 @@ export const apiSlice = createApi({
         // this endpoint does NOT call a 3rd party API. )
         getMediaApiRefLists: builder.query<MediaListSummary[], number>({
             query: (mediaApiRefId) => `/api/mediaapiref/${mediaApiRefId}/lists`,
+            providesTags: ['MediaList'],
         }),
 
         getMediaApiRefTags: builder.query<CustomTagSummary[], number>({
@@ -494,6 +495,12 @@ export const apiSlice = createApi({
                 if (page && page > 1) params.set('page', String(page))
                 return `/api/medialist/search?${params}`
             },
+        }),
+
+        // Dedicated endpoint — bypasses the DefaultPageSize cap that getMyMediaLists applies
+        getMyReadingStatusLists: builder.query<MediaListSummary[], void>({
+            query: () => '/api/medialist/my-reading-status-lists',
+            providesTags: ['MediaList'],
         }),
 
         getFeaturedLists: builder.query<MediaListDetail[], void>({
@@ -834,6 +841,7 @@ export const {
     useMoveMediaApiRefWithinMediaListMutation,
     useSearchMediaListsQuery,
     useLazySearchMediaListsQuery,
+    useGetMyReadingStatusListsQuery,
     useGetFeaturedListsQuery,
     useCreateFeaturedListMutation,
     // CustomTag

@@ -29,6 +29,15 @@ public class MediaListController : ControllerBase
         return result.ToActionResult(this);
     }
 
+    // Returns the user's ReadingStatus lists without pagination — always a small fixed set (seeded at registration)
+    [HttpGet("my-reading-status-lists")]
+    public async Task<IActionResult> GetMyReadingStatusLists()
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _mediaListService.GetMyReadingStatusListsAsync(requesterUserId);
+        return result.ToActionResult(this);
+    }
+
     [HttpGet("{mediaListId}")]
     public async Task<IActionResult> GetMediaListDetail(int mediaListId)
     {

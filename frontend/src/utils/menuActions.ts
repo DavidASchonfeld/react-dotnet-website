@@ -105,12 +105,13 @@ export function tagActions(item: {
     navigate: NavigateFunction;
     onEditOpen?: () => void;
     onDeleteOpen?: () => void;
+    includeGoToDetails?: boolean;
 }): MenuAction[] {
     const path = routes.tag(item.id);
     return [
         makeShareAction(item.name, path),
         ...(item.onEditOpen ? [makeEditBasicInfo(item.onEditOpen)] : []),
         ...(item.onDeleteOpen ? [makeDeleteAction(item.onDeleteOpen)] : []),
-        makeGoToDetailsAction(item.navigate, path),
+        ...(item.includeGoToDetails !== false ? [makeGoToDetailsAction(item.navigate, path)] : []),
     ];
 }

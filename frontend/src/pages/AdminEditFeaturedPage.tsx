@@ -4,7 +4,7 @@ import {
     useGetFeaturedListsQuery,
     useCreateFeaturedListMutation,
 } from '../services/apiSlice';
-import MediaListFormModal from '../components/modals/MediaListFormModal';
+import NameAndDescriptionModal from '../components/modals/NameAndDescriptionModal';
 import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/row_item_related/RowItemStyling';
 import RowItemContent from '../components/row_item_related/RowItemContent';
@@ -83,7 +83,7 @@ export default function AdminEditFeaturedPage() {
             </div>
 
             {showCreateModal && (
-                <MediaListFormModal
+                <NameAndDescriptionModal
                     mode="create"
                     onConfirm={handleCreateFeaturedList}
                     onCancel={() => setShowCreateModal(false)}

@@ -30,7 +30,7 @@ import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT, API_SUBTYPES, DEFAULT_SITE_SEARCH_SUBTYPE } from '../constants'
 import ManageLinkModal from '../components/modals/ManageLinkModal'
 import { useManageLinkModalSearch } from '../hooks/useManageLinkModalSearch'
-import MediaListFormModal from '../components/modals/MediaListFormModal'
+import NameAndDescriptionModal from '../components/modals/NameAndDescriptionModal'
 import ConfirmModal from '../components/modals/ConfirmModal'
 import BadgePill from '../components/BadgePill'
 import { routes } from '../utils/routes'
@@ -144,10 +144,8 @@ export default function SearchPage() {
     }
 
     // ── My Tags (mine+no-query state) ─────────────────────────────────────
-    const [showCreateTagForm, setShowCreateTagForm] = useState(false)
-    const [newTagName, setNewTagName] = useState('')
-    const [newTagVisibility, setNewTagVisibility] = useState<VisibilityStatus>(VisibilityStatus.Private)
-    const [editingTag, setEditingTag] = useState<{ id: number; name: string } | null>(null)
+    const [showCreateTagModal, setShowCreateTagModal] = useState(false)
+    const [editingTag, setEditingTag] = useState<{ id: number; name: string; description?: string | null; visibilityStatus?: VisibilityStatus } | null>(null)
     const [tagToDelete, setTagToDelete] = useState<{ id: number; name: string } | null>(null)
     const [createTag] = useCreateCustomTagMutation()
     const [patchTag] = usePatchCustomTagMutation()
@@ -158,11 +156,15 @@ export default function SearchPage() {
         { skip: urlSearchType !== 'tags' || subtypeForNonMedia !== 'mine' || shouldFetch }
     )
 
-    async function handleCreateTag() {
-        if (!newTagName.trim()) return
-        await createTag({ name: newTagName.trim(), visibilityStatus: newTagVisibility }).unwrap()
-        setNewTagName('')
-        setShowCreateTagForm(false)
+    async function handleCreateTag(name: string, _description: string, visibility: VisibilityStatus) {
+        await createTag({ name: name.trim(), visibilityStatus: visibility }).unwrap()
+        setShowCreateTagModal(false)
+    }
+
+    async function handleEditTag(name: string, description: string, visibility: VisibilityStatus) {
+        if (!editingTag) return
+        await patchTag({ tagId: editingTag.id, data: { name: name.trim(), description: description || undefined, visibilityStatus: visibility } }).unwrap()
+        setEditingTag(null)
     }
 
     const handleSearch = (newQuery: string, filters: FilterState, bypassCache: boolean) => {
@@ -322,6 +324,15 @@ export default function SearchPage() {
                                         <RowItemContent
                                             firstString={tag.name}
                                             secondString={String(tag.visibilityStatus)}
+                                            {...(isMineMode ? {
+                                                onMenuClick: tagActions({
+                                                    id: tag.id,
+                                                    name: tag.name,
+                                                    navigate,
+                                                    onEditOpen: () => setEditingTag({ id: tag.id, name: tag.name, description: tag.description, visibilityStatus: tag.visibilityStatus }),
+                                                    onDeleteOpen: () => setTagToDelete({ id: tag.id, name: tag.name }),
+                                                })
+                                            } : {})}
                                         />
                                     </RowItemStyling>
                                 ))}
@@ -349,37 +360,9 @@ export default function SearchPage() {
 
                 {/* Tags — Create button (mine mode only) */}
                 {isTagsSearch && isMineMode && (
-                    <button className="btn btn-secondary w-fit" onClick={() => setShowCreateTagForm(v => !v)}>
+                    <button className="btn btn-secondary w-fit" onClick={() => setShowCreateTagModal(true)}>
                         + Create Tag
                     </button>
-                )}
-
-                {/* Tags — Create Tag inline form */}
-                {isTagsSearch && isMineMode && showCreateTagForm && (
-                    <div className="flex flex-wrap gap-2 items-end mb-2">
-                        <input
-                            className="input input-bordered"
-                            placeholder="New tag name..."
-                            value={newTagName}
-                            onChange={e => setNewTagName(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleCreateTag()}
-                            autoFocus
-                        />
-                        <select
-                            className="select select-bordered"
-                            value={newTagVisibility}
-                            onChange={e => setNewTagVisibility(Number(e.target.value) as VisibilityStatus)}
-                        >
-                            <option value={VisibilityStatus.Private}>Private</option>
-                            <option value={VisibilityStatus.Public}>Public</option>
-                        </select>
-                        <button className="btn btn-primary" onClick={handleCreateTag} disabled={!newTagName.trim()}>
-                            Create
-                        </button>
-                        <button className="btn btn-secondary" onClick={() => setShowCreateTagForm(false)}>
-                            Cancel
-                        </button>
-                    </div>
                 )}
 
                 {/* Tags — no-query state: show all user's tags */}
@@ -393,35 +376,18 @@ export default function SearchPage() {
                             <div className="rounded-lg border border-border overflow-hidden">
                                 {myTagsResult.items.map(tag => (
                                     <RowItemStyling key={tag.id}>
-                                        {editingTag?.id === tag.id ? (
-                                            <form className="flex gap-2 w-full" onSubmit={async (e) => {
-                                                e.preventDefault()
-                                                await patchTag({ tagId: tag.id, data: { name: editingTag.name } })
-                                                setEditingTag(null)
-                                            }}>
-                                                <input
-                                                    className="input input-bordered flex-1"
-                                                    value={editingTag.name}
-                                                    onChange={e => setEditingTag({ ...editingTag, name: e.target.value })}
-                                                    autoFocus
-                                                />
-                                                <button type="submit" className="btn btn-primary btn-sm">Save</button>
-                                                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEditingTag(null)}>Cancel</button>
-                                            </form>
-                                        ) : (
-                                            <RowItemContent
-                                                firstString={tag.name}
-                                                secondString={tag.visibilityStatus === VisibilityStatus.Public ? 'Public' : 'Private'}
-                                                onClick={() => navigate(routes.tag(tag.id))}
-                                                onMenuClick={tagActions({
-                                                    id: tag.id,
-                                                    name: tag.name,
-                                                    navigate,
-                                                    onEditOpen: () => setEditingTag({ id: tag.id, name: tag.name }),
-                                                    onDeleteOpen: () => setTagToDelete({ id: tag.id, name: tag.name }),
-                                                })}
-                                            />
-                                        )}
+                                        <RowItemContent
+                                            firstString={tag.name}
+                                            secondString={tag.visibilityStatus === VisibilityStatus.Public ? 'Public' : 'Private'}
+                                            onClick={() => navigate(routes.tag(tag.id))}
+                                            onMenuClick={tagActions({
+                                                id: tag.id,
+                                                name: tag.name,
+                                                navigate,
+                                                onEditOpen: () => setEditingTag({ id: tag.id, name: tag.name, description: tag.description, visibilityStatus: tag.visibilityStatus }),
+                                                onDeleteOpen: () => setTagToDelete({ id: tag.id, name: tag.name }),
+                                            })}
+                                        />
                                     </RowItemStyling>
                                 ))}
                             </div>
@@ -634,10 +600,31 @@ export default function SearchPage() {
         )}
 
         {showCreateModal && (
-            <MediaListFormModal
+            <NameAndDescriptionModal
                 mode="create"
                 onConfirm={handleCreateMediaList}
                 onCancel={() => setShowCreateModal(false)}
+            />
+        )}
+
+        {showCreateTagModal && (
+            <NameAndDescriptionModal
+                mode="create"
+                showDescription={false}
+                showVisibility={true}
+                onConfirm={handleCreateTag}
+                onCancel={() => setShowCreateTagModal(false)}
+            />
+        )}
+
+        {editingTag !== null && (
+            <NameAndDescriptionModal
+                mode="edit"
+                initialName={editingTag.name}
+                initialDescription={editingTag.description}
+                initialVisibility={editingTag.visibilityStatus}
+                onConfirm={handleEditTag}
+                onCancel={() => setEditingTag(null)}
             />
         )}
 
