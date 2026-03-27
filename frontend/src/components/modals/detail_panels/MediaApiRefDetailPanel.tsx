@@ -38,10 +38,10 @@ export default function MediaApiRefDetailPanel({
                 <p className="text-sm text-text-muted">{secondString}</p>
             )}
 
-            {/* API source badge */}
-            <span className="text-xs px-2 py-0.5 rounded-full bg-border text-text-muted w-fit mx-auto">
-                {apiSourceName}
-            </span>
+            {/* API source / ID */}
+            <button className="btn btn-secondary w-fit">
+                Data Source: {apiSourceName} · ID: {id}
+            </button>
 
             {/* Per-link note from the join table — only shown when present */}
             {linkNote && (

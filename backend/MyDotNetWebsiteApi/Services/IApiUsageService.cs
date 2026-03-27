@@ -10,4 +10,7 @@ public interface IApiUsageService
 
     // Returns usage stats for every known external API.
     Task<List<ApiUsageStatsDto>> GetAllUsageStatsAsync();
+
+    // Returns historical usage buckets per API: last 30 days (Daily) or last 12 months (Monthly).
+    Task<List<ApiUsageHistoryDto>> GetUsageHistoryAsync();
 }

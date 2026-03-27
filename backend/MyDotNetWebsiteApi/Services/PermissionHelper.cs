@@ -25,11 +25,41 @@ public static class PermissionHelper
         || IsAdministrator(requester)
         || listObject.VisibilityStatus == VisibilityStatus.Public;
 
-    //// Featured lists require admin; regular lists require ownership or mod/admin
+    //// Featured lists require admin; regular lists require ownership or mod/admin (used for deletion)
     public static bool CanModifyOrDeleteList(AppUser requester, MediaList listObject) =>
         listObject.Category == MediaListCategory.Featured
             ? IsAdministrator(requester)  // Only admins can edit or delete featured (site-wide) lists
             : listObject.SubmittedById == requester.Id || IsModeratorOrAdmin(requester);
+
+    //// Owner can always edit; admin can also edit/delete any public list (admin-only for Featured)
+    public static bool CanEditListMetadata(AppUser requester, MediaList listObject) =>
+        listObject.Category == MediaListCategory.Featured
+            ? IsAdministrator(requester)
+            : listObject.SubmittedById == requester.Id
+              || (IsAdministrator(requester) && listObject.VisibilityStatus == VisibilityStatus.Public);
+
+    //// Owner can always manage content; admin can also manage content of any public list (admin-only for Featured)
+    public static bool CanManageListContent(AppUser requester, MediaList listObject) =>
+        listObject.Category == MediaListCategory.Featured
+            ? IsAdministrator(requester)
+            : listObject.SubmittedById == requester.Id
+              || (IsAdministrator(requester) && listObject.VisibilityStatus == VisibilityStatus.Public);
+
+    //// Mod/Admin can set visibility to Public; owner can revert to Private (admin-only for Featured)
+    public static bool CanSetListVisibility(AppUser requester, MediaList listObject) =>
+        listObject.Category == MediaListCategory.Featured
+            ? IsAdministrator(requester)
+            : listObject.SubmittedById == requester.Id || IsModeratorOrAdmin(requester);
+
+    // CustomTag Permissions
+    //// Owner can always edit; admin can also edit/delete any public tag
+    public static bool CanEditTagMetadata(AppUser requester, CustomTag tag) =>
+        tag.CreatedById == requester.Id
+        || (IsAdministrator(requester) && tag.VisibilityStatus == VisibilityStatus.Public);
+
+    //// Mod/Admin can set tag visibility to Public; owner can revert to Private
+    public static bool CanSetTagVisibility(AppUser requester, CustomTag tag) =>
+        tag.CreatedById == requester.Id || IsModeratorOrAdmin(requester);
     
 
     

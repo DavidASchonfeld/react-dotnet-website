@@ -404,6 +404,8 @@ public class MediaApiRefService : IMediaApiRefService
 
         var visibleLists = allMatchingLists
             .Where(l => PermissionHelper.CanSeeList(requesterUser, l))
+            // Featured lists are admin-curated site-wide lists — hide from non-admins in "Appears in Lists"
+            .Where(l => l.Category != MediaListCategory.Featured || PermissionHelper.IsAdministrator(requesterUser))
             .Select(l => new MediaListSummaryDto
             {
                 Id = l.Id,

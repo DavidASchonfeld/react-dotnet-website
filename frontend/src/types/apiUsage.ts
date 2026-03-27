@@ -16,3 +16,20 @@ export interface ApiUsageStats {
     supportsPosterApi?: boolean        // undefined = plan has no poster API tier; true = show the toggle button
     usePosterApi: boolean              // current per-source poster API toggle state
 }
+
+// One period bucket in the historical usage series for a single API.
+export interface ApiUsagePeriod {
+    periodStart: string       // ISO 8601 UTC
+    periodType: string        // "Daily" or "Monthly"
+    requestCount: number
+    isCurrentPeriod: boolean  // true for the single bucket covering the current billing period
+}
+
+// Historical usage + threshold data for one API; self-contained for the chart.
+export interface ApiUsageHistory {
+    apiName: string
+    requestLimit: number | null
+    warningThreshold: number | null
+    autoBlockThreshold: number | null
+    periods: ApiUsagePeriod[]
+}

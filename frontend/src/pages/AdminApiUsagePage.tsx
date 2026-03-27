@@ -4,6 +4,7 @@ import type { RootState, AppDispatch } from '../store/store'
 import { setShowImageCacheIndicator } from '../store/adminSettingsSlice'
 import {
     useGetApiUsageStatsQuery,
+    useGetApiUsageHistoryQuery,
     useToggleApiDisabledMutation,
     useTogglePosterApiMutation,
     useGetAppGlobalSettingsQuery,
@@ -12,7 +13,8 @@ import {
     useDeleteImageCachePlaceholdersMutation,
     useDeleteBigImagesMutation,
 } from '../services/apiSlice'
-import type { ApiUsageStats } from '../types/apiUsage'
+import type { ApiUsageStats, ApiUsageHistory } from '../types/apiUsage'
+import UsageBarChart from '../components/UsageBarChart'
 
 export default function AdminApiUsagePage() {
 
@@ -20,6 +22,10 @@ export default function AdminApiUsagePage() {
     const { showImageCacheIndicator } = useSelector((state: RootState) => state.adminSettings)
 
     const { data: stats = [], isLoading, error } = useGetApiUsageStatsQuery(undefined, {
+        pollingInterval: 30_000,
+    })
+    // History is fetched separately so a slow chart load doesn't block the stats card
+    const { data: history = [] } = useGetApiUsageHistoryQuery(undefined, {
         pollingInterval: 30_000,
     })
     const { data: globalSettings } = useGetAppGlobalSettingsQuery()
@@ -36,118 +42,83 @@ export default function AdminApiUsagePage() {
                     <h1 className="text-2xl font-bold">API Usage Tracker</h1>
                 </div>
 
-                {/* UI Display */}
+                {/* Settings card — groups all UI and cache toggle controls */}
                 <div className="bg-surface-raised rounded-lg p-4 border border-border mb-4">
-                    <h2 className="font-semibold mb-3">UI Display</h2>
+                    <h2 className="font-semibold mb-3">Settings</h2>
+                    <div className="flex flex-col divide-y divide-border">
 
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div>
-                            <p className="font-medium text-sm">Image cache source indicators</p>
-                            <p className="text-sm text-text-muted">
-                                A colored dot on each image shows whether it's served from the backend cache
-                                (green) or a 3rd party CDN (orange). Only visible to administrators.
-                            </p>
+                        {/* UI Display */}
+                        <div className="py-3 first:pt-0 last:pb-0">
+                            <ToggleRow
+                                label="Image cache source indicators"
+                                description="A colored dot on each image shows whether it's served from the backend cache (green) or a 3rd party CDN (orange). Only visible to administrators."
+                                isEnabled={showImageCacheIndicator}
+                                onToggle={() => dispatch(setShowImageCacheIndicator(!showImageCacheIndicator))}
+                            />
                         </div>
-                        <button
-                            onClick={() => dispatch(setShowImageCacheIndicator(!showImageCacheIndicator))}
-                            className={`ml-auto px-3 py-1.5 text-sm rounded transition-colors duration-150 ${
-                                showImageCacheIndicator
-                                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                                    : 'bg-green-600 hover:bg-green-700 text-white'
-                            }`}
-                        >
-                            {showImageCacheIndicator ? 'Disable' : 'Enable'}
-                        </button>
+
+                        {/* Global non-search cache toggle — master switch for all APIs */}
+                        <div className="py-3 first:pt-0 last:pb-0">
+                            <ToggleRow
+                                label="Global Non-Search Cache"
+                                description="Master switch for caching detail/lookup fetches across all APIs. Per-API settings only apply when this is enabled."
+                                isEnabled={globalSettings?.useNonSearchQueryCache ?? false}
+                                onToggle={() => toggleGlobalNonSearchCache()}
+                                isLoading={isTogglingGlobal}
+                                isReady={globalSettings !== undefined}
+                            />
+                        </div>
+
+                        {/* Global search cache toggle */}
+                        <div className="py-3 first:pt-0 last:pb-0">
+                            <ToggleRow
+                                label="Global Search Cache"
+                                description="Master switch for caching search-result fetches across all APIs."
+                                isEnabled={globalSettings?.useSearchQueryCache ?? false}
+                                onToggle={() => toggleGlobalSearchCache()}
+                                isLoading={isTogglingGlobalSearch}
+                                isReady={globalSettings !== undefined}
+                            />
+                        </div>
+
                     </div>
                 </div>
 
-                {/* Global non-search cache toggle — master switch for all APIs */}
+                {/* Maintenance card — groups image data cleanup actions */}
                 <div className="bg-surface-raised rounded-lg p-4 border border-border mb-4">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div>
-                            <h2 className="font-semibold">Global Non-Search Cache</h2>
-                            <p className="text-sm text-text-muted">
-                                Master switch for caching detail/lookup fetches across all APIs.
-                                Per-API settings only apply when this is enabled.
-                            </p>
+                    <h2 className="font-semibold mb-3">Maintenance</h2>
+                    <div className="flex flex-col divide-y divide-border">
+
+                        {/* Image Cache maintenance */}
+                        <div className="py-3 first:pt-0 last:pb-0">
+                            <MaintenanceRow
+                                label="Image Cache"
+                                description={<>Step 1: deletes <code className="font-mono">ImageCache</code> rows whose URL is a local path or whose blob is null (corrupt/incomplete entries).
+                                    Step 2: sets <code className="font-mono">ThumbnailUrl</code> to null on any <code className="font-mono">MediaApiRef</code> whose thumbnail is a local path instead of a real external URL.
+                                    Also runs automatically each night.</>}
+                                buttonLabel="Clean Image Data"
+                                onClick={() => deleteImageCachePlaceholders()}
+                                isLoading={isDeletingPlaceholders}
+                            />
                         </div>
-                        <button
-                            onClick={() => toggleGlobalNonSearchCache()}
-                            disabled={isTogglingGlobal || globalSettings === undefined}
-                            className={`ml-auto px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 ${
-                                globalSettings?.useNonSearchQueryCache
-                                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                                    : 'bg-green-600 hover:bg-green-700 text-white'
-                            }`}
-                        >
-                            {globalSettings?.useNonSearchQueryCache ? 'Disable' : 'Enable'}
-                        </button>
+
+                        {/* Big Image (Poster API) cache dump */}
+                        <div className="py-3 first:pt-0 last:pb-0">
+                            <MaintenanceRow
+                                label="Big Image Cache"
+                                description={<>Removes all high-res poster images fetched via the Poster API from <code className="font-mono">ImageCache</code>,
+                                    and resets each affected <code className="font-mono">MediaApiRef.PosterUrl</code> back to its thumbnail image.</>}
+                                buttonLabel="Dump Big Images"
+                                onClick={() => deleteBigImages()}
+                                isLoading={isDumpingBigImages}
+                            />
+                        </div>
+
                     </div>
                 </div>
 
-                {/* Global search cache toggle */}
-                <div className="bg-surface-raised rounded-lg p-4 border border-border mb-4">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div>
-                            <h2 className="font-semibold">Global Search Cache</h2>
-                            <p className="text-sm text-text-muted">
-                                Master switch for caching search-result fetches across all APIs.
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => toggleGlobalSearchCache()}
-                            disabled={isTogglingGlobalSearch || globalSettings === undefined}
-                            className={`ml-auto px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 ${
-                                globalSettings?.useSearchQueryCache
-                                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                                    : 'bg-green-600 hover:bg-green-700 text-white'
-                            }`}
-                        >
-                            {globalSettings?.useSearchQueryCache ? 'Disable' : 'Enable'}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Image Cache maintenance */}
-                <div className="bg-surface-raised rounded-lg p-4 border border-border mb-4">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div>
-                            <h2 className="font-semibold">Image Cache</h2>
-                            <p className="text-sm text-text-muted">
-                                Step 1: deletes <code className="font-mono">ImageCache</code> rows whose URL is a local path or whose blob is null (corrupt/incomplete entries).
-                                Step 2: sets <code className="font-mono">ThumbnailUrl</code> to null on any <code className="font-mono">MediaApiRef</code> whose thumbnail is a local path instead of a real external URL.
-                                Also runs automatically each night.
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => deleteImageCachePlaceholders()}
-                            disabled={isDeletingPlaceholders}
-                            className="ml-auto px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white"
-                        >
-                            Clean Image Data
-                        </button>
-                    </div>
-                </div>
-
-                {/* Big Image (Poster API) cache dump */}
-                <div className="bg-surface-raised rounded-lg p-4 border border-border mb-4">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div>
-                            <h2 className="font-semibold">Big Image Cache</h2>
-                            <p className="text-sm text-text-muted">
-                                Removes all high-res poster images fetched via the Poster API from <code className="font-mono">ImageCache</code>,
-                                and resets each affected <code className="font-mono">MediaApiRef.PosterUrl</code> back to its thumbnail image.
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => deleteBigImages()}
-                            disabled={isDumpingBigImages}
-                            className="ml-auto px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white"
-                        >
-                            Dump Big Images
-                        </button>
-                    </div>
-                </div>
+                {/* API Sources section label */}
+                <p className="text-xs text-text-muted uppercase tracking-wider mb-3">API Sources</p>
 
                 {isLoading && <p className="text-text-muted">Loading...</p>}
                 {error && <p className="text-red-500">Failed to load usage data.</p>}
@@ -155,7 +126,12 @@ export default function AdminApiUsagePage() {
                 {!isLoading && !error && (
                     <div className="flex flex-col gap-4">
                         {stats.map(api => (
-                            <ApiUsageCard key={api.apiName} api={api} />
+                            <ApiUsageCard
+                                key={api.apiName}
+                                api={api}
+                                // Pass the matching history entry, or null while it's still loading
+                                history={history.find(h => h.apiName === api.apiName) ?? null}
+                            />
                         ))}
                     </div>
                 )}
@@ -166,7 +142,68 @@ export default function AdminApiUsagePage() {
 }
 
 
-function ApiUsageCard({ api }: { api: ApiUsageStats }) {
+interface ToggleRowProps {
+    label: string
+    description: React.ReactNode  // ReactNode to support <code> tags in descriptions
+    isEnabled: boolean
+    onToggle: () => void
+    isLoading?: boolean
+    isReady?: boolean             // extra disabled guard (e.g. settings not yet loaded)
+}
+
+// Reusable toggle row for the Settings card
+function ToggleRow({ label, description, isEnabled, onToggle, isLoading, isReady = true }: ToggleRowProps) {
+    return (
+        <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+                <p className="font-medium text-sm">{label}</p>
+                <p className="text-sm text-text-muted">{description}</p>
+            </div>
+            <button
+                onClick={onToggle}
+                disabled={isLoading || !isReady}
+                className={`ml-auto px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 ${
+                    isEnabled
+                        ? 'bg-red-600 hover:bg-red-700 text-white'
+                        : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+            >
+                {isEnabled ? 'Disable' : 'Enable'}
+            </button>
+        </div>
+    )
+}
+
+
+interface MaintenanceRowProps {
+    label: string
+    description: React.ReactNode  // ReactNode to support <code> tags in descriptions
+    buttonLabel: string
+    onClick: () => void
+    isLoading?: boolean
+}
+
+// Reusable action button row for the Maintenance card
+function MaintenanceRow({ label, description, buttonLabel, onClick, isLoading }: MaintenanceRowProps) {
+    return (
+        <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+                <p className="font-medium text-sm">{label}</p>
+                <p className="text-sm text-text-muted">{description}</p>
+            </div>
+            <button
+                onClick={onClick}
+                disabled={isLoading}
+                className="ml-auto px-3 py-1.5 text-sm rounded transition-colors duration-150 disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white"
+            >
+                {buttonLabel}
+            </button>
+        </div>
+    )
+}
+
+
+function ApiUsageCard({ api, history }: { api: ApiUsageStats; history: ApiUsageHistory | null }) {
 
     const [toggleApiDisabled, { isLoading: isToggling }] = useToggleApiDisabledMutation()
     // Only rendered when api.supportsPosterApi is true (i.e. the active plan tier supports it).
@@ -233,6 +270,11 @@ function ApiUsageCard({ api }: { api: ApiUsageStats }) {
                         )}
                     </div>
                 </div>
+            )}
+
+            {/* Historical usage bar chart — rendered once history data arrives and has enough buckets */}
+            {history && history.periods.length >= 2 && (
+                <UsageBarChart history={history} />
             )}
 
             {/* Stats row */}

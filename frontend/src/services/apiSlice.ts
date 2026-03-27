@@ -31,7 +31,7 @@ import type {
     MoveMediaApiRefWithinMediaListRequest,
 } from '../types/mediaList'
 import type { MediaTypeSummary, MediaTypeDetail } from '../types/mediaType'
-import type { ApiUsageStats } from '../types/apiUsage'
+import type { ApiUsageStats, ApiUsageHistory } from '../types/apiUsage'
 import type { AppGlobalSettings } from '../types/appGlobalSettings'
 import type { PaginatedResult } from '../types/pagination'
 
@@ -681,6 +681,13 @@ export const apiSlice = createApi({
             providesTags: ['ExternalApiSource'],
         }),
 
+        // Returns historical usage buckets per API. Admin-only.
+        // Invalidated by the same mutations as getApiUsageStats (ExternalApiSource tag).
+        getApiUsageHistory: builder.query<ApiUsageHistory[], void>({
+            query: () => '/api/apiusage/history',
+            providesTags: ['ExternalApiSource'],
+        }),
+
         toggleApiDisabled: builder.mutation<
             { id: number; apiName: string; isDisabledByAdmin: boolean },
             number  // externalApiSourceId
@@ -871,6 +878,7 @@ export const {
     useGetItemsByTagQuery,
     // API Usage
     useGetApiUsageStatsQuery,
+    useGetApiUsageHistoryQuery,
     useToggleApiDisabledMutation,
     useTogglePosterApiMutation,           // toggles UsePosterApi on a per-source basis
     // App Global Settings

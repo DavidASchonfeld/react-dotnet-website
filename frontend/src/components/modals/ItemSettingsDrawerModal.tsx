@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import DrawerModal from "./DrawerModal";
+import DrawerModal from "./modal_frame/DrawerModal";
 
 interface Props {
     open: boolean;

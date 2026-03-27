@@ -375,7 +375,8 @@ a:hover {
   /* --- Page layout --- */
   .page {
     /* Here, It is padding, but I am also adding "border border-border rounded-lg" to add nice looking borders for each page. */
-    @apply max-w-2xl mx-auto px-4 py-6 space-y-4 border border-border rounded-lg;
+    /* sm: prefix so the decorative border/rounded only shows on desktop — on mobile it would create a floating-box-in-browser effect */
+    @apply max-w-2xl mx-auto px-4 py-6 space-y-4 sm:border sm:border-border sm:rounded-lg;
     /* fade-up is a CSS-only fallback animation; AnimatedPage (Framer Motion) handles this normally */
   }
 
@@ -457,8 +458,19 @@ a:hover {
          gap-4             : adds gap of size 4 between each child element
   */
   .modal-panel {
+    /* p-5 on mobile (less cramped), p-8 on sm+ (original spacious desktop padding) */
     @apply bg-surface-raised text-text border border-border
-           rounded-lg p-8 min-w-72 flex flex-col gap-4;
+           rounded-lg p-5 sm:p-8 min-w-72 flex flex-col gap-4;
+  }
+
+  /* --- Drawer panel ---
+       Content wrapper for modals rendered inside a DrawerModal bottom-sheet.
+       Uses less padding than modal-panel; the drawer shell provides the border/rounded container.
+       Mobile: Everything becomes a drawer (thumb-reachable).
+       Desktop: dialogs/popups for forms/confirmations — modal-panel is used there instead.
+  */
+  .drawer-panel {
+    @apply bg-surface-raised text-text px-5 pb-2 flex flex-col gap-4;
   }
 
   /* --- Form input ---
@@ -471,8 +483,9 @@ a:hover {
          w-full        : stretch to fill the parent's width
   */
   .form-input {
+    /* py-2.5 on mobile for ~44px touch targets; py-1 on sm+ restores the compact desktop look */
     @apply bg-surface text-text border border-border
-           rounded px-2 py-1 w-full;
+           rounded px-2 py-2.5 sm:py-1 w-full;
   }
 
   /* --- Menu item ---
@@ -575,12 +588,13 @@ a:hover {
   .polaroid-pile {
     position: relative;
     width: 100%;
-    max-width: 560px;
+    /* height and max-width driven by CSS custom properties injected from CollageConfig */
+    max-width: var(--collage-max-width, 560px);
     margin: 0 auto;
-    height: 420px;
+    height: var(--collage-height, 420px);
   }
   @media (min-width: 640px) {
-    .polaroid-pile { height: 520px; }
+    .polaroid-pile { height: var(--collage-sm-height, 520px); }
   }
 
   /* --- Polaroid card (always white — not theme-aware) --- */

@@ -45,6 +45,7 @@ export default function SearchPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const navigate = useNavigate()
     const { roleLevel } = useSelector((state: RootState) => state.auth)
+    const isAdmin = roleLevel === 'Administrator'
 
     // Parse URL parameters
     const query = searchParams.get('q') ?? ''
@@ -72,7 +73,6 @@ export default function SearchPage() {
     const availableSubtypes = selectedSource ? (API_SUBTYPES[selectedSource.apiName] ?? []) : []
     const activeSubtype = availableSubtypes.find(s => s.value === subtypeParam)?.value ?? undefined
 
-    const isAdmin = roleLevel === 'Administrator'
     const isModerator = roleLevel === 'Moderator' || roleLevel === 'Administrator'
     const shouldFetch = query.length >= SEARCH_MIN_CHARS
 
@@ -330,8 +330,11 @@ export default function SearchPage() {
                                                     id: tag.id,
                                                     name: tag.name,
                                                     navigate,
-                                                    onEditOpen: () => setEditingTag({ id: tag.id, name: tag.name, description: tag.description, visibilityStatus: tag.visibilityStatus }),
-                                                    onDeleteOpen: () => setTagToDelete({ id: tag.id, name: tag.name }),
+                                                    // Only show edit/delete when the user can actually perform those actions
+                                                    ...((tag.canEdit || (isAdmin && tag.visibilityStatus === VisibilityStatus.Public)) ? {
+                                                        onEditOpen: () => setEditingTag({ id: tag.id, name: tag.name, description: tag.description, visibilityStatus: tag.visibilityStatus }),
+                                                        onDeleteOpen: () => setTagToDelete({ id: tag.id, name: tag.name }),
+                                                    } : {}),
                                                 })
                                             } : {})}
                                         />
@@ -385,8 +388,11 @@ export default function SearchPage() {
                                                 id: tag.id,
                                                 name: tag.name,
                                                 navigate,
-                                                onEditOpen: () => setEditingTag({ id: tag.id, name: tag.name, description: tag.description, visibilityStatus: tag.visibilityStatus }),
-                                                onDeleteOpen: () => setTagToDelete({ id: tag.id, name: tag.name }),
+                                                // Only show edit/delete when the user can actually perform those actions
+                                                ...((tag.canEdit || (isAdmin && tag.visibilityStatus === VisibilityStatus.Public)) ? {
+                                                    onEditOpen: () => setEditingTag({ id: tag.id, name: tag.name, description: tag.description, visibilityStatus: tag.visibilityStatus }),
+                                                    onDeleteOpen: () => setTagToDelete({ id: tag.id, name: tag.name }),
+                                                } : {}),
                                             })}
                                         />
                                     </RowItemStyling>
@@ -540,9 +546,10 @@ export default function SearchPage() {
                 modalTitle={activeModalType === 'lists' ? 'Add to Lists' : 'Tag this Item'}
                 allowedSearchTypes={[activeModalType]}
                 focusedItem={{ firstString: selectedResult.name, secondString: selectedResult.creatorName ?? undefined, photographOnLeft: selectedResult.thumbnailUrl ?? undefined }}
+                noteInput={activeModalType === 'tags' ? { label: 'Note (optional)', placeholder: 'Why are you applying this tag?' } : undefined}
                 {...modalSearch}
                 initialLinkedIds={[]}  // unknown without findOrCreate; empty is safe
-                onAdd={async (id) => {
+                onAdd={async (id, note) => {
                     const source = activeSources?.find(s => s.mediaTypeId === mediaTypeId)
                     if (!source) return
                     if (activeModalType === 'lists') {
@@ -570,7 +577,7 @@ export default function SearchPage() {
                             publishedDate: selectedResult.publishedDate,
                             thumbnailUrl: selectedResult.thumbnailUrl,
                         }).unwrap()
-                        await addTag({ tagId: parseInt(id), mediaApiRefId: ref.id }).unwrap()
+                        await addTag({ tagId: parseInt(id), mediaApiRefId: ref.id, note }).unwrap()
                     }
                 }}
                 onRemove={async (id) => {

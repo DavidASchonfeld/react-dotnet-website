@@ -18,10 +18,12 @@ export interface ActiveDetail {
 interface DetailSidePanelProps {
     detail: ActiveDetail;
     onClose: () => void;
+    // When true, panel takes full width — used on mobile where 50/50 split is too narrow
+    fullWidth?: boolean;
 }
 
 // Wraps the three sub-panels with a shared header and close button
-export default function DetailSidePanel({ detail, onClose }: DetailSidePanelProps) {
+export default function DetailSidePanel({ detail, onClose, fullWidth = false }: DetailSidePanelProps) {
     // Panel title is derived from the item type
     const panelTitle =
         detail.type === 'tag' ? 'Tag Details'
@@ -29,7 +31,8 @@ export default function DetailSidePanel({ detail, onClose }: DetailSidePanelProp
         : 'Item Details';
 
     return (
-        <div className="flex flex-col w-1/2 border-l border-border overflow-hidden">
+        // fullWidth overrides the default w-1/2 side-panel layout for mobile viewports
+        <div className={`flex flex-col overflow-hidden ${fullWidth ? 'w-full' : 'w-1/2 border-l border-border'}`}>
             {/* Panel header with title and close button */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
                 <span className="flex-1 text-sm font-semibold text-text-muted text-center">{panelTitle}</span>

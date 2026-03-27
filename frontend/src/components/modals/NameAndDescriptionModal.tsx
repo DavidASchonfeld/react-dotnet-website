@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { VisibilityStatus } from '../../types/enums';
-import DialogOverlay from './DialogOverlay';
+import ResponsiveModalFrame from './modal_frame/ResponsiveModalFrame';
 
 // This defines what the caller must pass in
 interface Props {
@@ -34,6 +35,9 @@ export default function NameAndDescriptionModal({
     const [description, setDescription] = useState(initialDescription ?? '');
     const [visibility, setVisibility] = useState<VisibilityStatus>(initialVisibility ?? VisibilityStatus.Private);
 
+    // Selects the right panel class: drawer-panel (mobile bottom-sheet) vs modal-panel (desktop dialog)
+    const isMobile = useIsMobile();
+
     const shouldShowVisibility = showVisibility ?? mode === 'edit';
 
     function handleSubmit() {
@@ -42,9 +46,12 @@ export default function NameAndDescriptionModal({
     }
 
     return (
-        <DialogOverlay>
-                {/* The Modal aka Popup — see .modal-panel in index.css for Tailwind breakdown */}
-                <div className="modal-panel">
+        // open={true} because NameAndDescriptionModal is always conditionally mounted by its parent
+        // ResponsiveModalFrame picks DrawerModal on mobile, DialogOverlay on desktop
+        <ResponsiveModalFrame open={true} onClose={onCancel}>
+            {(_close) => (
+                // The Modal aka Popup — see .modal-panel / .drawer-panel in index.css for Tailwind breakdown
+                <div className={isMobile ? 'drawer-panel' : 'modal-panel'}>
                     <h2 className="h1-styling">Name &amp; Description</h2>
                     {/* See .form-input in index.css for Tailwind breakdown */}
                     <input
@@ -84,6 +91,7 @@ export default function NameAndDescriptionModal({
                         </button>
                     </div>
                 </div>
-        </DialogOverlay>
+            )}
+        </ResponsiveModalFrame>
     );
 }

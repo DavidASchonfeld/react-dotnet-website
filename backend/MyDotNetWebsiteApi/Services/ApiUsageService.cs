@@ -120,6 +120,61 @@ public class ApiUsageService : IApiUsageService
     }
 
 
+    // Returns historical usage buckets for all APIs.
+    // Daily: last 30 days (inclusive of today). Monthly: last 12 months (inclusive of this month).
+    // Zero-fills any period with no recorded requests so the chart always has a contiguous series.
+    public async Task<List<ApiUsageHistoryDto>> GetUsageHistoryAsync()
+    {
+        var result = new List<ApiUsageHistoryDto>();
+
+        foreach (var kvp in _apiConfig)
+        {
+            var apiName = kvp.Key;
+            var config  = kvp.Value;
+            var currentPeriodStart = GetCurrentPeriodStart(config.PeriodType);
+
+            // Look back 30 days for Daily APIs, 12 months for Monthly APIs
+            var windowStart = config.PeriodType == "Monthly"
+                ? currentPeriodStart.AddMonths(-11)
+                : currentPeriodStart.AddDays(-29);
+
+            // Single query per API — fetch all records in the window
+            var records = await _context.ApiUsageRecords
+                .Where(r => r.ApiName == apiName && r.PeriodStart >= windowStart)
+                .OrderBy(r => r.PeriodStart)
+                .Select(r => new { r.PeriodStart, r.RequestCount })
+                .ToListAsync();
+
+            // Build a dense list of all expected buckets, zero-filling periods with no record
+            var periods = new List<ApiUsagePeriodDto>();
+            var cursor  = windowStart;
+            while (cursor <= currentPeriodStart)
+            {
+                var rec = records.FirstOrDefault(r => r.PeriodStart == cursor);
+                periods.Add(new ApiUsagePeriodDto
+                {
+                    PeriodStart     = cursor,
+                    PeriodType      = config.PeriodType,
+                    RequestCount    = rec?.RequestCount ?? 0,
+                    IsCurrentPeriod = cursor == currentPeriodStart,
+                });
+                cursor = config.PeriodType == "Monthly" ? cursor.AddMonths(1) : cursor.AddDays(1);
+            }
+
+            result.Add(new ApiUsageHistoryDto
+            {
+                ApiName            = apiName,
+                RequestLimit       = config.Limit,
+                WarningThreshold   = config.WarningThreshold,
+                AutoBlockThreshold = config.AutoBlockThreshold,
+                Periods            = periods,
+            });
+        }
+
+        return result;
+    }
+
+
     // Returns the UTC start of the current billing period for the given period type.
     private static DateTime GetCurrentPeriodStart(string periodType) => periodType switch
     {

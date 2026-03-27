@@ -1,5 +1,6 @@
 import { useGetMediaListDetailQuery } from '../../../services/apiSlice';
 import { routes } from '../../../utils/routes';
+import ListCollageThumb from '../../ListCollageThumb';
 
 interface MediaListDetailPanelProps {
     id: string; // stringified numeric list ID
@@ -17,9 +18,16 @@ export default function MediaListDetailPanel({ id }: MediaListDetailPanelProps) 
 
     const previewItems = list.listContent.slice(0, PREVIEW_ITEM_LIMIT);
     const remaining = list.listContent.length - previewItems.length;
+    const thumbUrls = list.listContent
+        .map(item => item.thumbnailUrl)
+        .filter((u): u is string => !!u)
+        .slice(0, 4);
 
     return (
         <div className="p-4 flex flex-col gap-3 items-center text-center">
+            {/* Collage thumbnail */}
+            <ListCollageThumb urls={thumbUrls} />
+
             {/* List name */}
             <h3 className="font-semibold text-base leading-snug">{list.name}</h3>
 

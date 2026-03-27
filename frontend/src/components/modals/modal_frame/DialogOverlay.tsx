@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import AnimatedPage from '../AnimatedPage';
+import AnimatedPage from '../../AnimatedPage';
 
 interface Props {
     children: ReactNode;

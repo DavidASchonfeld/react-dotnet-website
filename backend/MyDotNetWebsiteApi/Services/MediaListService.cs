@@ -32,6 +32,18 @@ public class MediaListService : IMediaListService
         return (user, mediaListObject, !PermissionHelper.CanModifyOrDeleteList(user, mediaListObject));
     }
 
+    // Content-management permission check: only the list owner can add/remove items (used by Add/Remove item methods)
+    private async Task<(AppUser? user, MediaList? mediaListObject, bool forbidden)> FetchListWithContentCheckAsync(int mediaListId, string requesterId)
+    {
+        var user = await _context.Users.FindAsync(requesterId);
+        var mediaListObject = await _context.MediaLists.FindAsync(mediaListId);
+
+        if (user == null || mediaListObject == null)
+            return (user, mediaListObject, false);
+
+        return (user, mediaListObject, !PermissionHelper.CanManageListContent(user, mediaListObject));
+    }
+
     private async Task<int> ClampPositionAsync(int mediaListId, int? submittedPosition, bool isAdding)
     {
         int count = await _context.LinkMediaApiRefToMediaListTable
@@ -151,6 +163,10 @@ public class MediaListService : IMediaListService
         if(!PermissionHelper.CanSeeList(requesterUser, targetMediaList))
             return ServiceResult<MediaListDetailDto>.Forbidden();
 
+        // Featured lists are admin-curated site-wide — block direct detail access by non-admins
+        if (targetMediaList.Category == MediaListCategory.Featured && !PermissionHelper.IsAdministrator(requesterUser))
+            return ServiceResult<MediaListDetailDto>.Forbidden();
+
         var mediaList_withIncludes = await _context.MediaLists
             .Include(l => l.ItemLinks)  // Load the link rows
                 .ThenInclude(link => link.MediaApiRef)  // and the MediaApiRef attached via the link row
@@ -166,7 +182,7 @@ public class MediaListService : IMediaListService
             Description = mediaList_withIncludes.Description,
             SubmittedById = mediaList_withIncludes.SubmittedById,
             VisibilityStatus = mediaList_withIncludes.VisibilityStatus,
-            CanEdit = PermissionHelper.CanModifyOrDeleteList(requesterUser, targetMediaList),
+            CanEdit = PermissionHelper.CanEditListMetadata(requesterUser, targetMediaList),  // Owner-only
             Category = mediaList_withIncludes.Category,
             ListContent = mediaList_withIncludes.ItemLinks
                 .OrderBy(link => link.Position)  // Sorts Ascending by Default, which is what I want
@@ -194,6 +210,10 @@ public class MediaListService : IMediaListService
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
 
+        // Only mod/admin can create a list with Public visibility
+        if (dto.VisibilityStatus == VisibilityStatus.Public && !PermissionHelper.IsModeratorOrAdmin(requesterUser))
+            return ServiceResult<MediaListSummaryDto>.Forbidden();
+
         var newMediaList = new MediaList
         {
             Name = dto.Name,
@@ -218,7 +238,7 @@ public class MediaListService : IMediaListService
         await _context.SaveChangesAsync();  // Flush changes
 
         // Passing in itemCount = 0 since a newly created MediaList always starts with 0 items inside.
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(newMediaList, 0, new List<string>()));
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(newMediaList, 0, new List<string>(), canEdit: true));
     }
 
 
@@ -245,12 +265,23 @@ public class MediaListService : IMediaListService
     public async Task<ServiceResult<MediaListSummaryDto>> PatchListBasicInfoAsync(int mediaListId, UpdateMediaListNotListContentDto dto, string requesterUserId)
     {
 
-        // Fetch the User and MediaList Object and then Check Permissions:
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
+        // Fetch the User and MediaList Object (no forbidden check yet — checked per-field below)
+        var (requesterUser, mediaList, _) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null) return ServiceResult<MediaListSummaryDto>.NotFound();
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
-        if (forbidden) return ServiceResult<MediaListSummaryDto>.Forbidden();
+
+        // Name/description edits require ownership
+        if ((dto.Name != null || dto.Description != null) && !PermissionHelper.CanEditListMetadata(requesterUser, mediaList))
+            return ServiceResult<MediaListSummaryDto>.Forbidden();
+
+        // Visibility changes require mod/admin (or owner reverting to Private)
+        if (dto.VisibilityStatus != null && !PermissionHelper.CanSetListVisibility(requesterUser, mediaList))
+            return ServiceResult<MediaListSummaryDto>.Forbidden();
+
+        // Only mod/admin can promote a list to Public
+        if (dto.VisibilityStatus == VisibilityStatus.Public && !PermissionHelper.IsModeratorOrAdmin(requesterUser))
+            return ServiceResult<MediaListSummaryDto>.Forbidden();
 
 
         // Patch the Changes
@@ -267,15 +298,16 @@ public class MediaListService : IMediaListService
 
         int count = await GetItemCountAsync(mediaListId);
         var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
+        bool canEdit = PermissionHelper.CanEditListMetadata(requesterUser, mediaList);
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails, canEdit));
     }
 
 
     public async Task<ServiceResult<MediaListSummaryDto>> AddMediaApiRefToListAsync(int mediaListId, int mediaApiRefId, AddMediaApiRefToMediaListDto dto, string requesterUserId)
     {
 
-        //// Fetch the User and MediaList Object and then Check Permissions:
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
+        //// Fetch the User and MediaList Object and then Check Permissions (owner-only for content):
+        var (requesterUser, mediaList, forbidden) = await FetchListWithContentCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null) return ServiceResult<MediaListSummaryDto>.NotFound();
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
@@ -336,14 +368,15 @@ public class MediaListService : IMediaListService
 
         int count = await GetItemCountAsync(mediaListId);
         var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails,
+            canEdit: PermissionHelper.CanEditListMetadata(requesterUser, mediaList)));
     }
 
 
     public async Task<ServiceResult<MediaListSummaryDto>> RemoveMediaApiRefFromListAsync(int mediaListId, int mediaApiRefId, string requesterUserId)
     {
-        // Fetch the User and MediaList Object and then Check Permissions:
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
+        // Fetch the User and MediaList Object and then Check Permissions (owner-only for content):
+        var (requesterUser, mediaList, forbidden) = await FetchListWithContentCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null) return ServiceResult<MediaListSummaryDto>.NotFound();
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
@@ -369,7 +402,8 @@ public class MediaListService : IMediaListService
 
         int count = await GetItemCountAsync(mediaListId);
         var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails,
+            canEdit: PermissionHelper.CanEditListMetadata(requesterUser, mediaList)));
     }
 
 
@@ -379,7 +413,8 @@ public class MediaListService : IMediaListService
     public async Task<ServiceResult<MediaListSummaryDto>> AddMediaApiRefToListByExternalAsync(
         int mediaListId, AddToListByExternalRefDto dto, string requesterUserId)
     {
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
+        // Owner-only for content management
+        var (requesterUser, mediaList, forbidden) = await FetchListWithContentCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null)     return ServiceResult<MediaListSummaryDto>.NotFound();
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
@@ -424,7 +459,8 @@ public class MediaListService : IMediaListService
         {
             int existingCount = await GetItemCountAsync(mediaListId);
             var existingThumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
-            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, existingCount, existingThumbnails));
+            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, existingCount, existingThumbnails,
+                canEdit: PermissionHelper.CanEditListMetadata(requesterUser, mediaList)));
         }
 
 
@@ -465,7 +501,8 @@ public class MediaListService : IMediaListService
 
         int count = await GetItemCountAsync(mediaListId);
         var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails,
+            canEdit: PermissionHelper.CanEditListMetadata(requesterUser, mediaList)));
     }
 
 
@@ -475,7 +512,8 @@ public class MediaListService : IMediaListService
     public async Task<ServiceResult<MediaListSummaryDto>> RemoveMediaApiRefFromListByExternalAsync(
         int mediaListId, int externalApiSourceId, string externalId, string requesterUserId)
     {
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
+        // Owner-only for content management
+        var (requesterUser, mediaList, forbidden) = await FetchListWithContentCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null)     return ServiceResult<MediaListSummaryDto>.NotFound();
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
@@ -493,7 +531,8 @@ public class MediaListService : IMediaListService
             // Item not in DB → cannot be in any list → return success (idempotent)
             int count0 = await GetItemCountAsync(mediaListId);
             var thumbnails0 = await GetPreviewThumbnailUrlsAsync(mediaListId);
-            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count0, thumbnails0));
+            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count0, thumbnails0,
+                canEdit: PermissionHelper.CanEditListMetadata(requesterUser, mediaList)));
         }
 
 
@@ -506,7 +545,8 @@ public class MediaListService : IMediaListService
             // Not in list → return success (idempotent)
             int count0 = await GetItemCountAsync(mediaListId);
             var thumbnails0 = await GetPreviewThumbnailUrlsAsync(mediaListId);
-            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count0, thumbnails0));
+            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count0, thumbnails0,
+                canEdit: PermissionHelper.CanEditListMetadata(requesterUser, mediaList)));
         }
 
 
@@ -516,15 +556,16 @@ public class MediaListService : IMediaListService
 
         int count = await GetItemCountAsync(mediaListId);
         var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails,
+            canEdit: PermissionHelper.CanEditListMetadata(requesterUser, mediaList)));
     }
 
 
     public async Task<ServiceResult<MediaListSummaryDto>> MoveMediaApiRefWithinMediaListAsync(int mediaListId, int mediaApiRefId, MoveMediaApiRefWithinMediaListDto dto, string requesterUserId)
     {
 
-        // Fetch the User and MediaList Object and then Check Permissions:
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
+        // Fetch the User and MediaList Object and then Check Permissions (owner-only for content):
+        var (requesterUser, mediaList, forbidden) = await FetchListWithContentCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null) return ServiceResult<MediaListSummaryDto>.NotFound();
         if (requesterUser == null) return ServiceResult<MediaListSummaryDto>.Unauthorized();
@@ -554,7 +595,8 @@ public class MediaListService : IMediaListService
         {
             int count = await GetItemCountAsync(mediaListId);
             var thumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
-            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails));
+            return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails,
+                canEdit: PermissionHelper.CanEditListMetadata(requesterUser, mediaList)));
         }
 
 
@@ -588,12 +630,14 @@ public class MediaListService : IMediaListService
 
         int finalCount = await GetItemCountAsync(mediaListId);
         var finalThumbnails = await GetPreviewThumbnailUrlsAsync(mediaListId);
-        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, finalCount, finalThumbnails));
+        return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, finalCount, finalThumbnails,
+            canEdit: PermissionHelper.CanEditListMetadata(requesterUser, mediaList)));
     }
 
     public async Task<ServiceResult<bool>> ReorderItemsAsync(int mediaListId, List<int> orderedItemIds, string requesterUserId)
     {
-        var (requesterUser, mediaList, forbidden) = await FetchListWithModifyCheckAsync(mediaListId, requesterUserId);
+        // Owner-only for content management
+        var (requesterUser, mediaList, forbidden) = await FetchListWithContentCheckAsync(mediaListId, requesterUserId);
 
         if (mediaList == null) return ServiceResult<bool>.NotFound();
         if (requesterUser == null) return ServiceResult<bool>.Unauthorized();
@@ -639,9 +683,8 @@ public class MediaListService : IMediaListService
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<List<MediaListSummaryDto>>.Unauthorized();
 
-        // Precompute booleans so EF Core can inline them as SQL constants rather than loading AppUser per-row
+        // Precompute role flag so EF Core can inline it as a SQL constant rather than loading AppUser per-row
         bool isAdmin = PermissionHelper.IsAdministrator(requesterUser);
-        bool canModify = PermissionHelper.IsModeratorOrAdmin(requesterUser);  // Used for CanEdit projection
 
         var queryLower = query.ToLower();
         IQueryable<MediaList> baseQuery = _context.MediaLists;
@@ -680,7 +723,7 @@ public class MediaListService : IMediaListService
                 Description = l.Description,
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
-                CanEdit = l.SubmittedById == requesterUserId || canModify,
+                CanEdit = l.SubmittedById == requesterUserId,  // Owner-only
                 Category = l.Category,
                 // First 4 thumbnail URLs ordered by position for the collage
                 PreviewThumbnailUrls = l.ItemLinks
@@ -746,7 +789,7 @@ public class MediaListService : IMediaListService
             SubmittedById = l.SubmittedById,
             Description = l.Description,
             VisibilityStatus = l.VisibilityStatus,
-            CanEdit = false,  // Featured lists are managed through the admin panel only
+            CanEdit = false,      // Featured lists are managed through the admin panel only
             Category = l.Category,
             ListContent = l.ItemLinks
                 .OrderBy(link => link.Position)

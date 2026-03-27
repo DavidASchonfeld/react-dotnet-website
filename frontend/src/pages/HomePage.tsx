@@ -1,6 +1,7 @@
 import AnimatedPage from "../components/AnimatedPage";
 import FeaturedCollage from "../components/FeaturedCollage";
 import { useGetFeaturedListsQuery } from "../services/apiSlice";
+import { DEFAULT_COLLAGE_CONFIGS } from "../data/collageConfigs";
 
 export default function HomePage() {
 
@@ -26,7 +27,7 @@ export default function HomePage() {
                 <p className="text-center text-text/50">Check back soon — featured picks coming!</p>
             )}
 
-            <FeaturedCollage featuredItems={featuredItems} isLoading={isLoading} />
+            <FeaturedCollage featuredItems={featuredItems} isLoading={isLoading} configs={DEFAULT_COLLAGE_CONFIGS} />
 
         </div>
         </AnimatedPage>

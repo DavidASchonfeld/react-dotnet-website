@@ -32,6 +32,21 @@ public class ApiUsageController : ControllerBase
     }
 
 
+    // Returns historical usage buckets for all external APIs. Admin-only.
+    // Daily APIs: last 30 days. Monthly APIs: last 12 months.
+    [HttpGet("history")]
+    public async Task<IActionResult> GetUsageHistory()
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUser   = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return Unauthorized();
+        if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
+
+        var history = await _apiUsageService.GetUsageHistoryAsync();
+        return Ok(history);
+    }
+
+
     // Returns static metadata for all external APIs (URLs, licensing, subscription plans).
     // Admin-only — keeps consistency with GetAllUsageStats.
     // No API keys are exposed; the DTO includes only a boolean RequiresApiKey flag.

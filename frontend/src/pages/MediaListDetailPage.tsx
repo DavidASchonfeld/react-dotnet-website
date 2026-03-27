@@ -22,7 +22,7 @@ import {
     useGetActiveApiSourcesQuery,
 } from '../services/apiSlice';
 import type { MediaApiRefSummary } from '../types/mediaApiRef';
-import { MediaListCategory } from '../types/enums';
+import { MediaListCategory, VisibilityStatus } from '../types/enums';
 import { mediaApiRefToRowItemProps } from '../utils/mediaApiRefAdapter';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import BadgePill from '../components/BadgePill';
@@ -38,9 +38,11 @@ import AnimatedPage from '../components/AnimatedPage';
 import BackButton from '../components/BackButton';
 import ItemActionsButton from '../components/row_item_related/ItemActionsButton';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
+import type { DetailItemType } from '../components/modals/detail_panels/DetailSidePanel';
 import ListCollageThumb from '../components/ListCollageThumb';
 import { routes } from '../utils/routes';
 import { makeShareAction, makeGoToDetailsAction, mediaListActions } from '../utils/menuActions';
+import { RoleAbilitiesInfoPanel } from '../components/administrator_related/RoleAbilitiesInfoPanel';
 
 
 
@@ -49,7 +51,10 @@ export default function MediaListDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const { token } = useSelector((state: RootState) => state.auth);
+    const { token, roleLevel } = useSelector((state: RootState) => state.auth);
+    // Derived from the user's own roleLevel (already in Redux), not from DTO fields
+    const isModOrAdmin = roleLevel === 'Moderator' || roleLevel === 'Administrator';
+    const isAdmin = roleLevel === 'Administrator';
 
     const mediaListId = parseInt(id ?? '');
     // RTK Query auto-fetches on mount and auto-cleans cache on unmount.
@@ -106,6 +111,9 @@ export default function MediaListDetailPage() {
     if (error) return <div>Error loading list</div>;
     if (!selectedMediaListDetail) return null;
 
+    // Admin can fully manage (edit, add/remove contents) any public list they don't own
+    const adminCanEditPublic = isAdmin && selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public;
+    const canEditOrAdmin = selectedMediaListDetail.canEdit || adminCanEditPublic;
 
     function handleToggleEditMode() {
         if (isEditMode) setShowAddBrowsePanel(false);
@@ -186,7 +194,7 @@ export default function MediaListDetailPage() {
             <div className="flex justify-between items-center">
                 <div className="flex flex-wrap gap-2">
                     <BackButton />
-                    {selectedMediaListDetail.canEdit && (
+                    {canEditOrAdmin && (
                         <button
                             className="btn btn-secondary w-fit"
                             onClick={handleToggleEditMode}>
@@ -203,18 +211,19 @@ export default function MediaListDetailPage() {
                         id: mediaListId,
                         name: selectedMediaListDetail.name,
                         navigate,
-                        onManageListContentsOpen: () => { setShowAddBrowsePanel(true); },
+                        // Owner and admin (on public lists) can manage list contents and edit basic info
+                        ...(canEditOrAdmin ? { onManageListContentsOpen: () => { setShowAddBrowsePanel(true); } } : {}),
                         includeGoToDetails: false,
-                        ...(selectedMediaListDetail.canEdit ? { onEditBasicInfoOpen: () => setIsEditModalOpen(true) } : {}),
+                        ...(canEditOrAdmin ? { onEditBasicInfoOpen: () => setIsEditModalOpen(true) } : {}),
                     })}
                 />
             </div>
 
             {/* -- List Info -- */}
             <h1 className="h1-styling">{selectedMediaListDetail.name}</h1>
-            {/* Collage thumbnail — first 4 items' images in a 2×2 square grid */}
+            {/* Collage thumbnail — first 4 items' images in a 2×2 square grid; centered horizontally */}
             {orderedItems.length > 0 && (
-                <div className="w-32 h-32 rounded overflow-hidden my-2">
+                <div className="w-32 h-32 rounded overflow-hidden my-2 mx-auto">
                     <ListCollageThumb
                         urls={orderedItems.slice(0, 4).map(i => i.thumbnailUrl).filter((u): u is string => !!u)}
                     />
@@ -224,6 +233,26 @@ export default function MediaListDetailPage() {
             {selectedMediaListDetail.category === MediaListCategory.ReadingStatus && <BadgePill label="Reading Status" />}
             {selectedMediaListDetail.category === MediaListCategory.Library && <BadgePill label="Library" />}
             {selectedMediaListDetail.category === MediaListCategory.Featured && <BadgePill label="Featured" />}
+
+            {/* Visibility toggle — shown to mod/admin, derived from their own roleLevel */}
+            {isModOrAdmin && (
+                <button
+                    className="btn btn-secondary w-fit text-sm mt-1"
+                    onClick={() => patchListMutation({
+                        mediaListId,
+                        data: {
+                            visibilityStatus: selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public
+                                ? VisibilityStatus.Private
+                                : VisibilityStatus.Public,
+                        },
+                    })}
+                >
+                    {selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public ? 'Set Private' : 'Make Public'}
+                </button>
+            )}
+
+            <RoleAbilitiesInfoPanel />
+
             <br />
             <p>{selectedMediaListDetail.description}</p>
             <br/>
@@ -242,7 +271,7 @@ export default function MediaListDetailPage() {
             <ErrorBoundary
                 label="SwipeList"
                 fallback={
-                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className="rounded-lg border border-border overflow-hidden">
                         {renderFallbackItems(true, false)}
                     </div>
                 }
@@ -250,7 +279,7 @@ export default function MediaListDetailPage() {
                 <ErrorBoundary
                     label="DragList"
                     fallback={
-                        <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="rounded-lg border border-border overflow-hidden">
                             {renderFallbackItems(false, true)}
                         </div>
                     }
@@ -260,7 +289,7 @@ export default function MediaListDetailPage() {
                             items={orderedItems.map(i => i.id)}
                             strategy={verticalListSortingStrategy}
                         >
-                            <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <div className="rounded-lg border border-border overflow-hidden">
                                 {orderedItems.map(item => (
                                     <SwipeReorderRowItem
                                         key={item.id}
@@ -315,6 +344,8 @@ export default function MediaListDetailPage() {
                             secondString: item.creatorName ?? undefined,
                             labelPill: <MediaTypeLabel mediaTypeId={currentApiSource?.mediaTypeId ?? 1} />,
                             photographOnLeft: item.thumbnailUrl ?? undefined,
+                            detailType: 'mediaApiRef' as DetailItemType,       // enables ⓘ detail panel
+                            apiSourceName: currentApiSource?.apiName ?? '',     // needed for detail panel route link
                         }))
                     }
                     candidatesLoading={isSearching}

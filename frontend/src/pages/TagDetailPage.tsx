@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store/store';
+import { VisibilityStatus } from '../types/enums';
 import {
     useGetCustomTagQuery,
     useGetItemsByTagQuery,
@@ -25,14 +26,19 @@ import ItemActionsButton from '../components/row_item_related/ItemActionsButton'
 import { routes } from '../utils/routes';
 import { mediaApiRefToRowItemProps } from '../utils/mediaApiRefAdapter';
 import { makeShareAction, makeGoToDetailsAction, makeRemoveFromTagAction, tagActions } from '../utils/menuActions';
+import { RoleAbilitiesInfoPanel } from '../components/administrator_related/RoleAbilitiesInfoPanel';
 
 export default function TagDetailPage() {
     const { tagId } = useParams<{ tagId: string }>();
     const navigate = useNavigate();
 
+    const { roleLevel } = useSelector((state: RootState) => state.auth);
+    // Derived from the user's own roleLevel (already in Redux), not from DTO fields
+    const isModOrAdmin = roleLevel === 'Moderator' || roleLevel === 'Administrator';
+    const isAdmin = roleLevel === 'Administrator';
+
     const parsedTagId = parseInt(tagId ?? '');
 
-    const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
     const [page, setPage] = useState(1);
     const [showTagModal, setShowTagModal] = useState(false);
@@ -67,6 +73,10 @@ export default function TagDetailPage() {
     if (isLoading) return <div>Loading...</div>;
     if (error && !isDeleted) return <div>Error loading tag items. The tag may be private.</div>;
 
+    // Admin can fully manage any public tag they don't own
+    const adminCanEditPublic = isAdmin && tagDetail?.visibilityStatus === VisibilityStatus.Public;
+    const canEditOrAdmin = tagDetail?.canEdit || adminCanEditPublic;
+
     return (
         <AnimatedPage>
         <div className="page">
@@ -81,20 +91,41 @@ export default function TagDetailPage() {
                         name: tagName,
                         navigate,
                         includeGoToDetails: false,
-                        ...(isAuthenticated ? { onTagItemsOpen: () => setShowTagModal(true) } : {}),
-                        ...(isAuthenticated ? { onEditOpen: () => setIsEditModalOpen(true) } : {}),
-                        ...(isAuthenticated ? { onDeleteOpen: () => setIsDeleteModalOpen(true) } : {}),
+                        // Owner and admin (on public tags) can manage/edit/delete
+                        ...(canEditOrAdmin ? { onTagItemsOpen: () => setShowTagModal(true) } : {}),
+                        ...(canEditOrAdmin ? { onEditOpen: () => setIsEditModalOpen(true) } : {}),
+                        ...(canEditOrAdmin ? { onDeleteOpen: () => setIsDeleteModalOpen(true) } : {}),
                     })}
                 />
             </div>
 
             <h1 className="h1-styling">{tagName}</h1>
+
+            {/* Visibility toggle — shown to mod/admin, derived from their own roleLevel */}
+            {isModOrAdmin && (
+                <button
+                    className="btn btn-secondary w-fit text-sm mb-2"
+                    onClick={() => patchTag({
+                        tagId: parsedTagId,
+                        data: {
+                            visibilityStatus: tagDetail.visibilityStatus === VisibilityStatus.Public
+                                ? VisibilityStatus.Private
+                                : VisibilityStatus.Public,
+                        },
+                    })}
+                >
+                    {tagDetail.visibilityStatus === VisibilityStatus.Public ? 'Set Private' : 'Make Public'}
+                </button>
+            )}
+
+            <RoleAbilitiesInfoPanel />
+
             <p className="text-sm text-gray-500 mb-4">
                 {result?.totalCount ?? 0} item{result?.totalCount !== 1 ? 's' : ''} with this tag
             </p>
 
             {items.length > 0 ? (
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="rounded-lg border border-border overflow-hidden">
                     {items.map(item => (
                         <RowItemStyling key={item.item.id} onClick={() => navigate(routes.mediaApiRef(item.item.apiSourceName, item.item.externalId))}>
                             <RowItemContent
@@ -103,7 +134,8 @@ export default function TagDetailPage() {
                                 onMenuClick={[
                                     makeShareAction(item.item.name, routes.mediaApiRef(item.item.apiSourceName, item.item.externalId)),
                                     makeGoToDetailsAction(navigate, routes.mediaApiRef(item.item.apiSourceName, item.item.externalId)),
-                                    ...(isAuthenticated ? [makeRemoveFromTagAction(() => {
+                                    // Owner and admin (on public tags) can remove items from the tag
+                                    ...(canEditOrAdmin ? [makeRemoveFromTagAction(() => {
                                         removeTag({ tagId: parsedTagId, mediaApiRefId: item.item.id });
                                     })] : []),
                                 ]}
@@ -148,6 +180,7 @@ export default function TagDetailPage() {
                             mediaTypeId: modalSearch.currentApiSource.mediaTypeId,
                             creatorName: item.creatorName,
                             publishedDate: item.publishedDate,
+                            thumbnailUrl: item.thumbnailUrl, // pass thumbnail so DB stores it for display
                         }).unwrap();
                         await addTag({ tagId: parsedTagId, mediaApiRefId: ref.id, note }).unwrap();
                     }}

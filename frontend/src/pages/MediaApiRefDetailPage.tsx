@@ -23,13 +23,14 @@ import RowItemContent from '../components/row_item_related/RowItemContent';
 import { AdminItemStatusPanel } from '../components/administrator_related/AdminItemStatusPanel';
 import ImageCacheIndicatorDot from '../components/administrator_related/ImageCacheIndicatorDot';
 import ItemActionsButton from '../components/row_item_related/ItemActionsButton';
-import { mediaApiRefActions } from '../utils/menuActions';
+import { mediaApiRefActions, makeShareAction } from '../utils/menuActions';
 import { mediaApiRefToRowItemProps } from '../utils/mediaApiRefAdapter';
 import { routes } from '../utils/routes';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import type { SearchType } from '../components/SearchBarWithFilters';
 import { useManageLinkModalSearch } from '../hooks/useManageLinkModalSearch';
 import ReadingStatusButton from '../components/ReadingStatusButton';
+import { MediaListCategory } from '../types/enums';
 
 
 export default function MediaApiRefDetailPage() {
@@ -66,11 +67,11 @@ export default function MediaApiRefDetailPage() {
 
     const { data: lists } = useGetMediaApiRefListsQuery(
         effectiveMediaApiRefId,
-        { skip: !isInDb }
+        { skip: !isInDb || !isAuthenticated }  // guests don't see lists
     );
     const { data: appliedTags } = useGetMediaApiRefTagsQuery(
         effectiveMediaApiRefId,
-        { skip: !isInDb }
+        { skip: !isInDb || !isAuthenticated }  // guests don't manage tags
     );
     const { data: appliedTagsWithNotes } = useGetAppliedTagsWithNotesQuery(
         effectiveMediaApiRefId,
@@ -145,15 +146,20 @@ export default function MediaApiRefDetailPage() {
                     buttonClassName="btn btn-secondary w-10 h-10 flex items-center justify-center"
                     {...mediaApiRefToRowItemProps(detail, { includeYear: false, secondStringField: 'date' })}
                     labelPill={<MediaTypeLabel mediaTypeId={detail.mediaTypeId} faded={true} />}
-                    onMenuClick={mediaApiRefActions({
-                        apiName: detail.apiSourceName,
-                        externalId: detail.externalId,
-                        name: detail.name,
-                        navigate,
-                        onManageListsOpen: () => handleOpenManageModal('lists'),
-                        onManageTagsOpen: () => handleOpenManageModal('tags'),
-                        includeGoToDetails: false,
-                    })}
+                    onMenuClick={isAuthenticated
+                        // Authenticated: full action set (share, manage lists, manage tags)
+                        ? mediaApiRefActions({
+                            apiName: detail.apiSourceName,
+                            externalId: detail.externalId,
+                            name: detail.name,
+                            navigate,
+                            onManageListsOpen: () => handleOpenManageModal('lists'),
+                            onManageTagsOpen: () => handleOpenManageModal('tags'),
+                            includeGoToDetails: false,
+                        })
+                        // Guest: share-only
+                        : [makeShareAction(detail.name, routes.mediaApiRef(decodedApiName, decodedExternalId))]
+                    }
                 />
             </div>
 
@@ -195,14 +201,17 @@ export default function MediaApiRefDetailPage() {
 
             {/* Images served via backend ImageCache instead of direct external URL */}
             {posterSrc && (
-                <div className="my-4 relative inline-block">
-                    <img
-                        src={posterSrc}
-                        alt={detail.name}
-                        className="max-w-xs rounded-lg shadow-md"
-                        onError={e => { (e.currentTarget as HTMLImageElement).src = '/placeholder-poster.svg'; }}
-                    />
-                    <ImageCacheIndicatorDot src={posterSrc} />
+                // flex justify-center centers the image; w-full on mobile, capped at xs on sm+
+                <div className="my-4 flex justify-center">
+                    <div className="relative w-full sm:max-w-xs">
+                        <img
+                            src={posterSrc}
+                            alt={detail.name}
+                            className="w-full rounded-lg shadow-md"
+                            onError={e => { (e.currentTarget as HTMLImageElement).src = '/placeholder-poster.svg'; }}
+                        />
+                        <ImageCacheIndicatorDot src={posterSrc} />
+                    </div>
                 </div>
             )}
 
@@ -257,22 +266,30 @@ export default function MediaApiRefDetailPage() {
 
             <hr className="my-4" />
 
-            {/* -- Lists containing this item -- */}
-            <h2 className="font-semibold text-lg mb-2">Appears in Lists</h2>
-            {isInDb ? (
-                lists && lists.length > 0 ? (
-                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                        {lists.map(list => (
-                            <RowItemStyling key={list.id} onClick={() => navigate(routes.mediaList(list.id))}>
-                                <RowItemContent firstString={list.name} secondString={list.description ?? undefined} />
-                            </RowItemStyling>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-gray-400 text-sm">Not in any lists yet.</p>
-                )
-            ) : (
-                <p className="text-gray-400 text-sm">Save this item to a list to see it here.</p>
+            {/* -- Lists containing this item — hidden for guests, Featured lists excluded -- */}
+            {isAuthenticated && (
+                <>
+                    <h2 className="font-semibold text-lg mb-2">Appears in Lists</h2>
+                    {isInDb ? (
+                        // Filter out Featured lists before displaying
+                        (() => {
+                            const visibleLists = lists?.filter(l => l.category !== MediaListCategory.Featured);
+                            return visibleLists && visibleLists.length > 0 ? (
+                                <div className="rounded-lg border border-border overflow-hidden">
+                                    {visibleLists.map(list => (
+                                        <RowItemStyling key={list.id} onClick={() => navigate(routes.mediaList(list.id))}>
+                                            <RowItemContent firstString={list.name} secondString={list.description ?? undefined} />
+                                        </RowItemStyling>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-gray-400 text-sm">Not in any lists yet.</p>
+                            );
+                        })()
+                    ) : (
+                        <p className="text-gray-400 text-sm">Save this item to a list to see it here.</p>
+                    )}
+                </>
             )}
         </div>
 
@@ -284,15 +301,16 @@ export default function MediaApiRefDetailPage() {
                 allowedSearchTypes={[activeModalType]}
                 focusedItem={{ firstString: detail.name, secondString: detail.creatorName ?? undefined, photographOnLeft: detail.thumbnailUrl ?? undefined }}
                 linkNotes={activeModalType === 'tags' ? tagLinkNotes : undefined}
+                noteInput={activeModalType === 'tags' ? { label: 'Note (optional)', placeholder: 'Why are you applying this tag?' } : undefined}
                 {...modalSearch}
                 initialLinkedIds={activeModalType === 'lists'
                     ? (lists ?? []).map(l => String(l.id))
                     : (appliedTags ?? []).map(t => String(t.id))}
-                onAdd={async (id) => {
+                onAdd={async (id, note) => {
                     if (activeModalType === 'lists') {
                         await addToList({ listId: parseInt(id), mediaApiRefId: effectiveMediaApiRefId }).unwrap();
                     } else {
-                        await addTag({ tagId: parseInt(id), mediaApiRefId: effectiveMediaApiRefId }).unwrap();
+                        await addTag({ tagId: parseInt(id), mediaApiRefId: effectiveMediaApiRefId, note }).unwrap();
                     }
                 }}
                 onRemove={async (id) => {

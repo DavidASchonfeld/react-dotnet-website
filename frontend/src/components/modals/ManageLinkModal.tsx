@@ -1,14 +1,17 @@
 import { useState } from 'react';
+import ListCollageThumb from '../ListCollageThumb';
 import RowItemContent from "../row_item_related/RowItemContent";
 import type { RowItemDisplayProps } from '../../types/rowItemTypes';
 import ConfirmModal from "./ConfirmModal";
 import PaginationControls from "../PaginationControls";
-import DialogOverlay from './DialogOverlay';
+import DrawerModal from './modal_frame/DrawerModal';
+import DialogOverlay from './modal_frame/DialogOverlay';
 import SearchBarWithFilters from '../SearchBarWithFilters';
 import type { FilterState, SearchType } from '../SearchBarWithFilters';
 import type { ExternalApiSourceSummary } from '../../types/externalApiSource';
 import DetailSidePanel from './detail_panels/DetailSidePanel';
 import type { ActiveDetail, DetailItemType } from './detail_panels/DetailSidePanel';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface LinkRowItem extends RowItemDisplayProps {
     id: string;
@@ -18,6 +21,7 @@ interface LinkRowItem extends RowItemDisplayProps {
     //     but not to a list that isn't owned by you (Note: In the future, I will want to implement public/shared MediaLists)
     detailType?: DetailItemType;   // When set, the ⓘ icon appears and opens the detail panel
     apiSourceName?: string;        // mediaApiRef only — needed for the detail panel route link
+    previewThumbnailUrls?: string[];  // mediaList only — renders a collage instead of a single photo
 }
 
 // A tab in tabbed mode. The parent owns which candidates go in each tab — the modal just renders them.
@@ -136,8 +140,12 @@ export default function ManageLinkModal({
     const [committedFilters, setCommittedFilters] = useState<FilterState>({
         searchType: defaultType,
         apiSourceId: defaultApiSourceId ?? null,
-        subtype: defaultType === 'media' ? undefined : 'all',
+        // lists default to 'mine' (you manage your own lists); tags default to 'all' (tags are shared)
+        subtype: defaultType === 'media' ? undefined : defaultType === 'lists' ? 'mine' : 'all',
     })
+
+    // Mobile: DrawerModal (slide-up, thumb-reachable). Desktop: DialogOverlay (centered panel).
+    const isMobile = useIsMobile();
 
     function handleSearch(query: string, filters: FilterState, bypassCache: boolean) {
         setSearchQuery(query)
@@ -186,6 +194,7 @@ export default function ManageLinkModal({
                 try {
                     await onAdd(id, note || undefined);
                     setLinkedIds(prev => [...prev, id]);
+                    setNote('');  // auto-clear note after each successful submission
                     setActiveDetail(prev =>
                         prev?.id === id ? { ...prev, linkNote: note || null } : prev
                     );
@@ -204,8 +213,9 @@ export default function ManageLinkModal({
     // Opens the detail side panel for a row — stopPropagation prevents the row toggle from firing
     function handleShowDetail(e: React.MouseEvent, item: LinkRowItem) {
         e.stopPropagation();
+        if (!item.detailType) return; // guard: no panel available for items without a detailType
         setActiveDetail({
-            type: item.detailType!,
+            type: item.detailType,
             id: item.id,
             apiSourceName: item.apiSourceName,
             name: item.firstString,
@@ -215,79 +225,87 @@ export default function ManageLinkModal({
         });
     }
 
-    return (
-        <>
-            {/* Backdrop — click outside to close */}
-            <DialogOverlay onBackdropClick={() => onClose(linkedIds)}>
-            {/* Modal panel */}
-            <div className="w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] flex flex-col bg-surface-raised text-text rounded-xl shadow-xl overflow-hidden"
-                 onClick={e => e.stopPropagation()}>
+    // Shared modal body — receives the correct close function for each frame type.
+    // Mobile: close = DrawerModal's render-prop close (triggers slide-down animation).
+    // Desktop: close = () => onClose(linkedIds) (direct, no animation needed).
+    const renderContent = (closeModal: () => void) => (
+        <div
+            className={isMobile
+                // Mobile: near-full height inside the DrawerModal shell (no bg/rounded — drawer provides those)
+                ? "flex flex-col h-[90vh] overflow-hidden"
+                // Desktop: full-viewport-minus-margin panel with its own background and rounded corners
+                : "w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] flex flex-col bg-surface-raised text-text rounded-xl shadow-xl overflow-hidden"
+            }
+            onClick={e => e.stopPropagation()}
+        >
 
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-                    <h2 className="font-semibold text-lg">{modalTitle}</h2>
-                    <button className="btn btn-secondary w-fit" onClick={() => onClose(linkedIds)}>✕</button>
-                </div>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+                <h2 className="font-semibold text-lg">{modalTitle}</h2>
+                {/* closeModal uses the frame-specific close so the slide-down animation runs on mobile */}
+                <button className="btn btn-secondary w-fit" onClick={closeModal}>✕</button>
+            </div>
 
-                {/* Focused item — the subject of the linking action (e.g. the media item being tagged) */}
-                {focusedItem && (
-                    <div className="px-4 py-2 border-b border-border shrink-0 bg-surface">
-                        <RowItemContent
-                            firstString={focusedItem.firstString}
-                            secondString={focusedItem.secondString}
-                            photographOnLeft={focusedItem.photographOnLeft}
-                        />
-                    </div>
-                )}
-
-                {/* Search bar with type/API filters */}
-                <div className="px-4 py-2 border-b border-border shrink-0">
-                    <SearchBarWithFilters
-                        query={searchQuery}
-                        defaultApiSourceId={defaultApiSourceId ?? null}
-                        urlFilters={committedFilters}
-                        activeApiSources={activeApiSources}
-                        allowedSearchTypes={allowedSearchTypes}
-                        isModerator={isModerator ?? false}
-                        isAdmin={isAdmin ?? false}
-                        roleLevel={roleLevel ?? null}
-                        onSearch={handleSearch}
+            {/* Focused item — the subject of the linking action (e.g. the media item being tagged) */}
+            {focusedItem && (
+                <div className="px-4 py-2 border-b border-border shrink-0 bg-surface">
+                    <RowItemContent
+                        firstString={focusedItem.firstString}
+                        secondString={focusedItem.secondString}
+                        photographOnLeft={focusedItem.photographOnLeft}
                     />
                 </div>
+            )}
 
-                {/* Tab bar — only shown in tabbed mode (when `tabs` is provided) */}
-                {tabs && (
-                    <div className="flex border-b border-border shrink-0">
-                        {tabs.map((tab, i) => (
-                            <button
-                                key={tab.label}
-                                className={`flex-1 py-2 text-sm ${activeTabIndex === i ? 'font-semibold border-b-2 border-primary text-primary' : 'text-text-muted'}`}
-                                onClick={() => setActiveTabIndex(i)}
-                            >{tab.label}</button>
-                        ))}
-                    </div>
-                )}
+            {/* Search bar with type/API filters */}
+            <div className="px-4 py-2 border-b border-border shrink-0">
+                <SearchBarWithFilters
+                    query={searchQuery}
+                    defaultApiSourceId={defaultApiSourceId ?? null}
+                    urlFilters={committedFilters}
+                    activeApiSources={activeApiSources}
+                    allowedSearchTypes={allowedSearchTypes}
+                    isModerator={isModerator ?? false}
+                    isAdmin={isAdmin ?? false}
+                    roleLevel={roleLevel ?? null}
+                    onSearch={handleSearch}
+                />
+            </div>
 
-                {/* Note / reason input — shown when noteInput prop is provided */}
-                {noteInput && (
-                    <div className="px-4 py-3 border-b border-border shrink-0">
-                        <label className="text-xs text-text-muted mb-1 block">
-                            {noteInput.label ?? 'Note (optional)'}
-                        </label>
-                        <textarea
-                            value={note}
-                            onChange={(e) => setNote(e.target.value)}
-                            placeholder={noteInput.placeholder ?? 'Add a reason for this tag...'}
-                            rows={2}
-                            className="w-full text-sm bg-surface border border-border rounded px-2 py-1.5 text-text placeholder-text-muted resize-none focus:outline-none focus:border-primary"
-                        />
-                    </div>
-                )}
+            {/* Tab bar — only shown in tabbed mode (when `tabs` is provided) */}
+            {tabs && (
+                <div className="flex border-b border-border shrink-0">
+                    {tabs.map((tab, i) => (
+                        <button
+                            key={tab.label}
+                            className={`flex-1 py-2 text-sm ${activeTabIndex === i ? 'font-semibold border-b-2 border-primary text-primary' : 'text-text-muted'}`}
+                            onClick={() => setActiveTabIndex(i)}
+                        >{tab.label}</button>
+                    ))}
+                </div>
+            )}
 
-                {/* Body: candidate rows + optional detail side panel, side by side */}
-                <div className="flex flex-1 overflow-hidden">
+            {/* Note / reason input — shown when noteInput prop is provided */}
+            {noteInput && (
+                <div className="px-4 py-3 border-b border-border shrink-0">
+                    <label className="text-xs text-text-muted mb-1 block">
+                        {noteInput.label ?? 'Note (optional)'}
+                    </label>
+                    <textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder={noteInput.placeholder ?? 'Add a reason for this tag...'}
+                        rows={2}
+                        className="w-full text-sm bg-surface border border-border rounded px-2 py-1.5 text-text placeholder-text-muted resize-none focus:outline-none focus:border-primary"
+                    />
+                </div>
+            )}
 
-                    {/* Candidate rows — shrinks to half width when the detail panel is open */}
+            {/* Body: candidate rows + optional detail side panel, side by side */}
+            <div className="flex flex-1 overflow-hidden">
+
+                {/* Candidate rows — hidden on mobile when the detail panel is open (too narrow for 50/50 split) */}
+                {(!isMobile || !activeDetail) && (
                     <div className={`flex flex-col overflow-hidden transition-all ${activeDetail ? 'w-1/2' : 'w-full'}`}>
                         <div className="flex-1 overflow-y-auto">
                             {candidatesLoading ? (
@@ -312,7 +330,8 @@ export default function ManageLinkModal({
                                                     firstString={item.firstString}
                                                     secondString={item.secondString}
                                                     labelPill={item.labelPill}
-                                                    photographOnLeft={item.photographOnLeft}
+                                                    photographOnLeft={item.previewThumbnailUrls ? undefined : item.photographOnLeft}
+                                                    customLeftElement={item.previewThumbnailUrls ? <ListCollageThumb urls={item.previewThumbnailUrls} /> : undefined}
                                                 />
                                             </div>
                                             {rowStatusIcon(linked, pendingToAdd)}
@@ -321,16 +340,14 @@ export default function ManageLinkModal({
                                                     {item.countLabel}
                                                 </span>
                                             )}
-                                            {/* ⓘ icon — opens the detail panel without toggling the row */}
-                                            {item.detailType && (
-                                                <button
-                                                    className="shrink-0 text-text-muted hover:text-primary p-2"
-                                                    onClick={e => handleShowDetail(e, item)}
-                                                    aria-label={`View details for ${item.firstString}`}
-                                                >
-                                                    ⓘ
-                                                </button>
-                                            )}
+                                            {/* ⓘ icon — always shown; opens the detail panel when detailType is set */}
+                                            <button
+                                                className="shrink-0 text-text-muted hover:text-primary p-2"
+                                                onClick={e => handleShowDetail(e, item)}
+                                                aria-label={`View details for ${item.firstString}`}
+                                            >
+                                                ⓘ
+                                            </button>
                                         </div>
                                     );
                                 })
@@ -350,18 +367,37 @@ export default function ManageLinkModal({
                             </div>
                         )}
                     </div>
+                )}
 
-                    {/* Detail side panel — shown when a row's ⓘ icon is clicked */}
-                    {activeDetail && (
-                        <DetailSidePanel
-                            detail={activeDetail}
-                            onClose={() => setActiveDetail(null)}
-                        />
-                    )}
+                {/* Detail side panel — full-width on mobile (replaces the list), half-width on desktop */}
+                {activeDetail && (
+                    <DetailSidePanel
+                        detail={activeDetail}
+                        onClose={() => setActiveDetail(null)}
+                        fullWidth={isMobile}
+                    />
+                )}
 
-                </div>
             </div>
-            </DialogOverlay>
+        </div>
+    );
+
+    return (
+        <>
+            {/* Mobile: DrawerModal slides up from bottom (thumb-reachable).
+                Desktop: DialogOverlay centers the panel on screen.
+                The close function passed to renderContent differs per frame:
+                  mobile  → DrawerModal's render-prop close (triggers slide-down animation before unmount)
+                  desktop → direct onClose call (no exit animation needed) */}
+            {isMobile ? (
+                <DrawerModal open={true} onClose={() => onClose(linkedIds)}>
+                    {(close) => renderContent(close)}
+                </DrawerModal>
+            ) : (
+                <DialogOverlay onBackdropClick={() => onClose(linkedIds)}>
+                    {renderContent(() => onClose(linkedIds))}
+                </DialogOverlay>
+            )}
 
             {/* The Confirm Modal for Potentially Removing a Link */}
             {pendingRemoveId !== null && (() => {

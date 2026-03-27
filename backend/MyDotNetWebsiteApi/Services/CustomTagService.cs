@@ -30,7 +30,8 @@ public class CustomTagService : ICustomTagService
                 Name = t.Name,
                 Description = t.Description,
                 VisibilityStatus = t.VisibilityStatus,
-                CreatedById = t.CreatedById
+                CreatedById = t.CreatedById,
+                CanEdit = t.CreatedById == requesterUserId  // Owner-only
             })
             .ToListAsync();
 
@@ -49,6 +50,10 @@ public class CustomTagService : ICustomTagService
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<CustomTagSummaryDto>.Unauthorized();
 
+        // Only mod/admin can create a tag with Public visibility
+        if (dto.VisibilityStatus == VisibilityStatus.Public && !PermissionHelper.IsModeratorOrAdmin(requesterUser))
+            return ServiceResult<CustomTagSummaryDto>.Forbidden();
+
         var newTag = new CustomTag
         {
             Name = dto.Name,
@@ -61,7 +66,7 @@ public class CustomTagService : ICustomTagService
         _context.CustomTags.Add(newTag);
         await _context.SaveChangesAsync();
 
-        return ServiceResult<CustomTagSummaryDto>.Ok(ToSummaryDto(newTag));
+        return ServiceResult<CustomTagSummaryDto>.Ok(ToSummaryDto(newTag, requesterUser));
     }
 
 
@@ -73,7 +78,16 @@ public class CustomTagService : ICustomTagService
         var tag = await _context.CustomTags.FindAsync(tagId);
         if (tag == null) return ServiceResult<CustomTagSummaryDto>.NotFound();
 
-        if (tag.CreatedById != requesterUserId && !PermissionHelper.IsModeratorOrAdmin(requesterUser))
+        // Name/description edits require ownership
+        if ((dto.Name != null || dto.Description != null) && !PermissionHelper.CanEditTagMetadata(requesterUser, tag))
+            return ServiceResult<CustomTagSummaryDto>.Forbidden();
+
+        // Visibility changes require mod/admin (or owner reverting to Private)
+        if (dto.VisibilityStatus != null && !PermissionHelper.CanSetTagVisibility(requesterUser, tag))
+            return ServiceResult<CustomTagSummaryDto>.Forbidden();
+
+        // Only mod/admin can promote a tag to Public
+        if (dto.VisibilityStatus == VisibilityStatus.Public && !PermissionHelper.IsModeratorOrAdmin(requesterUser))
             return ServiceResult<CustomTagSummaryDto>.Forbidden();
 
         if (dto.Name != null) tag.Name = dto.Name;
@@ -81,7 +95,7 @@ public class CustomTagService : ICustomTagService
         if (dto.VisibilityStatus != null) tag.VisibilityStatus = dto.VisibilityStatus.Value;
 
         await _context.SaveChangesAsync();
-        return ServiceResult<CustomTagSummaryDto>.Ok(ToSummaryDto(tag));
+        return ServiceResult<CustomTagSummaryDto>.Ok(ToSummaryDto(tag, requesterUser));
     }
 
 
@@ -129,7 +143,8 @@ public class CustomTagService : ICustomTagService
                 Name = t.Name,
                 Description = t.Description,
                 VisibilityStatus = t.VisibilityStatus,
-                CreatedById = t.CreatedById
+                CreatedById = t.CreatedById,
+                CanEdit = t.CreatedById == requesterUserId  // Owner-only
             })
             .ToListAsync();
 
@@ -145,8 +160,10 @@ public class CustomTagService : ICustomTagService
         var tag = await _context.CustomTags.FindAsync(tagId);
         if (tag == null) return ServiceResult<bool>.NotFound("Tag not found.");
 
-        // Only the tag's creator can apply it (private tags) or anyone (public tags)
-        if (tag.VisibilityStatus == VisibilityStatus.Private && tag.CreatedById != requesterUserId)
+        // Creator can always apply; admin can also apply/manage public tags
+        bool canApplyTag = tag.CreatedById == requesterUserId
+            || (PermissionHelper.IsAdministrator(requesterUser) && tag.VisibilityStatus == VisibilityStatus.Public);
+        if (!canApplyTag)
             return ServiceResult<bool>.Forbidden();
 
         var mediaApiRef = await _context.MediaApiRefs.FindAsync(mediaApiRefId);
@@ -208,7 +225,7 @@ public class CustomTagService : ICustomTagService
         if (tag.VisibilityStatus == VisibilityStatus.Private && tag.CreatedById != requesterUserId)
             return ServiceResult<CustomTagSummaryDto>.Forbidden();
 
-        return ServiceResult<CustomTagSummaryDto>.Ok(ToSummaryDto(tag));
+        return ServiceResult<CustomTagSummaryDto>.Ok(ToSummaryDto(tag, requesterUser));
     }
 
 
@@ -262,7 +279,7 @@ public class CustomTagService : ICustomTagService
     }
 
 
-    // Private helper
+    // Private helper — basic overload (no user context; CanEdit defaults to false)
     private static CustomTagSummaryDto ToSummaryDto(CustomTag t) => new()
     {
         Id = t.Id,
@@ -270,5 +287,16 @@ public class CustomTagService : ICustomTagService
         Description = t.Description,
         VisibilityStatus = t.VisibilityStatus,
         CreatedById = t.CreatedById
+    };
+
+    // Overload with user context — computes CanEdit from permission helpers
+    private static CustomTagSummaryDto ToSummaryDto(CustomTag t, AppUser requester) => new()
+    {
+        Id = t.Id,
+        Name = t.Name,
+        Description = t.Description,
+        VisibilityStatus = t.VisibilityStatus,
+        CreatedById = t.CreatedById,
+        CanEdit = PermissionHelper.CanEditTagMetadata(requester, t),
     };
 }

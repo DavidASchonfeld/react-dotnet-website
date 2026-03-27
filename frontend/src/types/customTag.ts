@@ -9,6 +9,7 @@ export interface CustomTagSummary {
     description?: string | null;
     visibilityStatus: VisibilityStatus;
     createdById: string | null;
+    canEdit: boolean;      // Owner can edit name/description and apply/remove the tag
 }
 
 export interface CreateCustomTagRequest {

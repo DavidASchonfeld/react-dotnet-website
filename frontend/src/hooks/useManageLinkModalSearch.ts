@@ -14,6 +14,8 @@
 //   <ManageLinkModal {...modalSearch} initialLinkedIds={...} onAdd={...} onRemove={...} ... />
 
 import { useState } from 'react'
+import { useSelector } from 'react-redux'
+import type { RootState } from '../store/store'
 import {
     useGetMyMediaListsQuery,
     useGetMyCustomTagsQuery,
@@ -37,6 +39,7 @@ interface Candidate {
     firstString: string;
     secondString?: string;
     photographOnLeft?: string;
+    previewThumbnailUrls?: string[];  // mediaList only — used to render a collage thumbnail
     detailType?: DetailItemType;   // drives which detail panel to show
     apiSourceName?: string;        // mediaApiRef only — needed for route link
 }
@@ -58,6 +61,8 @@ export function useManageLinkModalSearch(
     activeType: SearchType, // 'lists' | 'tags' | 'media' — drives which queries fire
     enabled: boolean        // false while the modal is closed; prevents background fetches
 ): ManageLinkModalSearchResult {
+    // Admins can manage all public tags/lists, so they bypass the mineOnly filter
+    const isAdmin = useSelector((state: RootState) => state.auth.roleLevel) === 'Administrator'
     const [page, setPage] = useState(1)
     const [query, setQuery] = useState('')
     const shouldFetch = query.length >= SEARCH_MIN_CHARS // true once user has typed enough to search
@@ -68,12 +73,15 @@ export function useManageLinkModalSearch(
     const [prevActiveType, setPrevActiveType] = useState(activeType)
     const [currentApiSource, setCurrentApiSource] = useState<ExternalApiSourceSummary | null>(null)
     const [lastMediaSearchParams, setLastMediaSearchParams] = useState<{ query: string; mediaTypeId: number } | null>(null)
+    // tracks the last submitted mineOnly so pagination can reuse the same scope
+    const [mineOnly, setMineOnly] = useState(false)
     if (prevActiveType !== activeType) {
         setPrevActiveType(activeType)
         setPage(1)
         setQuery('')
         setCurrentApiSource(null)
         setLastMediaSearchParams(null)
+        setMineOnly(false)
     }
 
     // --- Lists / tags mode ---
@@ -115,8 +123,12 @@ export function useManageLinkModalSearch(
         setQuery(newQuery)
         setPage(1) // always reset to page 1 on a new search
         if (newQuery.length >= SEARCH_MIN_CHARS) {
-            if (filters.searchType === 'lists') triggerSearchLists({ query: newQuery, limit: SEARCH_DEFAULT_LIMIT, mineOnly: true, page: 1 })
-            else triggerSearchTags({ query: newQuery, limit: SEARCH_DEFAULT_LIMIT, mineOnly: true, page: 1 })
+            const isMineOnly = activeType === 'tags'
+                ? !isAdmin  // Admins can apply/manage any public tag; others only their own
+                : filters.subtype === 'mine'  // Lists: respect the user's scope filter
+            setMineOnly(isMineOnly)
+            if (filters.searchType === 'lists') triggerSearchLists({ query: newQuery, limit: SEARCH_DEFAULT_LIMIT, mineOnly: isMineOnly, page: 1 })
+            else triggerSearchTags({ query: newQuery, limit: SEARCH_DEFAULT_LIMIT, mineOnly: isMineOnly, page: 1 })
         }
     }
 
@@ -131,8 +143,8 @@ export function useManageLinkModalSearch(
         }
         if (shouldFetch) {
             // Re-run the active search at the new page
-            if (activeType === 'lists') triggerSearchLists({ query, limit: SEARCH_DEFAULT_LIMIT, mineOnly: true, page: newPage })
-            else triggerSearchTags({ query, limit: SEARCH_DEFAULT_LIMIT, mineOnly: true, page: newPage })
+            if (activeType === 'lists') triggerSearchLists({ query, limit: SEARCH_DEFAULT_LIMIT, mineOnly, page: newPage })
+            else triggerSearchTags({ query, limit: SEARCH_DEFAULT_LIMIT, mineOnly, page: newPage })
         }
         // No-query path: changing `page` causes useGetMyMediaListsQuery/useGetMyCustomTagsQuery to re-fire automatically
     }
@@ -171,8 +183,10 @@ export function useManageLinkModalSearch(
     const candidates: Candidate[] = activeType === 'lists'
         ? (shouldFetch ? listSearchData ?? [] : myListsResult?.items ?? [])
             .filter(l => !EXCLUDED_LIST_CATEGORIES.includes(l.category))
-            .map(l => ({ id: String(l.id), firstString: l.name, secondString: l.description ?? undefined, detailType: 'mediaList' as DetailItemType }))
+            .map(l => ({ id: String(l.id), firstString: l.name, secondString: l.description ?? undefined, previewThumbnailUrls: l.previewThumbnailUrls, detailType: 'mediaList' as DetailItemType }))
         : (shouldFetch ? tagSearchData ?? [] : myTagsResult?.items ?? [])
+            // Admins can manage all public tags; others only see their own
+            .filter(t => t.canEdit || isAdmin)
             .map(t => ({ id: String(t.id), firstString: t.name, detailType: 'tag' as DetailItemType }))
 
     // Next-page exists if the last batch was full (search) or there are more pages in the paginated result (no-query)

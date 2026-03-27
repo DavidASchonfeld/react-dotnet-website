@@ -8,7 +8,7 @@ import {
 } from '../services/apiSlice';
 import { MediaListCategory } from '../types/enums'; // still needed for activeStatusList check
 import type { MediaListSummary } from '../types/mediaList';
-import DrawerModal from './modals/DrawerModal';
+import DrawerModal from './modals/modal_frame/DrawerModal';
 
 interface ReadingStatusButtonProps {
     effectiveMediaApiRefId: number;              // 0 if item not yet persisted to DB
