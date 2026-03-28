@@ -80,6 +80,12 @@ public class CacheItemService : ICacheItemService
         await _context.SaveChangesAsync();
     }
 
+    // Bulk-delete all CacheItem rows; returns the number of rows deleted.
+    public async Task<int> ClearAllAsync()
+    {
+        return await _context.CacheItems.ExecuteDeleteAsync();
+    }
+
     // Sorted-key JSON → SHA256 hex -> deterministic regardless of insertion order
     private static string ComputeHash(SortedDictionary<string, string?> queryParams)
     {

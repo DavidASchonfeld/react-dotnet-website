@@ -48,7 +48,9 @@ public class RawgApiAdapter : IExternalMediaApiAdapter
             Plot = response.Description != null && response.Description != "N/A" ? response.Description : response.DescriptionRaw,
             Country = null, // RAWG doesn't provide country info for games
             Genres = genres,
-            Rated = null // RAWG doesn't provide ESRB rating in the detail endpoint
+            Rated = null, // RAWG doesn't provide ESRB rating in the detail endpoint
+            // GetByExternalIdAsync only fetches from /api/games/{id}
+            Subtype = "game"
         };
     }
 
@@ -82,7 +84,8 @@ public class RawgApiAdapter : IExternalMediaApiAdapter
                 Name          = item.Name,
                 PublishedDate = DateTime.TryParse(item.Released, out var d) ? d : null,
                 ThumbnailUrl  = item.BackgroundImage,
-                CreatorName   = item.Developers?.Count > 0 ? string.Join(", ", item.Developers.Select(d => d.Name)) : null
+                CreatorName   = item.Developers?.Count > 0 ? string.Join(", ", item.Developers.Select(d => d.Name)) : null,
+                Subtype       = "game"
             })
             .ToList();
     }
@@ -104,6 +107,7 @@ public class RawgApiAdapter : IExternalMediaApiAdapter
             {
                 ExternalId = $"publisher-{item.Id}",
                 Name       = item.Name,
+                Subtype    = "publisher"
             })
             .ToList();
     }
@@ -125,6 +129,7 @@ public class RawgApiAdapter : IExternalMediaApiAdapter
             {
                 ExternalId = $"developer-{item.Id}",
                 Name       = item.Name,
+                Subtype    = "developer"
             })
             .ToList();
     }

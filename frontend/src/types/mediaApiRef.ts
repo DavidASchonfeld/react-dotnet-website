@@ -4,6 +4,8 @@ export interface MediaApiRefSummary {
     id: number;
     name: string;
     mediaTypeId: number;
+    // API-specific subtype (e.g. "movie"/"series"/"episode" for OMDB, "game"/"publisher"/"developer" for RAWG)
+    subtype?: string | null;
     creatorName: string | null;
     publishedDate: string | null;
     externalId: string;
@@ -15,6 +17,8 @@ export interface MediaApiRefDetail {
     id: number;
     name: string;
     mediaTypeId: number;
+    // API-specific subtype (e.g. "movie"/"series"/"episode" for OMDB, "game"/"publisher"/"developer" for RAWG)
+    subtype?: string | null;
     creatorName: string | null;
     publishedDate: string | null;
     externalApiSourceId: number;
@@ -49,6 +53,8 @@ export interface FindOrCreateMediaApiRefRequest {
     externalId: string;
     name: string;
     mediaTypeId: number;
+    // API-specific subtype to persist (e.g. "movie"/"series"/"episode" for OMDB, "game"/"publisher"/"developer" for RAWG)
+    subtype?: string | null;
     creatorName?: string | null;
     publishedDate?: string | null;
     thumbnailUrl?: string | null;

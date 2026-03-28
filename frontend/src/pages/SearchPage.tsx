@@ -44,7 +44,7 @@ const PAGE_SIZE = SEARCH_DEFAULT_LIMIT
 export default function SearchPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const navigate = useNavigate()
-    const { roleLevel } = useSelector((state: RootState) => state.auth)
+    const { roleLevel, isAuthenticated } = useSelector((state: RootState) => state.auth)
     const isAdmin = roleLevel === 'Administrator'
 
     // Parse URL parameters
@@ -58,8 +58,9 @@ export default function SearchPage() {
     const urlSearchType = (searchParams.get('type') ?? 'media') as SearchType
 
     const shouldShowFilters = showFiltersParam || (!query && urlSearchType === 'media')
-    // For media: API-specific subtype. For tags/lists: scope ('all' | 'mine'), defaulting to 'all'.
-    const subtypeForNonMedia = subtypeParam ?? DEFAULT_SITE_SEARCH_SUBTYPE
+    // For media: API-specific subtype. For tags/lists: scope ('all' | 'mine').
+    // Authenticated users default to 'mine'; anonymous users default to 'all' (they have no own items).
+    const subtypeForNonMedia = subtypeParam ?? (isAuthenticated ? DEFAULT_SITE_SEARCH_SUBTYPE : 'all')
 
     const { data: activeSources } = useGetActiveApiSourcesQuery()
 
@@ -119,7 +120,7 @@ export default function SearchPage() {
 
     const { data: myListsResult, isLoading: myListsLoading } = useGetMyMediaListsQuery(
         { page },
-        { skip: urlSearchType !== 'lists' || subtypeForNonMedia !== 'mine' || shouldFetch }
+        { skip: !isAuthenticated || urlSearchType !== 'lists' || subtypeForNonMedia !== 'mine' || shouldFetch }
     )
 
     async function handleCreateMediaList(name: string, description: string, visibility: VisibilityStatus) {
@@ -154,7 +155,7 @@ export default function SearchPage() {
 
     const { data: myTagsResult, isLoading: myTagsLoading } = useGetMyCustomTagsQuery(
         { page },
-        { skip: urlSearchType !== 'tags' || subtypeForNonMedia !== 'mine' || shouldFetch }
+        { skip: !isAuthenticated || urlSearchType !== 'tags' || subtypeForNonMedia !== 'mine' || shouldFetch }
     )
 
     async function handleCreateTag(name: string, description: string, visibility: VisibilityStatus) {
@@ -227,6 +228,7 @@ export default function SearchPage() {
                 isModerator={isModerator}
                 isAdmin={isAdmin}
                 roleLevel={roleLevel}
+                isAuthenticated={isAuthenticated}
                 shouldShowFilters={shouldShowFilters}
                 onSearch={handleSearch}
             />
@@ -448,7 +450,7 @@ export default function SearchPage() {
                                             thirdString={list.description ?? undefined}
                                             larger
                                             labelPill={list.category !== MediaListCategory.Standard ? <BadgePill label={
-                                                list.category === MediaListCategory.ReadingStatus ? "Reading Status" :
+                                                list.category === MediaListCategory.VisitingStatus ? "Visiting Status" :
                                                 list.category === MediaListCategory.Library ? "Library" :
                                                 list.category === MediaListCategory.Featured ? "Featured" : ""
                                             } /> : undefined}
@@ -561,6 +563,7 @@ export default function SearchPage() {
                                 externalId: selectedResult.externalId,
                                 name: selectedResult.name,
                                 mediaTypeId: mediaTypeId!,
+                                subtype: selectedResult.subtype,
                                 creatorName: selectedResult.creatorName,
                                 publishedDate: selectedResult.publishedDate,
                                 thumbnailUrl: selectedResult.thumbnailUrl,
@@ -573,6 +576,7 @@ export default function SearchPage() {
                             externalId: selectedResult.externalId,
                             name: selectedResult.name,
                             mediaTypeId: mediaTypeId!,
+                            subtype: selectedResult.subtype,
                             creatorName: selectedResult.creatorName,
                             publishedDate: selectedResult.publishedDate,
                             thumbnailUrl: selectedResult.thumbnailUrl,
@@ -597,6 +601,7 @@ export default function SearchPage() {
                             externalId: selectedResult.externalId,
                             name: selectedResult.name,
                             mediaTypeId: mediaTypeId!,
+                            subtype: selectedResult.subtype,
                             creatorName: selectedResult.creatorName,
                             publishedDate: selectedResult.publishedDate,
                             thumbnailUrl: selectedResult.thumbnailUrl,

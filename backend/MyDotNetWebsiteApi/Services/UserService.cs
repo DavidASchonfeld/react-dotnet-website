@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;  // This import is needed for the lookups into the Database.  For example: _context.MediaItems.Where(i => is.IsApproved).ToListAsync();
 
 public class UserService : IUserService
 {
     private readonly AppDbContext _context;
+    private readonly UserManager<AppUser> _userManager;
 
     // Right now, only adding logger to this service, UserService,
     // since this is the most important/impactful service
@@ -10,9 +12,10 @@ public class UserService : IUserService
     // Reminder: Logger is a built-in C#/.NET program for logging.
     private readonly ILogger<UserService> _logger;
 
-    public UserService(AppDbContext context, ILogger<UserService> logger)
+    public UserService(AppDbContext context, UserManager<AppUser> userManager, ILogger<UserService> logger)
     {
         _context = context;
+        _userManager = userManager;
         _logger = logger;
     }
 
@@ -112,6 +115,43 @@ public class UserService : IUserService
         await _context.SaveChangesAsync();
 
         return ServiceResult<string?>.Ok(user.PreferredTheme);
+    }
+
+
+    public async Task<ServiceResult<string>> UpdateUsernameAsync(string userId, UpdateUsernameDto dto)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return ServiceResult<string>.NotFound();
+
+        // Reject if the new name is already taken by a different user
+        var existing = await _userManager.FindByNameAsync(dto.NewUserName);
+        if (existing != null && existing.Id != userId)
+            return ServiceResult<string>.BadRequest("That username is already taken.");
+
+        // SetUserNameAsync handles normalization and uniqueness enforcement
+        var result = await _userManager.SetUserNameAsync(user, dto.NewUserName);
+        if (!result.Succeeded)
+            return ServiceResult<string>.BadRequest(result.Errors.FirstOrDefault()?.Description ?? "Failed to update username.");
+
+        _logger.LogInformation("User '{UserId}' changed username to '{NewUserName}'", userId, dto.NewUserName);
+
+        return ServiceResult<string>.Ok(user.UserName!);
+    }
+
+
+    public async Task<ServiceResult<bool>> UpdatePasswordAsync(string userId, UpdatePasswordDto dto)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return ServiceResult<bool>.NotFound();
+
+        // ChangePasswordAsync verifies the current password and re-hashes the new one
+        var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+        if (!result.Succeeded)
+            return ServiceResult<bool>.BadRequest(result.Errors.FirstOrDefault()?.Description ?? "Failed to change password.");
+
+        _logger.LogInformation("User '{UserId}' changed their password", userId);
+
+        return ServiceResult<bool>.Ok(true);
     }
 
 

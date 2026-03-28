@@ -1,19 +1,29 @@
-import { useSelector } from "react-redux";
-import type { RootState } from '../store/store';
 import { useGetAllApprovedMediaTypesQuery } from "../services/apiSlice";
 import { getMediaTypeIcon } from "../utils/mediaTypeIcons";
 
-export default function MediaTypeLabel({mediaTypeId, faded}: {mediaTypeId: number, faded?: boolean}){
+// Maps API-specific subtype strings to their display label and emoji
+const SUBTYPE_DISPLAY: Record<string, { icon: string; label: string }> = {
+    // OMDB subtypes
+    movie:     { icon: '🎬', label: 'Movie'      },
+    series:    { icon: '📺', label: 'TV Show'    },
+    episode:   { icon: '📺', label: 'TV Episode' },
+    // RAWG subtypes
+    game:      { icon: '🎮', label: 'Video Game' },
+    publisher: { icon: '🏢', label: 'Publisher'  },
+    developer: { icon: '👨‍💻', label: 'Developer'  },
+}
 
-        const { token } = useSelector((state: RootState) => state.auth);
+export default function MediaTypeLabel({mediaTypeId, faded, subtype}: {mediaTypeId: number, faded?: boolean, subtype?: string | null}){
 
-        // Re-use the same cached query that App.tsx already fired on login.
+        // Approved media types are public — fetch for all users, no token required.
         // RTK Query deduplicates — no extra network request if the data is already in cache.
-        // skip=true when there is no token so this component does not try to fetch unauthenticated.
-        const { data: allTypes } = useGetAllApprovedMediaTypesQuery(undefined, { skip: !token });
+        const { data: allTypes } = useGetAllApprovedMediaTypesQuery(undefined);
         const mediaType = allTypes?.find(t => t.id === mediaTypeId);
 
-
+        // When a subtype is known, use its specific label; otherwise fall back to the MediaType name
+        const subtypeDisplay = subtype ? SUBTYPE_DISPLAY[subtype] : undefined;
+        const icon  = subtypeDisplay?.icon  ?? getMediaTypeIcon(mediaType?.name);
+        const label = subtypeDisplay?.label ?? mediaType?.name ?? '...';
 
         return (
             <>
@@ -36,7 +46,7 @@ export default function MediaTypeLabel({mediaTypeId, faded}: {mediaTypeId: numbe
             */}
             <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-text ${faded ? 'bg-border/60' : 'bg-surface-raised'}`}>
 
-                <span>{getMediaTypeIcon(mediaType?.name)}</span>
+                <span>{icon}</span>
 
                 {/* The "..." below is to demonstrate that the name is still loading.
                 In the mediaTypeSlice, I have a fallback placeholder mediaType
@@ -44,7 +54,7 @@ export default function MediaTypeLabel({mediaTypeId, faded}: {mediaTypeId: numbe
                 the ... will still be replaced by that fallback's mediaType's Name
                 I hardcoded that fallback MediaType's Name to be "Unknown"
                 getMediaTypeIcon returns "❓" for any unrecognized or undefined name */}
-                <span className="hidden sm:inline">{mediaType?.name ?? '❓'}</span>
+                <span className="hidden sm:inline">{label}</span>
             </span>
             </>
         );

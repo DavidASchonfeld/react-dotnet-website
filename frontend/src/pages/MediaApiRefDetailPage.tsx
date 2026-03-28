@@ -29,7 +29,7 @@ import { routes } from '../utils/routes';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
 import type { SearchType } from '../components/SearchBarWithFilters';
 import { useManageLinkModalSearch } from '../hooks/useManageLinkModalSearch';
-import ReadingStatusButton from '../components/ReadingStatusButton';
+import VisitingStatusButton from '../components/VisitingStatusButton';
 import { MediaListCategory } from '../types/enums';
 
 
@@ -102,7 +102,7 @@ export default function MediaApiRefDetailPage() {
     })()
 
     // Shared helper: ensures item exists in DB, returns its DB ID.
-    // Used by both the manage modal and ReadingStatusButton.
+    // Used by both the manage modal and VisitingStatusButton.
     const handleEnsureInDb = async (): Promise<number> => {
         if (effectiveMediaApiRefId > 0) return effectiveMediaApiRefId;
         if (!detail) throw new Error('No detail loaded');
@@ -111,6 +111,7 @@ export default function MediaApiRefDetailPage() {
             externalId: detail.externalId,
             name: detail.name,
             mediaTypeId: detail.mediaTypeId,
+            subtype: detail.subtype,
             creatorName: detail.creatorName,
             publishedDate: detail.publishedDate,
             thumbnailUrl: detail.thumbnailUrl,
@@ -145,7 +146,7 @@ export default function MediaApiRefDetailPage() {
                 <ItemActionsButton
                     buttonClassName="btn btn-secondary w-10 h-10 flex items-center justify-center"
                     {...mediaApiRefToRowItemProps(detail, { includeYear: false, secondStringField: 'date' })}
-                    labelPill={<MediaTypeLabel mediaTypeId={detail.mediaTypeId} faded={true} />}
+                    labelPill={<MediaTypeLabel mediaTypeId={detail.mediaTypeId} faded={true} subtype={detail.subtype} />}
                     onMenuClick={isAuthenticated
                         // Authenticated: full action set (share, manage lists, manage tags)
                         ? mediaApiRefActions({
@@ -165,7 +166,7 @@ export default function MediaApiRefDetailPage() {
 
             <h1 className="h1-styling">
                     {detail.name }
-                    <MediaTypeLabel mediaTypeId={detail.mediaTypeId} />
+                    <MediaTypeLabel mediaTypeId={detail.mediaTypeId} subtype={detail.subtype} />
             </h1> 
             {detail.apiHomepageUrl && (
                     <button
@@ -215,10 +216,10 @@ export default function MediaApiRefDetailPage() {
                 </div>
             )}
 
-            {/* GoodReads-style reading status button — only for authenticated users */}
+            {/* Visiting status button — only for authenticated users */}
             {isAuthenticated && (
                 <div className="flex justify-center">
-                    <ReadingStatusButton
+                    <VisitingStatusButton
                         effectiveMediaApiRefId={effectiveMediaApiRefId}
                         currentLists={lists}
                         onEnsureInDb={handleEnsureInDb}
@@ -264,11 +265,11 @@ export default function MediaApiRefDetailPage() {
                 
             </div>
 
-            <hr className="my-4" />
-
-            {/* -- Lists containing this item — hidden for guests, Featured lists excluded -- */}
+            {/* Divider and "Appears in Lists" section — both hidden for guests */}
             {isAuthenticated && (
                 <>
+                    <hr className="my-4" />
+                    {/* -- Lists containing this item — Featured lists excluded -- */}
                     <h2 className="font-semibold text-lg mb-2">Appears in Lists</h2>
                     {isInDb ? (
                         // Filter out Featured lists before displaying

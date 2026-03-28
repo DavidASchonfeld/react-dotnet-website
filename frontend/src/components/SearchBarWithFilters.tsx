@@ -31,6 +31,7 @@ interface SearchBarWithFiltersProps {
     isModerator: boolean
     isAdmin: boolean
     roleLevel: string | null
+    isAuthenticated?: boolean
     shouldShowFilters?: boolean
     allowedSearchTypes?: SearchType[]  // restrict visible type pills; undefined = show all
     onSearch: (query: string, filters: FilterState, bypassCache: boolean) => void
@@ -44,6 +45,7 @@ export default function SearchBarWithFilters({
     isModerator,
     isAdmin,
     roleLevel,
+    isAuthenticated = true,
     shouldShowFilters = false,
     allowedSearchTypes,
     onSearch,
@@ -258,7 +260,7 @@ export default function SearchBarWithFilters({
                             <div>
                                 <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Scope</p>
                                 <div className="flex gap-2">
-                                    {(SITE_TYPE_SUBTYPES[filters.searchType] ?? []).map(s => (
+                                    {(SITE_TYPE_SUBTYPES[filters.searchType] ?? []).filter(s => isAuthenticated || s.value !== 'mine').map(s => (
                                         <button
                                             key={s.value}
                                             onClick={() => handleSubtypeChange(s.value)}

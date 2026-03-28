@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store/store';
 import {
-    useGetMyReadingStatusListsQuery,
+    useGetMyVisitingStatusListsQuery,
     useAddMediaApiRefToListMutation,
     useRemoveMediaApiRefFromListMutation,
 } from '../services/apiSlice';
@@ -10,24 +10,24 @@ import { MediaListCategory } from '../types/enums'; // still needed for activeSt
 import type { MediaListSummary } from '../types/mediaList';
 import DrawerModal from './modals/modal_frame/DrawerModal';
 
-interface ReadingStatusButtonProps {
+interface VisitingStatusButtonProps {
     effectiveMediaApiRefId: number;              // 0 if item not yet persisted to DB
     currentLists: MediaListSummary[] | undefined; // lists this item appears in (from getMediaApiRefLists)
     onEnsureInDb: () => Promise<number>;          // resolves/creates the DB record, returns the DB ID
 }
 
-export default function ReadingStatusButton({
+export default function VisitingStatusButton({
     effectiveMediaApiRefId,
     currentLists,
     onEnsureInDb,
-}: ReadingStatusButtonProps) {
+}: VisitingStatusButtonProps) {
 
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
     const [showDrawer, setShowDrawer] = useState(false);
     const [isBusy, setIsBusy] = useState(false); // prevents double-clicks during async ops
 
-    // Dedicated endpoint returns only ReadingStatus lists — avoids the DefaultPageSize cap on my-lists
-    const { data: userReadingStatusLists = [] } = useGetMyReadingStatusListsQuery(
+    // Dedicated endpoint returns only VisitingStatus lists — avoids the DefaultPageSize cap on my-lists
+    const { data: userVisitingStatusLists = [] } = useGetMyVisitingStatusListsQuery(
         undefined,
         { skip: !isAuthenticated }
     );
@@ -35,15 +35,15 @@ export default function ReadingStatusButton({
     const [addToList] = useAddMediaApiRefToListMutation();
     const [removeFromList] = useRemoveMediaApiRefFromListMutation();
 
-    // Which ReadingStatus list this item is currently in (mutually exclusive per user)
+    // Which VisitingStatus list this item is currently in (mutually exclusive per user)
     const activeStatusList = currentLists?.find(
-        l => l.category === MediaListCategory.ReadingStatus
+        l => l.category === MediaListCategory.VisitingStatus
     );
 
-    // The default one-click target: "Want to Read" by name, else first in the list
+    // The default one-click target: "Want to Visit" by name, else first in the list
     const defaultList =
-        userReadingStatusLists.find(l => l.name.toLowerCase() === 'want to read') ??
-        userReadingStatusLists[0];
+        userVisitingStatusLists.find(l => l.name.toLowerCase() === 'want to visit') ??
+        userVisitingStatusLists[0];
 
     // Wrap async mutation with busy guard to prevent double-submits
     const withBusy = async (fn: () => Promise<void>) => {
@@ -52,12 +52,12 @@ export default function ReadingStatusButton({
         try { await fn(); } finally { setIsBusy(false); }
     };
 
-    // One-click default: add to "Want to Read" (or open drawer if no RS lists exist yet)
+    // One-click default: add to "Want to Visit" (or open drawer if no VS lists exist yet)
     const handleDefaultAdd = () => withBusy(async () => {
         if (!defaultList) { setShowDrawer(true); return; }
         const resolvedId = await onEnsureInDb();
         await addToList({ listId: defaultList.id, mediaApiRefId: resolvedId }).unwrap();
-        // Backend auto-removes item from any other ReadingStatus list (exclusive group logic)
+        // Backend auto-removes item from any other VisitingStatus list (exclusive group logic)
     });
 
     // Select a specific list from the drawer
@@ -70,7 +70,7 @@ export default function ReadingStatusButton({
             closeDrawer();
         });
 
-    // Remove from whichever ReadingStatus list the item is currently in
+    // Remove from whichever VisitingStatus list the item is currently in
     const handleRemove = (closeDrawer: () => void) =>
         withBusy(async () => {
             if (!activeStatusList) return;
@@ -88,7 +88,7 @@ export default function ReadingStatusButton({
             {/* Wrapper keeps both modes the same width so the layout never shifts */}
             <div className="flex mt-2 w-full max-w-xs">
                 {activeStatusList ? (
-                    // Item IS in a ReadingStatus list — outline button shows active list name
+                    // Item IS in a VisitingStatus list — outline button shows active list name
                     <button
                         className="btn btn-secondary border border-border flex items-center gap-2 w-full"
                         onClick={() => setShowDrawer(true)}
@@ -98,26 +98,26 @@ export default function ReadingStatusButton({
                         <span>{activeStatusList.name}</span>
                     </button>
                 ) : (
-                    // Item is NOT in any ReadingStatus list — primary-colored split button
+                    // Item is NOT in any VisitingStatus list — primary-colored split button
                     // Left (main action) is 6x wider than the right (chevron) via flex-grow ratios
                     <>
-                        {/* Left half (flex-[6]): one-click add to default "Want to Read" list */}
+                        {/* Left half (flex-[6]): one-click add to default "Want to Visit" list */}
                         <button
                             className="btn btn-primary flex items-center gap-2 rounded-r-none flex-[6]"
                             onClick={handleDefaultAdd}
                             disabled={isBusy}
                         >
                             <span>✏️</span>
-                            <span>Want to Read</span>
+                            <span>Want to Visit</span>
                         </button>
                         {/* Divider — slightly darker shade of primary so it's visible within the filled button */}
                         <div className="w-px bg-primary-hover self-stretch" />
-                        {/* Right half (flex-[1]): chevron — opens drawer to pick any ReadingStatus list */}
+                        {/* Right half (flex-[1]): chevron — opens drawer to pick any VisitingStatus list */}
                         <button
                             className="btn btn-primary rounded-l-none flex-[1] px-3"
                             onClick={() => setShowDrawer(true)}
                             disabled={isBusy}
-                            aria-label="Choose reading status"
+                            aria-label="Choose visiting status"
                         >
                             ▾
                         </button>
@@ -125,20 +125,20 @@ export default function ReadingStatusButton({
                 )}
             </div>
 
-            {/* Drawer: pick a ReadingStatus list or remove */}
+            {/* Drawer: pick a VisitingStatus list or remove */}
             <DrawerModal open={showDrawer} onClose={() => setShowDrawer(false)}>
                 {(close) => (
                     <div className="px-4 pb-2">
-                        <h3 className="font-semibold text-base mb-3 text-center">Reading Status</h3>
+                        <h3 className="font-semibold text-base mb-3 text-center">Visiting Status</h3>
 
-                        {userReadingStatusLists.length === 0 && (
+                        {userVisitingStatusLists.length === 0 && (
                             <p className="text-sm text-text-muted text-center py-4">
-                                No Reading Status lists found. Create one from My Lists.
+                                No Visiting Status lists found. Create one from My Lists.
                             </p>
                         )}
 
-                        {/* One row per ReadingStatus list */}
-                        {userReadingStatusLists.map(list => (
+                        {/* One row per VisitingStatus list */}
+                        {userVisitingStatusLists.map(list => (
                             <button
                                 key={list.id}
                                 className="w-full text-left px-3 py-3 rounded-lg flex items-center gap-3 transition-colors"
@@ -153,7 +153,7 @@ export default function ReadingStatusButton({
                             </button>
                         ))}
 
-                        {/* Remove option — only shown when item is in a ReadingStatus list */}
+                        {/* Remove option — only shown when item is in a VisitingStatus list */}
                         {activeStatusList && (
                             <>
                                 <hr className="my-2 border-border" />
@@ -163,7 +163,7 @@ export default function ReadingStatusButton({
                                     disabled={isBusy}
                                 >
                                     <span className="w-5 text-center text-sm" />
-                                    <span>Clear reading status</span>
+                                    <span>Clear visiting status</span>
                                 </button>
                             </>
                         )}

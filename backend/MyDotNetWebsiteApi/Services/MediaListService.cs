@@ -8,7 +8,7 @@ public class MediaListService : IMediaListService
     // Returns true if lists in this category enforce mutual exclusivity per user
     // (adding to one auto-removes the item from all other lists in the same category)
     private static bool IsExclusiveGroupCategory(MediaListCategory category) =>
-        category == MediaListCategory.ReadingStatus;
+        category == MediaListCategory.VisitingStatus;
         // Add future mutually exclusive categories here, e.g.: || category == MediaListCategory.FeelingStatus
 
     public MediaListService(AppDbContext context)
@@ -191,6 +191,7 @@ public class MediaListService : IMediaListService
                     Id = link.MediaApiRef.Id,
                     Name = link.MediaApiRef.Name,
                     MediaTypeId = link.MediaApiRef.MediaTypeId,
+                    Subtype = link.MediaApiRef.Subtype,
                     CreatorName = link.MediaApiRef.CreatorName,
                     PublishedDate = link.MediaApiRef.PublishedDate,
                     ExternalId = link.MediaApiRef.ExternalId,
@@ -439,6 +440,7 @@ public class MediaListService : IMediaListService
             {
                 Name                = dto.Name,
                 MediaTypeId         = dto.MediaTypeId,
+                Subtype             = dto.Subtype,
                 CreatorName         = dto.CreatorName,
                 PublishedDate       = dto.PublishedDate,
                 ExternalApiSourceId = dto.ExternalApiSourceId,
@@ -673,18 +675,17 @@ public class MediaListService : IMediaListService
     // ownedByUserId = someOtherUserId   : that user's public lists (or all of their lists if requester is admin)
     //
     // Note: visibility bypass is admin-only (not moderator) — matches CanSeeList() which uses IsAdministrator, not IsModeratorOrAdmin.
-    public async Task<ServiceResult<List<MediaListSummaryDto>>> SearchListsAsync(string query, int limit, string? ownedByUserId, string requesterUserId, int page = 1)
+    public async Task<ServiceResult<List<MediaListSummaryDto>>> SearchListsAsync(string query, int limit, string? ownedByUserId, string? requesterUserId, int page = 1)
     {
         if (query.Length < AppConstants.SearchMinQueryLength)
             return ServiceResult<List<MediaListSummaryDto>>.BadRequest("Search query must be at least 2 characters.");
 
         limit = Math.Min(limit, AppConstants.SearchResultMaxLimit);  // Server-side cap — ignore whatever limit the client sent
 
-        var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<List<MediaListSummaryDto>>.Unauthorized();
+        var requesterUser = requesterUserId != null ? await _context.Users.FindAsync(requesterUserId) : null;
 
         // Precompute role flag so EF Core can inline it as a SQL constant rather than loading AppUser per-row
-        bool isAdmin = PermissionHelper.IsAdministrator(requesterUser);
+        bool isAdmin = requesterUser != null && PermissionHelper.IsAdministrator(requesterUser);
 
         var queryLower = query.ToLower();
         IQueryable<MediaList> baseQuery = _context.MediaLists;
@@ -739,14 +740,14 @@ public class MediaListService : IMediaListService
     }
 
 
-    // Returns all ReadingStatus-category lists for the user — no pagination, since there are always a small fixed number
-    public async Task<ServiceResult<List<MediaListSummaryDto>>> GetMyReadingStatusListsAsync(string requesterUserId)
+    // Returns all VisitingStatus-category lists for the user — no pagination, since there are always a small fixed number
+    public async Task<ServiceResult<List<MediaListSummaryDto>>> GetMyVisitingStatusListsAsync(string requesterUserId)
     {
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return ServiceResult<List<MediaListSummaryDto>>.Unauthorized();
 
         var lists = await _context.MediaLists
-            .Where(l => l.SubmittedById == requesterUserId && l.Category == MediaListCategory.ReadingStatus)
+            .Where(l => l.SubmittedById == requesterUserId && l.Category == MediaListCategory.VisitingStatus)
             .OrderBy(l => l.Id)
             .Select(l => new MediaListSummaryDto
             {
@@ -798,6 +799,7 @@ public class MediaListService : IMediaListService
                     Id = link.MediaApiRef.Id,
                     Name = link.MediaApiRef.Name,
                     MediaTypeId = link.MediaApiRef.MediaTypeId,
+                    Subtype = link.MediaApiRef.Subtype,
                     CreatorName = link.MediaApiRef.CreatorName,
                     PublishedDate = link.MediaApiRef.PublishedDate,
                     ExternalId = link.MediaApiRef.ExternalId,

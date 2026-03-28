@@ -82,7 +82,9 @@ const baseQueryWithErrorHandling: BaseQueryFn<
         const status = result.error.status
 
         if (status === 401) {
-            if (!isRefreshing) {
+            // Only attempt refresh if the user has an active session — skip for guests.
+            const isAuthenticated = (api.getState() as { auth: { isAuthenticated: boolean } }).auth.isAuthenticated
+            if (!isRefreshing && isAuthenticated) {
                 isRefreshing = true
                 try {
                     // Ask the backend for a new access token using the HttpOnly refresh cookie.
@@ -104,7 +106,7 @@ const baseQueryWithErrorHandling: BaseQueryFn<
                 isRefreshing = false
             }
             // Retry the original request — prepareHeaders now has the new token.
-            result = await baseQuery(args, api, extra)
+            if (isAuthenticated) result = await baseQuery(args, api, extra)
         } else if (status === 'FETCH_ERROR') {
             safeToast.error('Unable to reach the server. Please try again later.')
         } else if (status === 403) {
@@ -504,8 +506,8 @@ export const apiSlice = createApi({
         }),
 
         // Dedicated endpoint — bypasses the DefaultPageSize cap that getMyMediaLists applies
-        getMyReadingStatusLists: builder.query<MediaListSummary[], void>({
-            query: () => '/api/medialist/my-reading-status-lists',
+        getMyVisitingStatusLists: builder.query<MediaListSummary[], void>({
+            query: () => '/api/medialist/my-visiting-status-lists',
             providesTags: ['MediaList'],
         }),
 
@@ -764,6 +766,27 @@ export const apiSlice = createApi({
         }),
 
 
+        // ---- CacheItem Endpoints ----
+
+        // Deletes all query-cache entries (search + detail) from the CacheItem table. Admin-only.
+        clearAllCacheItems: builder.mutation<{ deleted: number }, void>({
+            query: () => ({
+                url: '/api/appsettings/cache-items',
+                method: 'DELETE',
+            }),
+            onQueryStarted: (_, { queryFulfilled }) => {
+                safeToast.promise(queryFulfilled, {
+                    loading: 'Clearing query cache...',
+                    success: (result) => {
+                        const { deleted } = result.data
+                        return deleted > 0 ? `${deleted} cache ${deleted === 1 ? 'entry' : 'entries'} cleared` : 'Cache was already empty'
+                    },
+                    error: '',
+                })
+            },
+        }),
+
+
         // ---- ImageCache Endpoints ----
 
         // Cleans invalid ImageCache entries and non-http MediaApiRef thumbnail URLs. Admin-only.
@@ -833,6 +856,24 @@ export const apiSlice = createApi({
                 body: { theme },
             }),
         }),
+
+        // Changes the caller's username; returns the new username on success.
+        updateUsername: builder.mutation<string, string>({
+            query: (newUserName) => ({
+                url: '/api/user/me/username',
+                method: 'PATCH',
+                body: { newUserName },
+            }),
+        }),
+
+        // Changes the caller's password using their current password for verification.
+        updatePassword: builder.mutation<boolean, { currentPassword: string; newPassword: string }>({
+            query: (body) => ({
+                url: '/api/user/me/password',
+                method: 'PATCH',
+                body,
+            }),
+        }),
     }),
 })
 
@@ -862,7 +903,7 @@ export const {
     useMoveMediaApiRefWithinMediaListMutation,
     useSearchMediaListsQuery,
     useLazySearchMediaListsQuery,
-    useGetMyReadingStatusListsQuery,
+    useGetMyVisitingStatusListsQuery,
     useGetFeaturedListsQuery,
     useCreateFeaturedListMutation,
     // CustomTag
@@ -885,6 +926,7 @@ export const {
     useGetAppGlobalSettingsQuery,
     useToggleGlobalNonSearchCacheMutation,
     useToggleGlobalSearchCacheMutation,
+    useClearAllCacheItemsMutation,        // deletes all CacheItem rows (search + detail)
     // ImageCache
     useDeleteImageCachePlaceholdersMutation,
     useDeleteBigImagesMutation,           // removes poster-api:// blobs + resets PosterUrl values
@@ -895,4 +937,6 @@ export const {
     useGetMediaTypeByIdQuery,
     // User Preferences
     useUpdateUserThemeMutation,
+    useUpdateUsernameMutation,
+    useUpdatePasswordMutation,
 } = apiSlice

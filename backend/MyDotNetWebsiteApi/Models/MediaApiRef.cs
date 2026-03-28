@@ -6,6 +6,8 @@ public class MediaApiRef
     // Basic identifying information
     public string Name { get; set; } = string.Empty; // Title/name from external API
     public int MediaTypeId { get; set; }
+    // API-specific subtype (e.g. "movie"/"series"/"episode" for OMDB, "game"/"publisher"/"developer" for RAWG)
+    public string? Subtype { get; set; }
 
     // Creator info (director, author, etc.) — allows grouping without detail fetch
     public string? CreatorName { get; set; }

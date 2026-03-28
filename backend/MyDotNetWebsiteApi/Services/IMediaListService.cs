@@ -14,8 +14,8 @@ public interface IMediaListService
     // ownedByUserId = null              → all visible (owner || admin || public)
     // ownedByUserId = requesterUserId   → own lists only
     // ownedByUserId = someOtherUserId   → that user's public lists (or all if admin)
-    Task<ServiceResult<List<MediaListSummaryDto>>> SearchListsAsync(string query, int limit, string? ownedByUserId, string requesterUserId, int page = 1);
-    Task<ServiceResult<List<MediaListSummaryDto>>> GetMyReadingStatusListsAsync(string requesterUserId);
+    Task<ServiceResult<List<MediaListSummaryDto>>> SearchListsAsync(string query, int limit, string? ownedByUserId, string? requesterUserId, int page = 1);
+    Task<ServiceResult<List<MediaListSummaryDto>>> GetMyVisitingStatusListsAsync(string requesterUserId);
     Task<ServiceResult<List<MediaListDetailDto>>> GetFeaturedListsAsync();
     Task<ServiceResult<MediaListSummaryDto>> CreateFeaturedListAsync(CreateMediaListDto dto, string requesterUserId);
 }

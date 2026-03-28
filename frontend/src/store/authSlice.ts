@@ -154,6 +154,11 @@ const authSlice = createSlice({
             state.roleLevel = action.payload.roleLevel;
         },
 
+        // Updates the stored username after a successful username change.
+        setUserName: (state, action: PayloadAction<string>) => {
+            state.userName = action.payload;
+        },
+
         // Replaces the logout() function
         // redux-persistent will also clear the persisted localStorage entry when this
         // fires because state becomes null and the persist will sync that.
@@ -231,7 +236,7 @@ const authSlice = createSlice({
 // Export the synchronous functions so components can import and dispatch them.
 // Dispatch: Call this authSlice.ts to run the dispatched functionm
 // To Dispatch:     dispatch(clearCredentials())
-export const { setCredentials, clearCredentials } = authSlice.actions;
+export const { setCredentials, clearCredentials, setUserName } = authSlice.actions;
 
 
 // Export the reducer.

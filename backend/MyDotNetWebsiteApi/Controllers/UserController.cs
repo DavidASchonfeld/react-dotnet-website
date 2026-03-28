@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 // Note: Permissions are not in this file.
@@ -38,6 +39,24 @@ public class UserController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var result = await _userService.UpdateUserThemeAsync(userId, dto.Theme);
+        return result.ToActionResult(this);
+    }
+
+    // Changes the caller's username.
+    [HttpPatch("me/username")]
+    public async Task<IActionResult> UpdateMyUsername([FromBody] UpdateUsernameDto dto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _userService.UpdateUsernameAsync(userId, dto);
+        return result.ToActionResult(this);
+    }
+
+    // Changes the caller's password; requires current password for verification.
+    [HttpPatch("me/password")]
+    public async Task<IActionResult> UpdateMyPassword([FromBody] UpdatePasswordDto dto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _userService.UpdatePasswordAsync(userId, dto);
         return result.ToActionResult(this);
     }
 

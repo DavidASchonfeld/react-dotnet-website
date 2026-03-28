@@ -37,6 +37,7 @@ public class ExternalApiSourceController : ControllerBase
     // Returns only the currently active source per media type — used by the frontend
     // to know which API is live when displaying search UI per media type
     [HttpGet("active")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetActive()
     {
         var activeSources = await _context.ExternalApiSources

@@ -230,7 +230,7 @@ export default function MediaListDetailPage() {
                 </div>
             )}
             {/* Show a category badge for any non-Standard list */}
-            {selectedMediaListDetail.category === MediaListCategory.ReadingStatus && <BadgePill label="Reading Status" />}
+            {selectedMediaListDetail.category === MediaListCategory.VisitingStatus && <BadgePill label="Visiting Status" />}
             {selectedMediaListDetail.category === MediaListCategory.Library && <BadgePill label="Library" />}
             {selectedMediaListDetail.category === MediaListCategory.Featured && <BadgePill label="Featured" />}
 

@@ -17,10 +17,13 @@ public class MediaApiRefController : ControllerBase
 
 
     // Fetch detail by external identifiers. Checks DB first; falls back to external API. Returns Id=0 when not in DB.
+    // Open to anonymous users — guests see public data, authenticated users also get admin info if applicable.
     [HttpGet("byexternal/{apiName}/{externalId}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetByExternal(string apiName, string externalId)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        // Null for guests; populated for authenticated users.
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var result = await _mediaApiRefService.GetDetailByExternalKeyAsync(apiName, externalId, requesterUserId);
         return WrapCachedResponse(result);
     }
@@ -35,7 +38,9 @@ public class MediaApiRefController : ControllerBase
 
     // Proxies the search to the active external API for the given media type.
     // Returns ExternalApiSearchResult items (not MediaApiRef records) — these are raw API results.
+    // Open to anonymous users — guests can search; authenticated users get admin-level cache bypass.
     [HttpGet("search")]
+    [AllowAnonymous]
     [EnableRateLimiting(RateLimiterExtensions.ExternalApiSearchPolicy)]
     public async Task<IActionResult> SearchExternalApi(
         [FromQuery] string q,
@@ -45,7 +50,7 @@ public class MediaApiRefController : ControllerBase
         [FromQuery] string? subtype = null,
         [FromQuery] bool bypassCache = false)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var result = await _mediaApiRefService.SearchThirdPartyApiAsync(q, limit, mediaTypeId, requesterUserId, page, subtype, bypassCache);
         return WrapCachedResponse(result);
     }

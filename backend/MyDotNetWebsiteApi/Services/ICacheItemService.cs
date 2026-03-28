@@ -5,4 +5,7 @@ public interface ICacheItemService
 
     // Insert or update a cache entry; resets ExpiresAt and updates HitCount on hit.
     Task UpsertAsync(string apiSource, string queryType, string mediaType, SortedDictionary<string, string?> queryParams, string responseJson, int ttlDays);
+
+    // Delete all entries from the CacheItem table.
+    Task<int> ClearAllAsync();
 }

@@ -9,4 +9,6 @@ export interface ExternalApiSearchResult {
     creatorName: string | null;
     publishedDate: string | null;
     thumbnailUrl: string | null;
+    // API-specific subtype set by the adapter (e.g. "movie"/"series"/"episode" for OMDB, "game"/"publisher"/"developer" for RAWG)
+    subtype: string | null;
 }

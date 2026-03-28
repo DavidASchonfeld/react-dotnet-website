@@ -10,7 +10,7 @@ public class MediaList
     
 
     public VisibilityStatus VisibilityStatus {get; set;}
-    public MediaListCategory Category {get; set;} = MediaListCategory.Standard; // Determines behavior: Standard, ReadingStatus, Library, or Featured
+    public MediaListCategory Category {get; set;} = MediaListCategory.Standard; // Determines behavior: Standard, VisitingStatus, Library, or Featured
     
 
 

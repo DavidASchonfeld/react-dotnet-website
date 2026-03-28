@@ -12,6 +12,7 @@ import {
     useToggleGlobalSearchCacheMutation,
     useDeleteImageCachePlaceholdersMutation,
     useDeleteBigImagesMutation,
+    useClearAllCacheItemsMutation,
 } from '../services/apiSlice'
 import type { ApiUsageStats, ApiUsageHistory } from '../types/apiUsage'
 import UsageBarChart from '../components/UsageBarChart'
@@ -33,6 +34,7 @@ export default function AdminApiUsagePage() {
     const [toggleGlobalSearchCache, { isLoading: isTogglingGlobalSearch }] = useToggleGlobalSearchCacheMutation()
     const [deleteImageCachePlaceholders, { isLoading: isDeletingPlaceholders }] = useDeleteImageCachePlaceholdersMutation()
     const [deleteBigImages, { isLoading: isDumpingBigImages }] = useDeleteBigImagesMutation()
+    const [clearAllCacheItems, { isLoading: isClearingQueryCache }] = useClearAllCacheItemsMutation()
 
     return (
         <AnimatedPage>
@@ -99,6 +101,17 @@ export default function AdminApiUsagePage() {
                                 buttonLabel="Clean Image Data"
                                 onClick={() => deleteImageCachePlaceholders()}
                                 isLoading={isDeletingPlaceholders}
+                            />
+                        </div>
+
+                        {/* Query Cache clear — wipes all CacheItem rows (search + detail results) */}
+                        <div className="py-3 first:pt-0 last:pb-0">
+                            <MaintenanceRow
+                                label="Query Cache"
+                                description={<>Deletes all <code className="font-mono">CacheItem</code> rows — both search results and detail/lookup results — for all APIs. Fresh results will re-populate the cache on demand.</>}
+                                buttonLabel="Clear Query Cache"
+                                onClick={() => clearAllCacheItems()}
+                                isLoading={isClearingQueryCache}
                             />
                         </div>
 
@@ -249,8 +262,13 @@ function ApiUsageCard({ api, history }: { api: ApiUsageStats; history: ApiUsageH
             </div>
 
             {/* Progress bar (only shown when there is a configured limit) */}
+            {/* Fills by % based on how much you used up that specific API's rate limits.
+                The orange tick is the point in the "progress bar' where you reach your chosen "warning limit"
+                and the red tick is the point in the "progress bar ' where you reach your "auto-block" limit.*/}
             {hasLimit && (
                 <div className="mb-3">
+                    <p className="font-medium text-sm">Progress Bar</p>
+                    <p className="text-sm text-text-muted mb-2">Fills by % based on how much of this API's rate limit has been used. The amber tick marks the warning threshold; the orange tick marks the auto-block threshold.</p>
                     <div className="relative w-full h-2.5 rounded-full bg-surface overflow-visible border border-border">
                         <div
                             className={`h-full rounded-full transition-all duration-500 overflow-hidden ${barColor}`}

@@ -6,7 +6,7 @@ public interface ICustomTagService
     Task<ServiceResult<CustomTagSummaryDto>> UpdateTagAsync(int tagId, UpdateCustomTagDto dto, string requesterUserId);
     Task<ServiceResult<bool>> DeleteTagAsync(int tagId, string requesterUserId);
     // mineOnly = true → return only the requester's own tags (skip public tags from other users)
-    Task<ServiceResult<List<CustomTagSummaryDto>>> SearchTagsAsync(string query, int limit, string requesterUserId, bool mineOnly = false, int page = 1);
+    Task<ServiceResult<List<CustomTagSummaryDto>>> SearchTagsAsync(string query, int limit, string? requesterUserId, bool mineOnly = false, int page = 1);
     Task<ServiceResult<bool>> AddTagToMediaApiRefAsync(int tagId, int mediaApiRefId, string requesterUserId, AddTagToMediaApiRefDto? dto = null);
     Task<ServiceResult<bool>> RemoveTagFromMediaApiRefAsync(int tagId, int mediaApiRefId, string requesterUserId);
 

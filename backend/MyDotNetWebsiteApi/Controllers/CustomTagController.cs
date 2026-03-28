@@ -50,14 +50,17 @@ public class CustomTagController : ControllerBase
         return result.ToActionResult(this);
     }
 
+    // Open to anonymous users — guests see public tags; mineOnly requires authentication.
     [HttpGet("search")]
+    [AllowAnonymous]
     public async Task<IActionResult> SearchTags(
         [FromQuery] string q,
         [FromQuery] int limit = 10,
         [FromQuery] bool mineOnly = false, // when true, returns only the requester's own tags
         [FromQuery] int page = 1)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (mineOnly && requesterUserId == null) return Unauthorized();
         var result = await _customTagService.SearchTagsAsync(q, limit, requesterUserId, mineOnly, page);
         return result.ToActionResult(this);
     }

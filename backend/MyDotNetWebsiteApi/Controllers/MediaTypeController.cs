@@ -20,6 +20,7 @@ public class MediaTypeController : ControllerBase
 
     // Get all approved MediaType objects
     [HttpGet("all-approved")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAllApproved()
     {
         var result = await _mediaTypeService.GetAllApprovedAsync();

@@ -29,12 +29,12 @@ public class MediaListController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    // Returns the user's ReadingStatus lists without pagination — always a small fixed set (seeded at registration)
-    [HttpGet("my-reading-status-lists")]
-    public async Task<IActionResult> GetMyReadingStatusLists()
+    // Returns the user's VisitingStatus lists without pagination — always a small fixed set (seeded at registration)
+    [HttpGet("my-visiting-status-lists")]
+    public async Task<IActionResult> GetMyVisitingStatusLists()
     {
         var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var result = await _mediaListService.GetMyReadingStatusListsAsync(requesterUserId);
+        var result = await _mediaListService.GetMyVisitingStatusListsAsync(requesterUserId);
         return result.ToActionResult(this);
     }
 
@@ -124,7 +124,9 @@ public class MediaListController : ControllerBase
     // ownedByUserId = current user ID  → own lists only
     // ownedByUserId = another user ID  → that user's public lists (or all if admin)
     // mineOnly = true                  → shorthand for ownedByUserId = requesterUserId (avoids exposing GUID to frontend)
+    // Open to anonymous users — guests see public lists; mineOnly requires authentication.
     [HttpGet("search")]
+    [AllowAnonymous]
     public async Task<IActionResult> SearchLists(
         [FromQuery] string q,
         [FromQuery] int limit = 10,
@@ -132,7 +134,8 @@ public class MediaListController : ControllerBase
         [FromQuery] bool mineOnly = false, // when true, overrides ownedByUserId with requester's own ID
         [FromQuery] int page = 1)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (mineOnly && requesterUserId == null) return Unauthorized();
         // mineOnly is a convenience flag so the frontend never needs to know the user's GUID
         var resolvedOwnerId = mineOnly ? requesterUserId : ownedByUserId;
         var result = await _mediaListService.SearchListsAsync(q, limit, resolvedOwnerId, requesterUserId, page);

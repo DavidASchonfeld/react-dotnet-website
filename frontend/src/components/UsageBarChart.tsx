@@ -41,6 +41,8 @@ export default function UsageBarChart({ history }: Props) {
 
     return (
         <div className="mt-3 mb-1">
+            {/* Chart title: "<API Name> Bar Chart" */}
+            <p className="font-medium text-sm mb-1">{history.apiName} Bar Chart</p>
             <ResponsiveContainer width="100%" height={160}>
                 <BarChart
                     data={history.periods}
@@ -78,8 +80,8 @@ export default function UsageBarChart({ history }: Props) {
                             color: 'var(--color-text)',
                         }}
                         labelFormatter={(label) => formatLabel(label as string)}
-                        formatter={(value: number, _name, entry) => [
-                            `${(value as number).toLocaleString()} requests`,
+                        formatter={(value, _name, entry) => [
+                            `${Number(value).toLocaleString()} requests`,
                             (entry.payload as ApiUsagePeriod).isCurrentPeriod ? 'Current period' : 'Requests',
                         ]}
                     />
@@ -90,7 +92,7 @@ export default function UsageBarChart({ history }: Props) {
                             y={history.warningThreshold}
                             stroke={COLOR_WARN}
                             strokeDasharray="4 2"
-                            label={{ value: 'Warn', position: 'insideTopRight', fontSize: 9, fill: COLOR_WARN }}
+                            label={{ value: 'Warning Value Threshold', position: 'insideTopRight', fontSize: 9, fill: COLOR_WARN }}
                         />
                     )}
 
@@ -100,7 +102,7 @@ export default function UsageBarChart({ history }: Props) {
                             y={history.autoBlockThreshold}
                             stroke={COLOR_BLOCK}
                             strokeDasharray="4 2"
-                            label={{ value: 'Block', position: 'insideTopRight', fontSize: 9, fill: COLOR_BLOCK }}
+                            label={{ value: 'Auto-Block Value Threshold', position: 'insideTopRight', fontSize: 9, fill: COLOR_BLOCK }}
                         />
                     )}
 

@@ -7,6 +7,9 @@ public class ExternalApiSearchResult
 
     public string Name {get; set;} = string.Empty;
 
+    // API-specific subtype set by the adapter (e.g. "movie"/"series"/"episode" for OMDB, "game"/"publisher"/"developer" for RAWG)
+    public string? Subtype {get; set;}
+
     // Director, author, developer, etc. — whatever the API provides; null if unavailable
     public string? CreatorName {get; set;}
 

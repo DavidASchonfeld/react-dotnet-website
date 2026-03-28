@@ -9,11 +9,13 @@ public class AppGlobalSettingsController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly ILogger<AppGlobalSettingsController> _logger;
+    private readonly ICacheItemService _cacheItemService;
 
-    public AppGlobalSettingsController(AppDbContext context, ILogger<AppGlobalSettingsController> logger)
+    public AppGlobalSettingsController(AppDbContext context, ILogger<AppGlobalSettingsController> logger, ICacheItemService cacheItemService)
     {
         _context = context;
         _logger = logger;
+        _cacheItemService = cacheItemService;
     }
 
 
@@ -53,6 +55,22 @@ public class AppGlobalSettingsController : ControllerBase
             settings.UseNonSearchQueryCache, requesterUserId);
 
         return Ok(new AppGlobalSettingsDto { UseNonSearchQueryCache = settings.UseNonSearchQueryCache, UseSearchQueryCache = settings.UseSearchQueryCache });
+    }
+
+    // Deletes all query-cache entries from the CacheItem table. Admin-only.
+    [HttpDelete("cache-items")]
+    public async Task<IActionResult> ClearCacheItems()
+    {
+        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUser = await _context.Users.FindAsync(requesterUserId);
+        if (requesterUser == null) return Unauthorized();
+        if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
+
+        var deleted = await _cacheItemService.ClearAllAsync();
+
+        _logger.LogInformation("CacheItems: all {Count} entries cleared by user '{UserId}'", deleted, requesterUserId);
+
+        return Ok(new { deleted });
     }
 
     // Flips the global UseSearchQueryCache flag. Admin-only.

@@ -140,7 +140,7 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
 
     const handleSearchSubmit = (query: string) => {
         const params = new URLSearchParams({
-            q: encodeURIComponent(query),
+            q: query, // URLSearchParams handles encoding; manual encodeURIComponent causes double-encoding
             page: '1',
         })
         if (effectiveSelectedApiSourceId !== null)

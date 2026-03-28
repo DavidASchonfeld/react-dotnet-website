@@ -31,7 +31,7 @@ import type { ExternalApiSourceSummary } from '../types/externalApiSource'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
 import type { DetailItemType } from '../components/modals/detail_panels/DetailSidePanel'
 
-const EXCLUDED_LIST_CATEGORIES = [MediaListCategory.ReadingStatus, MediaListCategory.Featured]
+const EXCLUDED_LIST_CATEGORIES = [MediaListCategory.VisitingStatus, MediaListCategory.Featured]
 
 // Candidate shape — includes optional detail metadata so the modal can open a side panel
 interface Candidate {

@@ -92,7 +92,7 @@ export default function AdminManageAllUsersPage() {
                 {/* Remember, you need "() =>"" so the function
                 only runs when the button is clicked, instead
                 of when the button is rendered. */}
-                <button onClick={ () => { getAllUsers(token!, page).then(d => setUserList(d.items))} }>Refresh</button>
+                <button className="btn btn-secondary w-fit" onClick={() => { getAllUsers(token!, page).then(d => setUserList(d.items)) }}>⟳ Refresh</button>
 
                 {!loading && !error && (
                     <table className="w-full text-sm">

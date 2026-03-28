@@ -23,10 +23,11 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<MediaApiRefDetailDto>> GetDetailByDbIdAsync(int mediaApiRefId, string requesterUserId, bool bypassCache = false)
+    public async Task<ServiceResult<MediaApiRefDetailDto>> GetDetailByDbIdAsync(int mediaApiRefId, string? requesterUserId, bool bypassCache = false)
     {
-        var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null)
+        // Resolve user if authenticated; null means guest access.
+        var requesterUser = requesterUserId != null ? await _context.Users.FindAsync(requesterUserId) : null;
+        if (requesterUserId != null && requesterUser == null)
         {
             _logger.LogWarning("MediaApiRef.GetDetail: User not found for id '{RequesterUserId}' — returning 401", requesterUserId);
             return ServiceResult<MediaApiRefDetailDto>.Unauthorized();
@@ -39,7 +40,8 @@ public class MediaApiRefService : IMediaApiRefService
 
         if (mediaApiRef == null) return ServiceResult<MediaApiRefDetailDto>.NotFound();
 
-        var effectiveBypass = bypassCache && PermissionHelper.IsAdministrator(requesterUser);
+        // Guests cannot bypass cache; only authenticated admins can.
+        var effectiveBypass = requesterUser != null && bypassCache && PermissionHelper.IsAdministrator(requesterUser);
 
         // Caching is active only when the global master switch is true.
         var globalSettings = await _context.AppGlobalSettings.FindAsync(1);
@@ -117,15 +119,14 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<List<ExternalApiSearchResult>>> SearchThirdPartyApiAsync(string query, int limit, int mediaTypeId, string requesterUserId, int page = 1, string? subtype = null, bool bypassCache = false)
+    public async Task<ServiceResult<List<ExternalApiSearchResult>>> SearchThirdPartyApiAsync(string query, int limit, int mediaTypeId, string? requesterUserId, int page = 1, string? subtype = null, bool bypassCache = false)
     {
         if (query.Length < AppConstants.SearchMinQueryLength)
             return ServiceResult<List<ExternalApiSearchResult>>.BadRequest("Search query must be at least 2 characters.");
 
         limit = Math.Min(limit, AppConstants.SearchResultMaxLimit);
 
-        var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<List<ExternalApiSearchResult>>.Unauthorized();
+        var requesterUser = requesterUserId != null ? await _context.Users.FindAsync(requesterUserId) : null;
 
         var activeSource = await _context.ExternalApiSources
             .Include(s => s.MediaType)
@@ -146,7 +147,7 @@ public class MediaApiRefService : IMediaApiRefService
         if (adapter == null)
             return ServiceResult<List<ExternalApiSearchResult>>.NotImplemented($"No adapter implemented for API '{activeSource.ApiName}'.");
 
-        var effectiveBypass = bypassCache && PermissionHelper.IsAdministrator(requesterUser);
+        var effectiveBypass = bypassCache && requesterUser != null && PermissionHelper.IsAdministrator(requesterUser);
 
         // Caching is active only when the global master switch is true.
         var globalSettings = await _context.AppGlobalSettings.FindAsync(1);
@@ -200,10 +201,11 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<ExternalApiSearchResult>> FetchRawItemFromExternalApiAsync(string externalItemId, int externalApiSourceId, string requesterUserId, bool bypassCache = false)
+    public async Task<ServiceResult<ExternalApiSearchResult>> FetchRawItemFromExternalApiAsync(string externalItemId, int externalApiSourceId, string? requesterUserId, bool bypassCache = false)
     {
-        var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null)
+        // Resolve user if authenticated; null means guest access.
+        var requesterUser = requesterUserId != null ? await _context.Users.FindAsync(requesterUserId) : null;
+        if (requesterUserId != null && requesterUser == null)
         {
             _logger.LogWarning("MediaApiRef.FetchRaw: User not found for id '{RequesterUserId}' — returning 401", requesterUserId);
             return ServiceResult<ExternalApiSearchResult>.Unauthorized();
@@ -228,7 +230,8 @@ public class MediaApiRefService : IMediaApiRefService
         if (adapter == null)
             return ServiceResult<ExternalApiSearchResult>.NotImplemented($"No adapter implemented for API '{source.ApiName}'.");
 
-        var effectiveBypass = bypassCache && PermissionHelper.IsAdministrator(requesterUser);
+        // Guests cannot bypass cache; only authenticated admins can.
+        var effectiveBypass = requesterUser != null && bypassCache && PermissionHelper.IsAdministrator(requesterUser);
 
         // Caching is active only when the global master switch is true.
         var globalSettings = await _context.AppGlobalSettings.FindAsync(1);
@@ -276,10 +279,11 @@ public class MediaApiRefService : IMediaApiRefService
     }
 
 
-    public async Task<ServiceResult<MediaApiRefDetailDto>> GetDetailByExternalKeyAsync(string apiName, string externalId, string requesterUserId)
+    public async Task<ServiceResult<MediaApiRefDetailDto>> GetDetailByExternalKeyAsync(string apiName, string externalId, string? requesterUserId)
     {
-        var requesterUser = await _context.Users.FindAsync(requesterUserId);
-        if (requesterUser == null) return ServiceResult<MediaApiRefDetailDto>.Unauthorized();
+        // Resolve user if authenticated; null means guest access — no Unauthorized for guests.
+        var requesterUser = requesterUserId != null ? await _context.Users.FindAsync(requesterUserId) : null;
+        if (requesterUserId != null && requesterUser == null) return ServiceResult<MediaApiRefDetailDto>.Unauthorized();
 
         // Resolve ExternalApiSource by name (case-insensitive)
         var source = await _context.ExternalApiSources
@@ -312,6 +316,7 @@ public class MediaApiRefService : IMediaApiRefService
             Id = 0,
             Name = ext.Name,
             MediaTypeId = source.MediaTypeId,
+            Subtype = ext.Subtype,
             ExternalApiSourceId = source.Id,
             ApiSourceName = source.ApiName,
             ExternalId = ext.ExternalId,
@@ -359,12 +364,11 @@ public class MediaApiRefService : IMediaApiRefService
 
         if (existing != null)
         {
-            // Update ThumbnailUrl if not yet stored (e.g. record was created before this field existed)
-            if (existing.ThumbnailUrl == null && dto.ThumbnailUrl != null)
-            {
-                existing.ThumbnailUrl = dto.ThumbnailUrl;
-                await _context.SaveChangesAsync();
-            }
+            // Update ThumbnailUrl/Subtype if not yet stored (e.g. record was created before these fields existed)
+            bool needsSave = false;
+            if (existing.ThumbnailUrl == null && dto.ThumbnailUrl != null) { existing.ThumbnailUrl = dto.ThumbnailUrl; needsSave = true; }
+            if (existing.Subtype == null && dto.Subtype != null) { existing.Subtype = dto.Subtype; needsSave = true; }
+            if (needsSave) await _context.SaveChangesAsync();
             return ServiceResult<MediaApiRefDetailDto>.Ok(ToDetailDto(existing, null, requesterUser));
         }
 
@@ -372,6 +376,7 @@ public class MediaApiRefService : IMediaApiRefService
         {
             Name = dto.Name,
             MediaTypeId = dto.MediaTypeId,
+            Subtype = dto.Subtype,
             CreatorName = dto.CreatorName,
             PublishedDate = dto.PublishedDate,
             ExternalApiSourceId = dto.ExternalApiSourceId,
@@ -535,6 +540,7 @@ public class MediaApiRefService : IMediaApiRefService
         Id = r.Id,
         Name = r.Name,
         MediaTypeId = r.MediaTypeId,
+        Subtype = r.Subtype,
         CreatorName = r.CreatorName,
         PublishedDate = r.PublishedDate,
         ExternalApiSourceId = r.ExternalApiSourceId,

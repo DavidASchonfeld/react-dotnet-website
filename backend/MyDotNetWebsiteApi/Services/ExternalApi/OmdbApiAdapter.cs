@@ -43,7 +43,9 @@ public class OmdbApiAdapter : IExternalMediaApiAdapter
                 PublishedDate = int.TryParse(item.Year.Length >= 4 ? item.Year[..4] : item.Year, out var y) ? new DateTime(y, 1, 1) : (DateTime?)null,
                 // OMDB returns the string "N/A" (not null) when no poster exists.
                 ThumbnailUrl  = item.Poster == "N/A" ? null : item.Poster,
-                CreatorName   = null  // not available from the search endpoint
+                CreatorName   = null,  // not available from the search endpoint
+                // OMDB returns "movie", "series", or "episode" — lowercase for consistency
+                Subtype       = item.Type?.ToLower()
             })
             .ToList();
     }
@@ -83,7 +85,9 @@ public class OmdbApiAdapter : IExternalMediaApiAdapter
             Runtime       = response.Runtime == "N/A" ? null : response.Runtime,
             Country       = response.Country == "N/A" ? null : response.Country,
             Genres        = response.Genre == "N/A" ? null : response.Genre,
-            Rated         = response.Rated == "N/A" ? null : response.Rated
+            Rated         = response.Rated == "N/A" ? null : response.Rated,
+            // OMDB returns "movie", "series", or "episode" — lowercase for consistency
+            Subtype       = response.Type?.ToLower()
         };
     }
 }
@@ -103,6 +107,8 @@ file class OmdbSearchItem
     public string Year   { get; set; } = string.Empty;
     public string ImdbID { get; set; } = string.Empty;
     public string Poster { get; set; } = string.Empty;
+    // "movie", "series", or "episode"
+    public string? Type  { get; set; }
 }
 
 // Single-item detail response from OMDB's ?i= endpoint.
@@ -118,6 +124,8 @@ file class OmdbDetailResponse
     public string Country  { get; set; } = string.Empty;
     public string Genre    { get; set; } = string.Empty;
     public string Rated    { get; set; } = string.Empty;
+    // "movie", "series", or "episode"
+    public string? Type    { get; set; }
     // "True" or "False" — OMDB signals errors here instead of via HTTP status codes.
     public string Response { get; set; } = "False";
 }

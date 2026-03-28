@@ -25,8 +25,18 @@ export default function About(){
             <div>
                 <p className="font-semibold text-text">Tech Stack</p>
                 <ul className="list-disc list-inside text-text-muted mt-1 space-y-1">
-                    <li><span className="text-text">Front-End:</span> React, Redux, Tailwind CSS</li>
-                    <li><span className="text-text">Back-End:</span> ASP.NET Core, EF Core, SQLite, JWT</li>
+                    {/* Core framework, language, and build tooling */}
+                    <li><span className="text-text">Front-End:</span> React 19, TypeScript, Vite</li>
+                    {/* State management */}
+                    <li><span className="text-text">State:</span> Redux Toolkit, redux-persist</li>
+                    {/* Routing and styling */}
+                    <li><span className="text-text">Routing & Styling:</span> React Router, Tailwind CSS</li>
+                    {/* UI / interaction libraries */}
+                    <li><span className="text-text">UI Libraries:</span> Framer Motion, Recharts, dnd-kit, Sonner, react-select</li>
+                    {/* Backend framework, ORM, auth, and database */}
+                    <li><span className="text-text">Back-End:</span> ASP.NET Core 10, EF Core, SQLite, JWT</li>
+                    {/* API documentation tool */}
+                    <li><span className="text-text">API Docs:</span> Scalar</li>
                 </ul>
             </div>
 

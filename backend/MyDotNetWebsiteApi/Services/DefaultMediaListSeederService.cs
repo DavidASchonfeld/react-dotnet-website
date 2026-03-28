@@ -2,9 +2,9 @@ using Microsoft.EntityFrameworkCore;
 
 public static class DefaultMediaListSeederService
 {
-    // The 4 mutually exclusive reading status lists seeded for every user
-    private static readonly string[] ReadingStatusListNames =
-        ["Want to Read", "Currently Reading", "Read", "Did Not Finish"];
+    // The 4 mutually exclusive visiting status lists seeded for every user
+    private static readonly string[] VisitingStatusListNames =
+        ["Want to Visit", "Currently Visiting", "Visited", "Did Not Finish"];
 
     // The standalone library list seeded for every user (not mutually exclusive)
     private static readonly string LibraryListName = "My Library";
@@ -29,14 +29,14 @@ public static class DefaultMediaListSeederService
             .Select(l => l.Name)
             .ToListAsync();
 
-        // Seed the ReadingStatus lists if they don't already exist
-        foreach (var name in ReadingStatusListNames)
+        // Seed the VisitingStatus lists if they don't already exist
+        foreach (var name in VisitingStatusListNames)
         {
             if (existingProtectedNames.Contains(name)) continue;
             db.MediaLists.Add(new MediaList
             {
                 Name = name,
-                Category = MediaListCategory.ReadingStatus, // Mutually exclusive per-user status tracker
+                Category = MediaListCategory.VisitingStatus, // Mutually exclusive per-user status tracker
                 SubmittedById = user.Id,
                 VisibilityStatus = VisibilityStatus.Private,
                 DateSubmitted = DateTime.UtcNow
