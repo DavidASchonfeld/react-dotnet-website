@@ -131,6 +131,75 @@ Wrapped the table in `overflow-x-auto` with `min-w-[500px]` on the table itself.
 
 ---
 
+## Keyboard Navigation Guide
+
+This site is fully navigable without a mouse. The sections below describe what keys do in each area.
+
+### Browser requirements
+
+Full keyboard navigation (Tab reaching buttons, links, and all controls — not just text inputs) requires a one-time setup step depending on your browser and OS:
+
+| Browser | OS | Setup required |
+|---|---|---|
+| **Chrome** | macOS / Windows | None — works out of the box |
+| **Edge** | macOS / Windows | None — works out of the box |
+| **Firefox** | Windows | None — works out of the box |
+| **Firefox** | macOS | Enable **"Keyboard navigation"** in System Settings → Keyboard |
+| **Safari** | macOS | Enable **both**: (1) Safari → Settings → Advanced → "Press Tab to highlight each item on a webpage" and (2) System Settings → Keyboard → "Keyboard navigation" |
+
+**Recommended browser for testing keyboard accessibility:** Chrome or Edge, where no extra setup is needed.
+
+> The macOS system setting (**System Settings → Keyboard → Keyboard navigation**) is shared across all browsers. Turning it on once fixes Firefox and Safari at the same time.
+
+### Global keys (work anywhere on the page)
+
+| Key | Action |
+|---|---|
+| Tab | Move focus forward to the next interactive element |
+| Shift+Tab | Move focus backward to the previous interactive element |
+| Enter | Activate the focused button or link |
+| Space | Activate the focused button |
+
+A 2px colored ring appears around whichever element currently has focus so you always know where you are.
+
+### Skip link
+
+On any page, press **Tab** once as soon as it loads. A "Skip to content" pill appears in the top-left corner. Press **Enter** to jump focus past the navbar directly to the page content. This lets you avoid tabbing through every navbar element on every page.
+
+### Navbar user menu
+
+1. Tab to the username / avatar button in the top-right corner.
+2. Press **Enter** or **Space** to open the dropdown menu.
+3. Once the menu is open, use **Arrow Down** / **Arrow Up** to move between menu items. (Arrow keys only have this effect inside an open menu — elsewhere they scroll the page as normal.)
+4. Press **Home** to jump to the first item or **End** to jump to the last.
+5. Press **Enter** or **Space** on any item to activate it.
+6. Press **Escape** to close the menu and return focus to the button.
+
+### Search bar
+
+1. Tab to the search input field and type your query.
+2. Press **Enter** to submit the search.
+3. Alternatively, Tab forward to the search icon button and press **Enter** or **Space** to submit.
+4. Tab to the clear (**✕**) button and press **Enter** or **Space** to clear the current query.
+
+### Modals and drawers (any popup or dialog)
+
+- **Tab** / **Shift+Tab** cycle focus through all controls inside the modal. Focus cannot leave the modal while it is open.
+- **Escape** closes the modal and returns focus to the element that originally opened it.
+
+### List rows (search results, media lists, tags, etc.)
+
+- Tab to any row in a list.
+- Press **Enter** or **Space** to open it (same as clicking).
+
+### Pagination
+
+- Tab to the **Previous** or **Next** page button.
+- Press **Enter** or **Space** to go to that page.
+- The current page number is announced automatically to screen readers when it changes.
+
+---
+
 ## Summary Table
 
 | Change | Keyboard | Screen Reader | Mobile | Colorblind | Motion-sensitive |

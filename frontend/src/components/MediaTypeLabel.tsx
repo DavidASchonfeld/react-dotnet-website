@@ -1,17 +1,6 @@
 import { useGetAllApprovedMediaTypesQuery } from "../services/apiSlice";
 import { getMediaTypeIcon } from "../utils/mediaTypeIcons";
-
-// Maps API-specific subtype strings to their display label and emoji
-const SUBTYPE_DISPLAY: Record<string, { icon: string; label: string }> = {
-    // OMDB subtypes
-    movie:     { icon: '🎬', label: 'Movie'      },
-    series:    { icon: '📺', label: 'TV Show'    },
-    episode:   { icon: '📺', label: 'TV Episode' },
-    // RAWG subtypes
-    game:      { icon: '🎮', label: 'Video Game' },
-    publisher: { icon: '🏢', label: 'Publisher'  },
-    developer: { icon: '👨‍💻', label: 'Developer'  },
-}
+import { SUBTYPE_DISPLAY } from "../constants"; // subtype icon/label map lives in constants to keep this file component-only
 
 export default function MediaTypeLabel({mediaTypeId, faded, subtype}: {mediaTypeId: number, faded?: boolean, subtype?: string | null}){
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import SearchBar from './SearchBar'
 import RoleBadge from './administrator_related/RoleBadge'
-import { API_SUBTYPES, SITE_TYPE_SUBTYPES, DEFAULT_SITE_SEARCH_SUBTYPE } from '../constants'
+import { API_SUBTYPES, API_SOURCE_META, SITE_TYPE_SUBTYPES, DEFAULT_SITE_SEARCH_SUBTYPE, SUBTYPE_DISPLAY } from '../constants'
 import type { ExternalApiSourceSummary } from '../types/externalApiSource'
 import { canSearch } from '../utils/searchUtils'
 import type { SearchType } from '../utils/searchUtils'
@@ -95,11 +95,14 @@ export default function SearchBarWithFilters({
 
     const urlChips = [
         SEARCH_TYPES.find(t => t.id === urlFilters.searchType)?.label ?? urlFilters.searchType,
-        urlFilters.searchType === 'media' ? lastSearchResultsThirdPartyApiDetails?.apiName : undefined,
-
-        // Look up the display label for the selected subtype within this API's subtype list
+        // Prefix the API name with its emoji (e.g. "🎬 OMDB") for visual clarity in the chip strip
         urlFilters.searchType === 'media' && lastSearchResultsThirdPartyApiDetails
-            ? (API_SUBTYPES[lastSearchResultsThirdPartyApiDetails.apiName] ?? []).find(s => s.value === urlFilters.subtype)?.label
+            ? `${API_SOURCE_META[lastSearchResultsThirdPartyApiDetails.apiName]?.icon ?? ''} ${lastSearchResultsThirdPartyApiDetails.apiName}`.trim()
+            : undefined,
+
+        // Use SUBTYPE_DISPLAY for icon + label (e.g. "🎬 Movie") instead of raw API_SUBTYPES label
+        urlFilters.searchType === 'media' && urlFilters.subtype
+            ? `${SUBTYPE_DISPLAY[urlFilters.subtype]?.icon ?? ''} ${SUBTYPE_DISPLAY[urlFilters.subtype]?.label ?? urlFilters.subtype}`.trim()
             : undefined,
         urlFilters.searchType !== 'media'
             ? (SITE_TYPE_SUBTYPES[urlFilters.searchType] ?? []).find(s => s.value === urlFilters.subtype)?.label
@@ -214,19 +217,29 @@ export default function SearchBarWithFilters({
                             <div>
                                 <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">API</p>
                                 <div className="flex flex-wrap gap-2">
-                                    {activeApiSources.map(source => (
-                                        <button
-                                            key={source.id}
-                                            onClick={() => handleApiSourceChange(source.id)}
-                                            className={`px-3 py-1 rounded-full border text-sm transition-colors ${
-                                                selectedFilterThirdPartyApiId === source.id
-                                                    ? 'bg-primary text-white border-primary'
-                                                    : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
-                                            }`}
-                                        >
-                                            {source.apiName}
-                                        </button>
-                                    ))}
+                                    {activeApiSources.map(source => {
+                                        // Look up emoji + description (e.g. 🎬 / "Movies & TV Shows" for OMDB)
+                                        const meta = API_SOURCE_META[source.apiName]
+                                        return (
+                                            <button
+                                                key={source.id}
+                                                onClick={() => handleApiSourceChange(source.id)}
+                                                // a11y: aria-label gives screen readers the full description
+                                                aria-label={meta ? `${source.apiName} — ${meta.description}` : source.apiName}
+                                                // a11y: aria-pressed announces selected/deselected state
+                                                aria-pressed={selectedFilterThirdPartyApiId === source.id}
+                                                className={`px-3 py-1 rounded-full border text-sm transition-colors ${
+                                                    selectedFilterThirdPartyApiId === source.id
+                                                        ? 'bg-primary text-white border-primary'
+                                                        : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
+                                                }`}
+                                            >
+                                                {/* a11y: aria-hidden hides decorative emoji (aria-label covers it) */}
+                                                {meta && <span aria-hidden="true">{meta.icon} </span>}
+                                                {source.apiName}
+                                            </button>
+                                        )
+                                    })}
                                 </div>
                             </div>
                         )}
@@ -238,19 +251,28 @@ export default function SearchBarWithFilters({
                                     Search for
                                 </p>
                                 <div className="flex flex-wrap gap-2">
-                                    {availableSubtypes.map(sub => (
-                                        <button
-                                            key={sub.value}
-                                            onClick={() => handleSubtypeChange(sub.value === filters.subtype ? '' : sub.value)}
-                                            className={`px-3 py-1 rounded-full border text-sm transition-colors ${
-                                                filters.subtype === sub.value
-                                                    ? 'bg-primary/20 text-primary border-primary/40'
-                                                    : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
-                                            }`}
-                                        >
-                                            {sub.label}
-                                        </button>
-                                    ))}
+                                    {availableSubtypes.map(sub => {
+                                        // Use SUBTYPE_DISPLAY for consistent icon + label across the app
+                                        const display = SUBTYPE_DISPLAY[sub.value]
+                                        return (
+                                            <button
+                                                key={sub.value}
+                                                onClick={() => handleSubtypeChange(sub.value === filters.subtype ? '' : sub.value)}
+                                                // a11y: aria-label gives full description; aria-pressed announces selection state
+                                                aria-label={`Filter by ${display?.label ?? sub.label}`}
+                                                aria-pressed={filters.subtype === sub.value}
+                                                className={`px-3 py-1 rounded-full border text-sm transition-colors ${
+                                                    filters.subtype === sub.value
+                                                        ? 'bg-primary/20 text-primary border-primary/40'
+                                                        : 'border-border text-text/70 hover:border-primary/60 hover:text-text'
+                                                }`}
+                                            >
+                                                {/* a11y: aria-hidden hides decorative emoji (aria-label covers it) */}
+                                                {display?.icon && <span aria-hidden="true">{display.icon} </span>}
+                                                {display?.label ?? sub.label}
+                                            </button>
+                                        )
+                                    })}
                                 </div>
                             </div>
                         )}

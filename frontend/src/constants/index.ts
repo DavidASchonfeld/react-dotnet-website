@@ -23,7 +23,7 @@ export const DEFAULT_SITE_SEARCH_SUBTYPE = 'mine'
 // Options for non-media (aka non-3rd-Party-API) Search Types (Lists, Tags).
 // Keys match SearchType values; mirrors the API_SUBTYPES pattern below.
 export const SITE_TYPE_SUBTYPES: Record<string, { value: string; label: string }[]> = {
-        lists: [
+    lists: [
         { value: 'all',  label: 'All'  },
         { value: 'mine', label: 'Mine' }
     ],
@@ -31,6 +31,25 @@ export const SITE_TYPE_SUBTYPES: Record<string, { value: string; label: string }
         { value: 'all',  label: 'All'  },
         { value: 'mine', label: 'Mine' }
     ],
+}
+
+// Primary emoji and human-readable description for each 3rd-party API source.
+// Used to label API selector buttons and generate accessible aria-labels.
+export const API_SOURCE_META: Record<string, { icon: string; description: string }> = {
+    OMDB: { icon: '🎬', description: 'Movies & TV Shows' },
+    RAWG: { icon: '🎮', description: 'Video Games'       },
+}
+
+// Maps API-specific subtype strings to their display label and emoji — shared across components
+export const SUBTYPE_DISPLAY: Record<string, { icon: string; label: string }> = {
+    // OMDB subtypes
+    movie:     { icon: '🎬', label: 'Movie'      },
+    series:    { icon: '📺', label: 'TV Show'    },
+    episode:   { icon: '📺', label: 'TV Episode' },
+    // RAWG subtypes
+    game:      { icon: '🎮', label: 'Video Game' },
+    publisher: { icon: '🏢', label: 'Publisher'  },
+    developer: { icon: '👨‍💻', label: 'Developer'  },
 }
 
 // API-specific search sub-types shown in AdvancedSearch and SearchResultsPage.
