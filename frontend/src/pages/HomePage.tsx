@@ -14,9 +14,21 @@ export default function HomePage() {
         <AnimatedPage>
         <div className="page flex-col gap-8">
 
-            <div className="text-center">
-                <h1 className="h1-styling">Media Favorites</h1>
-                <p className="text-text/70 mt-1">Browse movies, books, music, and more — then build your own lists.</p>
+            {/* Hero section: dot-grid texture adds depth without any images */}
+            <div className="relative text-center py-4 px-2 rounded-xl overflow-hidden">
+                {/* CSS-only dot-grid texture overlay — uses border color so it adapts to every theme */}
+                <div
+                    className="absolute inset-0 rounded-xl opacity-40 pointer-events-none"
+                    style={{
+                        backgroundImage: 'radial-gradient(circle, var(--color-border) 1px, transparent 1px)',
+                        backgroundSize: '20px 20px',
+                    }}
+                />
+                {/* Accent bar above the title: gradient from primary → transparent */}
+                <div className="page-header-accent mx-auto w-24" />
+                {/* Larger heading for stronger visual impact */}
+                <h1 className="text-4xl font-bold tracking-tight relative">Media Favorites</h1>
+                <p className="text-text/70 mt-2 text-base relative">Browse movies, books, music, and more — then build your own lists.</p>
             </div>
 
             {isError && (

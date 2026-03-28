@@ -19,6 +19,8 @@ interface MinimizableIconTextButtonProps {
     ariaExpanded?: boolean;
     // a11y: optional aria-controls — links this button to the element it controls (e.g. a dropdown id)
     ariaControls?: string;
+    // active: highlights this button as the current page using the .nav-active CSS class
+    active?: boolean;
 }
 
 export default function MinimizableIconTextButton({
@@ -31,6 +33,7 @@ export default function MinimizableIconTextButton({
     ariaLabel,
     ariaExpanded,
     ariaControls,
+    active = false,
 }: MinimizableIconTextButtonProps) {
 
     // autoSmall is only used when mode === "auto".
@@ -96,7 +99,8 @@ export default function MinimizableIconTextButton({
     //   -- gap-0 removes the gap between the icon and the now-invisible label.
     //      Without this, the 8px gap still takes up space to the right of the icon,
     //      which offsets it slightly left of true center even with justify-center.
-    const buttonClass = `flex items-center${effectiveMinimized ? " justify-center gap-0" : " gap-2"} px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 transition-colors${!isTop ? " w-full" : ""}`;
+    // Active state uses .nav-active (primary tint + primary text); inactive keeps hover-only highlight
+    const buttonClass = `flex items-center${effectiveMinimized ? " justify-center gap-0" : " gap-2"} px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors${active ? " nav-active" : " hover:bg-white/10"}${!isTop ? " w-full" : ""}`;
 
     return (
         <button

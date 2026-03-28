@@ -30,6 +30,7 @@ import ManageLinkModal from '../components/modals/ManageLinkModal';
 import type { SearchType } from '../components/SearchBarWithFilters';
 import { useManageLinkModalSearch } from '../hooks/useManageLinkModalSearch';
 import VisitingStatusButton from '../components/VisitingStatusButton';
+import ListCollageThumb from '../components/ListCollageThumb';
 import { MediaListCategory } from '../types/enums';
 
 
@@ -279,7 +280,7 @@ export default function MediaApiRefDetailPage() {
                                 <div className="rounded-lg border border-border overflow-hidden">
                                     {visibleLists.map(list => (
                                         <RowItemStyling key={list.id} onClick={() => navigate(routes.mediaList(list.id))}>
-                                            <RowItemContent firstString={list.name} secondString={list.description ?? undefined} />
+                                            <RowItemContent firstString={list.name} secondString={list.description ?? undefined} customLeftElement={<ListCollageThumb urls={list.previewThumbnailUrls} />} />
                                         </RowItemStyling>
                                     ))}
                                 </div>

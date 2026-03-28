@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSelector, useDispatch } from "react-redux";
 
@@ -89,6 +89,8 @@ export default function Navbar({ onMinimizedChange }: NavbarProps) {
 
     // Importing ability to Redirect
     const navigate = useNavigate();  // set up useNavigate React.js to use it later (just like with useAuth()  ).
+    // Track current path to highlight the active nav item
+    const { pathname } = useLocation();
 
 
     const handleSearchSubmit = (query: string) => {
@@ -148,9 +150,10 @@ export default function Navbar({ onMinimizedChange }: NavbarProps) {
 
                 {/* title="..." is the browser's native tooltip — shown on hover (desktop only; no touch support).
                     Useful in minimized mode where the text label is hidden. */}
-                <MinimizableIconTextButton title="Home" icon="⌂" label="Home" onClick={() => navigate("/")} mode={effectiveMinimized ? "minimized" : "expanded"} isTop={true} />
+                {/* active prop highlights the button whose route matches the current page */}
+                <MinimizableIconTextButton title="Home" icon="⌂" label="Home" onClick={() => navigate("/")} mode={effectiveMinimized ? "minimized" : "expanded"} isTop={true} active={pathname === "/"} />
 
-                <MinimizableIconTextButton title="About" icon="ⓘ" label="About" onClick={() => navigate("/about")} mode={effectiveMinimized ? "minimized" : "expanded"} isTop={true} />
+                <MinimizableIconTextButton title="About" icon="ⓘ" label="About" onClick={() => navigate("/about")} mode={effectiveMinimized ? "minimized" : "expanded"} isTop={true} active={pathname === "/about"} />
 
                 {effectiveMinimized ? (
                         // a11y: aria-label names the icon-only search button when the navbar is minimized

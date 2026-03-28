@@ -41,7 +41,8 @@ export default function RowItemContent({ firstString, secondString, thirdString,
                     {customLeftElement}
                 </div>
             ) : (
-                <div className={`shrink-0 bg-border flex items-center justify-center overflow-hidden relative
+                // shadow lifts the poster image off the flat row surface, adding perceived depth
+                <div className={`shrink-0 bg-border flex items-center justify-center overflow-hidden relative shadow-[0_2px_8px_rgba(0,0,0,0.28)]
                     ${larger
                         ? 'self-stretch w-16 rounded'
                         : 'rounded aspect-square w-10 h-10'

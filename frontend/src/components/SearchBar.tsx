@@ -160,7 +160,8 @@ export default function SearchBar({
                     onChange={e => handleInputChange(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={selectedSource ? `${selectedSource.apiName}…` : searchType === 'lists' ? 'Lists…' : searchType === 'tags' ? 'Tags…' : 'Search…'}
-                    className="form-input pl-3 pr-8 py-1 text-sm w-full rounded-lg"
+                    /* rounded-full: pill shape for the search input; bg-primary/5 adds a barely-visible tint */
+                    className={`form-input pl-3 pr-8 py-1 text-sm w-full rounded-full ${isTop ? 'bg-primary/5' : ''}`}
                     // a11y: aria-expanded tells screen readers whether the typeahead dropdown is currently open
                     aria-expanded={mode === 'typeahead' ? isDropdownOpen : undefined}
                     // a11y: aria-controls links the input to its dropdown listbox for screen readers

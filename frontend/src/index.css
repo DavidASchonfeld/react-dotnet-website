@@ -42,6 +42,16 @@
   }
 }
 
+/* --- Polaroid card theming variables ---
+       Off-white for dark themes (feels like a real photo print);
+       pure white for light themes.
+       Hardcoded since these are non-semantic and intentionally not theme-color-tinted. */
+:root {
+  --polaroid-bg:           #f5f5f0; /* Warm off-white — looks like a real photo print */
+  --polaroid-text:         #1a1a1a; /* Dark caption text on the white polaroid border */
+  --polaroid-creator-text: #555555; /* Lighter muted text for the creator line */
+}
+
 /* --- Default -- */
 :root {
   font-family: 'Inter Variable', system-ui, sans-serif;
@@ -113,6 +123,7 @@ a:hover {
   --color-danger:         #dc2626; /* red-600 */
   --color-accent:         #d97706; /* amber-600 */
   --color-btn-hover:      rgba(0, 0, 0, 0.07); /* subtle dark overlay on light bg */
+  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
@@ -148,6 +159,7 @@ a:hover {
   --color-danger:         #dc2626;
   --color-accent:         #d97706;
   --color-btn-hover:      rgba(0, 0, 0, 0.07);
+  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
@@ -183,6 +195,7 @@ a:hover {
   --color-danger:         #dc2626;
   --color-accent:         #ca8a04; /* yellow-600 */
   --color-btn-hover:      rgba(0, 0, 0, 0.07);
+  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
@@ -218,6 +231,7 @@ a:hover {
   --color-danger:         #dc2626;
   --color-accent:         #d97706;
   --color-btn-hover:      rgba(0, 0, 0, 0.07);
+  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
@@ -253,6 +267,7 @@ a:hover {
   --color-danger:         #dc2626;
   --color-accent:         #d97706;
   --color-btn-hover:      rgba(0, 0, 0, 0.07);
+  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
@@ -288,6 +303,7 @@ a:hover {
   --color-danger:         #dc2626;
   --color-accent:         #65a30d; /* lime-600 */
   --color-btn-hover:      rgba(0, 0, 0, 0.07);
+  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
@@ -323,7 +339,346 @@ a:hover {
   --color-danger:         #dc2626;
   --color-accent:         #d97706;
   --color-btn-hover:      rgba(0, 0, 0, 0.07);
+  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
+
+/* ─────────────────────────────────────────────
+   THEME: glass-dark
+   Glassmorphism — frosted semi-transparent panels over a vivid gradient background.
+   Requires backdrop-filter support (all modern browsers).
+────────────────────────────────────────────── */
+[data-theme="glass-dark"] {
+  --color-bg:             #0a0f1e; /* Deep navy base so gradient layers pop through */
+  --color-surface:        rgba(255, 255, 255, 0.18); /* Frosted glass panel */
+  --color-surface-raised: rgba(255, 255, 255, 0.30); /* Slightly more opaque for modals */
+  --color-border:         rgba(255, 255, 255, 0.32); /* Soft glass edge */
+  --color-text:           #e8eeff; /* Near-white, slightly blue-tinted */
+  --color-text-muted:     #8899cc; /* Muted blue-slate */
+  --color-primary:        #7eb8f7; /* Soft sky blue — readable on frosted bg */
+  --color-primary-hover:  #5aa0ee;
+  --color-danger:         #ff6b81;
+  --color-accent:         #ffd166; /* Warm gold */
+  --color-btn-hover:      rgba(255, 255, 255, 0.10);
+}
+/* Gradient background that "bleeds through" the glass panels */
+[data-theme="glass-dark"] body {
+  background: radial-gradient(ellipse at 20% 20%, #1a3a6e 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 80%, #2d1060 0%, transparent 60%),
+              #0a0f1e;
+}
+/* Frosted blur effect on cards and modals for glass theme */
+[data-theme="glass-dark"] .card,
+[data-theme="glass-dark"] .modal-panel,
+[data-theme="glass-dark"] .drawer-panel {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+
+/* ─────────────────────────────────────────────
+   THEME: terminal-dark
+   Retro hacker aesthetic — monospace font, phosphor green, CRT scanlines.
+────────────────────────────────────────────── */
+[data-theme="terminal-dark"] {
+  --color-bg:             #000000; /* True black CRT screen */
+  --color-surface:        #0d0d0d; /* Slightly lighter panel */
+  --color-surface-raised: #141414; /* Modal background */
+  --color-border:         #1f3a1f; /* Dark green border */
+  --color-text:           #33ff33; /* Phosphor green */
+  --color-text-muted:     #1a8c1a; /* Dimmer green */
+  --color-primary:        #33ff33; /* Phosphor green accent */
+  --color-primary-hover:  #22dd22;
+  --color-danger:         #ff3333; /* Red error */
+  --color-accent:         #ffaa00; /* Amber — secondary phosphor */
+  --color-btn-hover:      rgba(51, 255, 51, 0.08); /* Green overlay */
+}
+/* Monospace font stack for terminal feel */
+[data-theme="terminal-dark"] {
+  font-family: 'Courier New', Courier, 'Lucida Console', monospace;
+}
+/* Sharp corners — no rounded edges on a CRT terminal */
+[data-theme="terminal-dark"] .card,
+[data-theme="terminal-dark"] .modal-panel,
+[data-theme="terminal-dark"] .btn,
+[data-theme="terminal-dark"] .row-item {
+  border-radius: 0;
+}
+/* Subtle CRT scanline overlay using a repeating gradient */
+[data-theme="terminal-dark"] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+}
+
+
+/* ─────────────────────────────────────────────
+   THEME: cream-office
+   Warm cream office aesthetic — comfortable light theme with serif headings.
+────────────────────────────────────────────── */
+[data-theme="cream-office"] {
+  --color-bg:             #f0e8d0; /* Real newsprint cream — warm but not tan */
+  --color-surface:        #f4edd8; /* Aged paper panels — warm but light */
+  --color-surface-raised: #ede3c8; /* Slightly deeper raised surface */
+  --color-border:         #c8b8a0; /* Warm tan border — visible but not harsh */
+  --color-text:           #1a1a1a; /* Near-black — strong ink contrast */
+  --color-text-muted:     #6b5d4f; /* Warm brown muted text */
+  --color-primary:        #8b1a1a; /* Deep editorial red */
+  --color-primary-hover:  #6b0000;
+  --color-danger:         #dc2626;
+  --color-accent:         #8b6914; /* Warm gold accent */
+  --color-btn-hover:      rgba(0, 0, 0, 0.07);
+  --polaroid-bg:          #f4edd8; /* Aged paper to match surface */
+}
+/* Serif font applied to root; auto-smoothing makes letterforms heavier like ink on paper */
+[data-theme="cream-office"] {
+  font-family: Georgia, 'Times New Roman', serif;
+  -webkit-font-smoothing: auto; /* subpixel rendering = heavier strokes, more like printed ink */
+}
+/* Tighten letter-spacing on headings specifically — looks better at large sizes */
+[data-theme="cream-office"] .h1-styling,
+[data-theme="cream-office"] .h2-styling {
+  letter-spacing: -0.01em;
+}
+/* Page background: tiled texture image */
+[data-theme="cream-office"] body {
+  background-image: url("/cream_office_400x400.svg");
+  background-size: 400px 400px;
+}
+/* Full-page texture overlay via multiply blend — texture shows through ALL content, not just background */
+[data-theme="cream-office"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none; /* never blocks clicks */
+  background-image: url("/cream_office_400x400.svg");
+  background-size: 400px 400px;
+  mix-blend-mode: multiply; /* light texture areas = no-op; dark areas darken all content below */
+  opacity: 0.55;
+}
+/* Real texture on card surfaces too — body texture is hidden under card's own background */
+[data-theme="cream-office"] .card {
+  background-image: url("/cream_office_400x400.svg");
+  background-size: 400px 400px;
+}
+
+
+
+/* ─────────────────────────────────────────────
+   THEME: neon-dark
+   Cyberpunk / dark club — near-black with vivid neon glow accents.
+────────────────────────────────────────────── */
+[data-theme="neon-dark"] {
+  --color-bg:             #05050e; /* Near-black base */
+  --color-surface:        #0d0d22; /* Dark surface — clearly visible against bg */
+  --color-surface-raised: #14143a; /* Modal/dropdown — noticeably lighter */
+  --color-border:         #00ccee; /* Bright neon cyan border — immediately visible */
+  --color-text:           #e8f0ff; /* Cool blue-white text */
+  --color-text-muted:     #44ccee; /* Vivid cyan muted text */
+  --color-primary:        #00eeff; /* Neon cyan */
+  --color-primary-hover:  #00ccdd;
+  --color-danger:         #ff0066; /* Hot pink for danger */
+  --color-accent:         #ff00ff; /* Magenta accent */
+  --color-btn-hover:      rgba(0, 238, 255, 0.12); /* Cyan glow overlay */
+}
+/* Strong neon glow on primary buttons */
+[data-theme="neon-dark"] .btn-primary {
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-primary) 80%, transparent),
+              0 0 40px color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+/* Glowing border on all cards at rest — not just on hover */
+[data-theme="neon-dark"] .card {
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+[data-theme="neon-dark"] .card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--color-primary) 55%, transparent),
+              0 8px 24px rgba(0, 0, 0, 0.7);
+}
+/* Neon glow on the active nav item */
+[data-theme="neon-dark"] .nav-active {
+  text-shadow: 0 0 10px var(--color-primary);
+}
+
+
+/* ─────────────────────────────────────────────
+   THEME: glass-light
+   Light glassmorphism — animated conic-gradient borders that cycle through
+   the iridescent spectrum (cyan → blue → purple → pink → green), frosted glass
+   surfaces over a pale sky background, and pill/rounded shapes.
+
+   Key technique: padding-box / border-box trick
+     border: Xpx solid transparent;
+     background: <fill> padding-box, conic-gradient(...) border-box;
+   This gives a gradient border that still respects border-radius (unlike border-image).
+
+   @property --bubble-angle lets CSS smoothly interpolate the conic-gradient's
+   start angle, producing a living shimmer. inherits:true means all children share
+   the single animated value cascading from [data-theme="glass-light"].
+────────────────────────────────────────────── */
+
+/* Animatable custom property for the conic-gradient start angle */
+@property --bubble-angle {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+@keyframes bubble-shimmer {
+  to { --bubble-angle: 360deg; }
+}
+
+[data-theme="glass-light"] {
+  --color-bg:             #e8f4fd; /* Pale sky blue — looking up through a bubble */
+  --color-surface:        rgba(255, 255, 255, 0.75); /* Frosted white panel */
+  --color-surface-raised: rgba(255, 255, 255, 0.92); /* More opaque for modals/dropdowns */
+  --color-border:         rgba(150, 210, 255, 0.50); /* Soft iridescent blue fallback */
+  --color-text:           #1e3a5a; /* Deep navy — readable on pale background */
+  --color-text-muted:     #5a85b0; /* Muted blue */
+  --color-primary:        #6488c8; /* Soft iridescent blue-purple */
+  --color-primary-hover:  #4a6ab8;
+  --color-danger:         #e05080; /* Pink-red — bubble-tinted danger */
+  --color-accent:         #5dc8b0; /* Iridescent teal accent */
+  --color-btn-hover:      rgba(100, 136, 200, 0.12);
+
+  /* Kick off the shimmer animation — all children inherit --bubble-angle */
+  animation: bubble-shimmer 10s linear infinite;
+}
+
+/* Aurora-like background: pale blue, lavender, and mint radial blobs — like looking up through a bubble */
+[data-theme="glass-light"] body {
+  background:
+    radial-gradient(ellipse at 25% 15%, rgba(190, 225, 255, 0.90) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 80%, rgba(210, 190, 255, 0.70) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 10%, rgba(190, 255, 230, 0.55) 0%, transparent 40%),
+    radial-gradient(ellipse at 10% 85%, rgba(255, 210, 240, 0.45) 0%, transparent 40%),
+    #e8f4fd;
+}
+
+/* Frosted glass blur on elevated surfaces */
+[data-theme="glass-light"] .card,
+[data-theme="glass-light"] .modal-panel,
+[data-theme="glass-light"] .drawer-panel {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Iridescent gradient border on cards */
+[data-theme="glass-light"] .card {
+  border: 1.5px solid transparent;
+  background:
+    rgba(255, 255, 255, 0.75) padding-box,
+    conic-gradient(from var(--bubble-angle, 0deg),
+      #7dd3fc, #a78bfa, #f472b6, #34d399, #fde68a, #7dd3fc) border-box;
+  border-radius: 1.25rem; /* Rounder than default */
+}
+[data-theme="glass-light"] .card:hover {
+  background:
+    rgba(255, 255, 255, 0.88) padding-box,
+    conic-gradient(from var(--bubble-angle, 0deg),
+      #38bdf8, #818cf8, #e879f9, #10b981, #fbbf24, #38bdf8) border-box;
+}
+
+/* Iridescent gradient border on all buttons; pill shape */
+[data-theme="glass-light"] .btn {
+  border: 1.5px solid transparent;
+  background:
+    rgba(255, 255, 255, 0.82) padding-box,
+    conic-gradient(from var(--bubble-angle, 0deg),
+      #7dd3fc, #a78bfa, #f472b6, #34d399, #7dd3fc) border-box;
+  border-radius: 9999px; /* Full pill */
+}
+
+/* Primary button: iridescent fill gradient so it reads as the main CTA */
+[data-theme="glass-light"] .btn-primary {
+  background:
+    linear-gradient(135deg, rgba(125, 211, 252, 0.85), rgba(167, 139, 250, 0.85)) padding-box,
+    conic-gradient(from var(--bubble-angle, 0deg),
+      #7dd3fc, #a78bfa, #f472b6, #34d399, #7dd3fc) border-box;
+  color: #1e3a5a;
+  box-shadow: 0 2px 16px rgba(167, 139, 250, 0.30);
+}
+
+/* Form inputs: pill shape + iridescent border */
+[data-theme="glass-light"] .form-input {
+  border: 1.5px solid transparent;
+  background:
+    rgba(255, 255, 255, 0.88) padding-box,
+    conic-gradient(from var(--bubble-angle, 0deg),
+      #7dd3fc, #a78bfa, #f472b6, #34d399, #7dd3fc) border-box;
+  border-radius: 9999px;
+}
+
+/* Row items get extra rounding so they feel bubbly */
+[data-theme="glass-light"] .row-item {
+  border-radius: 1rem;
+}
+
+
+/* ─────────────────────────────────────────────
+   THEME: cream
+   Cozy parchment / reading nook — warm sepia tones, terracotta accent.
+────────────────────────────────────────────── */
+[data-theme="cream"] {
+  --color-bg:             #fef9f0; /* Warm parchment */
+  --color-surface:        #fff8eb; /* Slightly warmer panel */
+  --color-surface-raised: #fef0d0; /* Raised elements — honey tint */
+  --color-border:         #e8d5b0; /* Warm tan border */
+  --color-text:           #3d2b1f; /* Deep warm brown */
+  --color-text-muted:     #8b6347; /* Mid-brown muted */
+  --color-primary:        #c0622f; /* Terracotta / burnt sienna */
+  --color-primary-hover:  #a04d22;
+  --color-danger:         #c0392b;
+  --color-accent:         #8b7355; /* Warm khaki accent */
+  --color-btn-hover:      rgba(0, 0, 0, 0.06);
+  --polaroid-bg:          #ffffff; /* Pure white for light theme */
+}
+
+
+/* ─────────────────────────────────────────────
+   THEME: amoled  (displayed in the picker as "Pure Black")
+   AMOLED = Active Matrix Organic Light-Emitting Diode.
+   On AMOLED/OLED screens, pure black pixels are completely powered off — saving battery.
+   This theme uses true #000000 so those pixels stay off, plus high-contrast white text
+   and an electric blue accent with glow effects that really pop against the pure black.
+────────────────────────────────────────────── */
+[data-theme="amoled"] {
+  --color-bg:             #000000; /* True black — OLED pixels completely off */
+  --color-surface:        #111111; /* Dark panels — noticeably separated from bg */
+  --color-surface-raised: #1e1e1e; /* Modals/dropdowns — clearly elevated */
+  --color-border:         #3a3a3a; /* Visible gray separator on black */
+  --color-text:           #ffffff; /* Pure white — maximum contrast */
+  --color-text-muted:     #b0b0b0; /* Light gray — clearly readable */
+  --color-primary:        #60a5fa; /* Blue-400 — brighter than ocean-dark blue */
+  --color-primary-hover:  #3b82f6;
+  --color-danger:         #f87171; /* Brighter red for visibility on black */
+  --color-accent:         #fbbf24; /* Vivid amber */
+  --color-btn-hover:      rgba(255, 255, 255, 0.10);
+}
+/* Electric blue glow on primary buttons — really pops against pure black */
+[data-theme="amoled"] .btn-primary {
+  box-shadow: 0 0 16px color-mix(in srgb, var(--color-primary) 70%, transparent),
+              0 0 36px color-mix(in srgb, var(--color-primary) 25%, transparent);
+}
+/* Blue-tinted border on cards so panels are distinct and striking */
+[data-theme="amoled"] .card {
+  border-color: color-mix(in srgb, var(--color-primary) 40%, #3a3a3a);
+}
+[data-theme="amoled"] .card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-primary) 40%, transparent);
+}
+
 
 /* ─────────────────────────────────────────────
    DAY / NIGHT AUTO-DETECTION
@@ -343,6 +698,7 @@ a:hover {
     --color-danger:         #dc2626;
     --color-accent:         #d97706;
     --color-btn-hover:      rgba(0, 0, 0, 0.07);
+    --polaroid-bg:          #ffffff; /* pure white for OS light mode */
   }
 }
 
@@ -368,6 +724,12 @@ a:hover {
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Shimmer animation for skeleton loading states */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
 
 @layer components {
@@ -396,7 +758,8 @@ a:hover {
            transition-colors duration-150 active:scale-95;
   }
   .btn-primary   { @apply bg-primary text-white hover:bg-primary-hover; }
-  .btn-secondary { @apply text-text; }
+  /* Ghost style: visible border so it reads as a button; border shifts to primary on hover */
+  .btn-secondary { @apply text-text border border-border hover:border-primary/50; }
   .btn-danger    { @apply bg-danger text-white hover:opacity-90; }
 
   /* ── Error banner ─────────────────────────────────────────────────────────
@@ -427,8 +790,10 @@ a:hover {
 
   /* --- Cards --- */
   .card {
+    /* transition-colors added so border-color animates smoothly on hover */
     @apply bg-surface border border-border rounded-lg overflow-hidden
-           transition-shadow transition-transform hover:shadow-lg hover:-translate-y-0.5;
+           transition-shadow transition-transform transition-colors
+           hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/50;
   }
   .card-padding-4 {
     @apply p-4;
@@ -515,7 +880,11 @@ a:hover {
            bg-surface border-b border-border
            hover:bg-surface-raised active:bg-border
            transition-colors;
+    /* Left accent border: 3px transparent by default, shifts to primary on hover */
+    border-left: 3px solid transparent;
+    transition: background-color 150ms ease, border-color 150ms ease;
   }
+  .row-item:hover { border-left-color: var(--color-primary); }
 
   /* --- Row Item: Phone variant ---
        Additive constraint on .row-item — apply both classes together, e.g. "row-item row-item-phone".
@@ -569,7 +938,11 @@ a:hover {
   .row-item-swipe-content {
     @apply relative z-10 bg-surface flex items-center gap-2 px-3 py-1
            select-none hover:bg-surface-raised active:bg-border transition-colors;
+    /* Mirror the left accent border from .row-item for swipeable rows */
+    border-left: 3px solid transparent;
+    transition: background-color 150ms ease, border-color 150ms ease;
   }
+  .row-item-swipe-content:hover { border-left-color: var(--color-primary); }
   .row-item-drag-handle {
     @apply cursor-grab text-gray-400 select-none text-lg;
   }
@@ -591,6 +964,38 @@ a:hover {
     @apply text-2xl font-bold tracking-tight;
   }
 
+  /* Sub-heading: one step below h1, used for section headers within a page */
+  .h2-styling {
+    @apply text-xl font-semibold tracking-tight;
+  }
+
+  /* Thin gradient bar placed above a page title to anchor it with a splash of theme color */
+  .page-header-accent {
+    height: 4px;
+    background: linear-gradient(to right, var(--color-primary), transparent);
+    border-radius: 2px;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Skeleton loading placeholder — shimmer effect using theme surface colors */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface) 25%,
+      var(--color-surface-raised) 50%,
+      var(--color-surface) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+  }
+
+  /* Active nav item: tinted background + primary text, used by MinimizableIconTextButton */
+  .nav-active {
+    background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+    color: var(--color-primary);
+  }
+
   /* --- Polaroid pile container --- */
   .polaroid-pile {
     position: relative;
@@ -604,13 +1009,14 @@ a:hover {
     .polaroid-pile { height: var(--collage-sm-height, 520px); }
   }
 
-  /* --- Polaroid card (always white — not theme-aware) --- */
+  /* --- Polaroid card — now theme-aware via --polaroid-bg CSS variable --- */
   .polaroid-card {
     display: block;
     cursor: pointer;
     position: absolute;
     width: 130px;
-    background: #ffffff;
+    /* Uses theme variable: off-white on dark themes, pure white on light themes */
+    background: var(--polaroid-bg);
     padding: 6px 6px 0 6px;
     border-radius: 2px;
     transition: transform 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
@@ -637,11 +1043,11 @@ a:hover {
     gap: 1px;
   }
 
-  /* Hardcoded dark text — caption is always on white Polaroid border */
+  /* Caption text uses theme variables so it stays dark on any polaroid background */
   .polaroid-title {
     font-size: 9px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--polaroid-text);
     line-height: 1.2;
     overflow: hidden;
     display: -webkit-box;
@@ -650,7 +1056,7 @@ a:hover {
   }
   .polaroid-creator {
     font-size: 8px;
-    color: #555555;
+    color: var(--polaroid-creator-text);
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
