@@ -40,7 +40,11 @@ export function ThemePicker() {
     const { currentTheme } = useSelector((state: RootState) => state.theme);
 
     return (
+        <>
+        {/* a11y: sr-only label associates a visible name with the select so screen readers announce "Color theme" */}
+        <label htmlFor="theme-picker" className="sr-only">Color theme</label>
         <select
+            id="theme-picker"
             value = {currentTheme ?? ''}
             onChange = {e => dispatch(setCurrentTheme((e.target.value || null) as Theme | null))}
             className = "bg-surface text-text border-border rounded px-2 py-1 text-sm"
@@ -51,5 +55,6 @@ export function ThemePicker() {
                     </option>
                 ))}
         </select>
+        </>
     );
 }

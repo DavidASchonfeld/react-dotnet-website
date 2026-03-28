@@ -84,16 +84,24 @@ function ChangeUsernameForm({ currentUserName, onClose }: { currentUserName: str
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3" aria-label="Change username">
+            {/* a11y: sr-only label associated via htmlFor so screen readers name this field */}
+            <label htmlFor="settings-new-username" className="sr-only">New username</label>
             <input
+                id="settings-new-username"
                 className="form-input"
                 value={newUserName}
                 onChange={e => setNewUserName(e.target.value)}
                 placeholder="New username"
                 maxLength={100}
                 autoFocus
+                // a11y: aria-required signals this field must be filled before saving
+                aria-required="true"
+                // a11y: aria-describedby links this input to the error message so it is read together
+                aria-describedby={error ? 'username-error' : undefined}
             />
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {/* a11y: role="alert" causes screen readers to announce the error immediately when it appears */}
+            {error && <p id="username-error" role="alert" className="text-xs text-red-500">{error}</p>}
             <div className="flex gap-2">
                 <button type="submit" disabled={isLoading || !newUserName.trim()} className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
                     Save
@@ -132,30 +140,45 @@ function ChangePasswordForm({ onClose }: { onClose: () => void }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3" aria-label="Change password">
+            {/* a11y: sr-only labels for each password field so screen readers distinguish them */}
+            <label htmlFor="settings-current-password" className="sr-only">Current password</label>
             <input
+                id="settings-current-password"
                 className="form-input"
                 type="password"
                 value={currentPassword}
                 onChange={e => setCurrentPassword(e.target.value)}
                 placeholder="Current password"
                 autoFocus
+                aria-required="true"
+                // a11y: aria-describedby links to error message so it is announced together with the field
+                aria-describedby={error ? 'password-error' : undefined}
             />
+            <label htmlFor="settings-new-password" className="sr-only">New password</label>
             <input
+                id="settings-new-password"
                 className="form-input"
                 type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 placeholder="New password"
+                aria-required="true"
+                aria-describedby={error ? 'password-error' : undefined}
             />
+            <label htmlFor="settings-confirm-password" className="sr-only">Confirm new password</label>
             <input
+                id="settings-confirm-password"
                 className="form-input"
                 type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
+                aria-required="true"
+                aria-describedby={error ? 'password-error' : undefined}
             />
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {/* a11y: role="alert" causes screen readers to announce the error immediately when it appears */}
+            {error && <p id="password-error" role="alert" className="text-xs text-red-500">{error}</p>}
             <div className="flex gap-2">
                 <button type="submit" disabled={isLoading || !currentPassword || !newPassword} className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
                     Change Password
@@ -201,6 +224,8 @@ export default function MySettingsPage() {
                             <button
                                 className="btn btn-secondary text-sm"
                                 onClick={() => toggle('username')}
+                                // a11y: aria-expanded tells screen readers whether the username form is currently shown
+                                aria-expanded={openForm === 'username'}
                             >
                                 {openForm === 'username' ? 'Cancel' : 'Edit'}
                             </button>
@@ -221,6 +246,8 @@ export default function MySettingsPage() {
                             <button
                                 className="btn btn-secondary text-sm"
                                 onClick={() => toggle('password')}
+                                // a11y: aria-expanded tells screen readers whether the password form is currently shown
+                                aria-expanded={openForm === 'password'}
                             >
                                 {openForm === 'password' ? 'Cancel' : 'Edit'}
                             </button>

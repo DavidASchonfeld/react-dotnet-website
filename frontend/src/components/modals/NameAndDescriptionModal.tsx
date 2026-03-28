@@ -48,41 +48,58 @@ export default function NameAndDescriptionModal({
     return (
         // open={true} because NameAndDescriptionModal is always conditionally mounted by its parent
         // ResponsiveModalFrame picks DrawerModal on mobile, DialogOverlay on desktop
-        <ResponsiveModalFrame open={true} onClose={onCancel}>
+        // a11y: titleId links the dialog's aria-labelledby to the visible heading inside
+        <ResponsiveModalFrame open={true} onClose={onCancel} titleId="name-desc-modal-title">
             {(_close) => (
                 // The Modal aka Popup — see .modal-panel / .drawer-panel in index.css for Tailwind breakdown
                 <div className={isMobile ? 'drawer-panel' : 'modal-panel'}>
-                    <h2 className="h1-styling">Name &amp; Description</h2>
+                    {/* a11y: id matches titleId so aria-labelledby on the dialog points here */}
+                    <h2 id="name-desc-modal-title" className="h1-styling">Name &amp; Description</h2>
                     {/* See .form-input in index.css for Tailwind breakdown */}
+                    {/* a11y: sr-only label so screen readers announce "Name, required" for this field */}
+                    <label htmlFor="ndm-name" className="sr-only">Name (required)</label>
                     <input
+                        id="ndm-name"
                         placeholder="Name (Required)"
                         value = {name}
                         onChange={(e) => setName(e.target.value)}
                         className="form-input"
+                        // a11y: aria-required tells screen readers this field must be filled before submitting
+                        aria-required="true"
                     />
                     {showDescription && (
-                        <textarea
-                            placeholder="Add description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            rows={2}
-                            className="form-input resize-none"
-                        />
+                        <>
+                            {/* a11y: sr-only label so screen readers announce "Description" for this textarea */}
+                            <label htmlFor="ndm-description" className="sr-only">Description</label>
+                            <textarea
+                                id="ndm-description"
+                                placeholder="Add description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                rows={2}
+                                className="form-input resize-none"
+                            />
+                        </>
                     )}
                     {/*
                         I do not need to add flex-row because here, it by default fits things side-by-side
                         until it runs out of room.
                     */}
                     {shouldShowVisibility && (
-                        <select
-                            value={visibility}
-                            onChange = {(e) => setVisibility(Number(e.target.value) as VisibilityStatus)}
-                            className="form-input"
-                        >
-                            <option value = {VisibilityStatus.Private}>Private</option>
-                            {/* <option value = {VisibilityStatus.Shared}>Shared</option> TODO: Implement Sharing.*/}
-                            {/* <option value = {VisibilityStatus.Public}>Public</option> TODO: Implement Submission/Approval System*/}
-                        </select>
+                        <>
+                            {/* a11y: sr-only label so screen readers announce "Visibility" for this select */}
+                            <label htmlFor="ndm-visibility" className="sr-only">Visibility</label>
+                            <select
+                                id="ndm-visibility"
+                                value={visibility}
+                                onChange = {(e) => setVisibility(Number(e.target.value) as VisibilityStatus)}
+                                className="form-input"
+                            >
+                                <option value = {VisibilityStatus.Private}>Private</option>
+                                {/* <option value = {VisibilityStatus.Shared}>Shared</option> TODO: Implement Sharing.*/}
+                                {/* <option value = {VisibilityStatus.Public}>Public</option> TODO: Implement Submission/Approval System*/}
+                            </select>
+                        </>
                     )}
                     <div className="flex gap-2 justify-center">
                         <button onClick={onCancel} className = "btn btn-secondary w-fit">Cancel</button>

@@ -31,7 +31,8 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
     return (
         // open={true} because ConfirmModal is always conditionally mounted by its parent
         // ResponsiveModalFrame picks DrawerModal on mobile, DialogOverlay on desktop
-        <ResponsiveModalFrame open={true} onClose={onCancel}>
+        // a11y: titleId links the dialog's aria-labelledby to the visible heading so screen readers announce the title
+        <ResponsiveModalFrame open={true} onClose={onCancel} titleId="confirm-modal-title">
             {(_close) => (
                 // The Modal aka Popup — see .modal-panel / .drawer-panel in index.css for Tailwind breakdown
                 <div className={isMobile ? 'drawer-panel' : 'modal-panel'}>
@@ -48,7 +49,8 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
                         </RowItemStyling>
                     )}
 
-                    <h1 className='h1-styling'>{title}</h1>
+                    {/* a11y: id matches titleId so the dialog's aria-labelledby points to this heading */}
+                    <h1 id="confirm-modal-title" className='h1-styling'>{title}</h1>
                     <p>{message}</p>
                     {/* In Tailwind, regular and default options always exist
                     For md: that's for medium size (and larger) screens

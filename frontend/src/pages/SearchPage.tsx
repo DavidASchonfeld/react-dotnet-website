@@ -233,6 +233,13 @@ export default function SearchPage() {
                 onSearch={handleSearch}
             />
 
+            {/* a11y: aria-live region announces the result count to screen readers after each search completes */}
+            <p aria-live="polite" aria-atomic="true" className="sr-only">
+                {query && !isLoading
+                    ? `Search results loaded for "${query}"`
+                    : ''}
+            </p>
+
             {/* Results section */}
             <div className="mt-4">
                 {/* No query entered */}

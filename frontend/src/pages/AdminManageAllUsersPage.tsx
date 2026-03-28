@@ -82,11 +82,11 @@ export default function AdminManageAllUsersPage() {
         <AnimatedPage>
             <div className = "page">
 
-            
+
 
                 {loading && <h2>Loading...</h2>}
                 {error && <h2>{error}</h2>}
-    
+
                 <h1>Administrator: Manage All Users</h1>
                 {/* Refresh Button - Calls Refresh on Click: */}
                 {/* Remember, you need "() =>"" so the function
@@ -95,69 +95,82 @@ export default function AdminManageAllUsersPage() {
                 <button className="btn btn-secondary w-fit" onClick={() => { getAllUsers(token!, page).then(d => setUserList(d.items)) }}>⟳ Refresh</button>
 
                 {!loading && !error && (
-                    <table className="w-full text-sm">
-                        {/* text-text-muted: uses the semantic color token for secondary/dimmed text
-                                (auto-adjusts per theme — lighter than primary text, used for labels).
-                            tracking-wider: increases letter-spacing, standard for ALL-CAPS column headers
-                                 to improve readability at small sizes */}
-                        <thead className="bg-surface-raised text-text-muted uppercase text-xs tracking-wider">
-                            <tr>
-                                <th className="px-4 py-3 text-left">Username</th>
-                                <th className="px-4 py-3 text-left">Email</th>
-                                <th className="px-4 py-3 text-left">Change Role</th>
-                                <th className="px-4 py-3 text-left">Save</th>
-                            </tr>
-                        </thead>
-                        {/* divide-y: adds a top border to every child element except the first —
-                                 creates horizontal row separators without adding a border to the table itself.
-                            divide-border: uses the semantic --color-border token so dividers match
-                                 the current theme automatically */}
-                        <tbody className="divide-y divide-border">
-                        {userList.map(eachUser => {
-                            const isCurrentUser = eachUser.userName === userName;
-                            return (
-                                <tr key={eachUser.id} className={`hover:bg-surface-raised transition-colors ${isCurrentUser ? 'opacity-50': ''}`}>
-                                    <td className="px-4 py-3">{eachUser.userName}</td>
-                                    <td className="px-4 py-3">{eachUser.email}</td>
-                                    <td className="px-4 py-3">
-                                        <select
-                                            name = "UserRole"
-                                            id = {`${eachUser.id}_userRole`}
-                                            disabled = {isCurrentUser}
-                                            className={isCurrentUser ? 'cursor-not-allowed':''}
+                    // mobile: overflow-x-auto makes the table horizontally scrollable on narrow screens instead of overflowing or breaking layout
+                    <div className="overflow-x-auto">
+                        <table
+                            className="w-full text-sm min-w-[500px] sm:min-w-0"
+                            // a11y: aria-label gives the table an accessible name for screen readers navigating by landmark
+                            aria-label="User list"
+                        >
+                            {/* text-text-muted: uses the semantic color token for secondary/dimmed text
+                                    (auto-adjusts per theme — lighter than primary text, used for labels).
+                                tracking-wider: increases letter-spacing, standard for ALL-CAPS column headers
+                                     to improve readability at small sizes */}
+                            <thead className="bg-surface-raised text-text-muted uppercase text-xs tracking-wider">
+                                <tr>
+                                    <th className="px-4 py-3 text-left" scope="col">Username</th>
+                                    <th className="px-4 py-3 text-left" scope="col">Email</th>
+                                    <th className="px-4 py-3 text-left" scope="col">Change Role</th>
+                                    <th className="px-4 py-3 text-left" scope="col">Save</th>
+                                </tr>
+                            </thead>
+                            {/* divide-y: adds a top border to every child element except the first —
+                                     creates horizontal row separators without adding a border to the table itself.
+                                divide-border: uses the semantic --color-border token so dividers match
+                                     the current theme automatically */}
+                            <tbody className="divide-y divide-border">
+                            {userList.map(eachUser => {
+                                const isCurrentUser = eachUser.userName === userName;
+                                return (
+                                    <tr key={eachUser.id} className={`hover:bg-surface-raised transition-colors ${isCurrentUser ? 'opacity-50': ''}`}>
+                                        <td className="px-4 py-3">{eachUser.userName}</td>
+                                        <td className="px-4 py-3">{eachUser.email}</td>
+                                        <td className="px-4 py-3">
+                                            {/* a11y: sr-only label links to the select so screen readers announce "Role for [username]" */}
+                                            <label htmlFor={`${eachUser.id}_userRole`} className="sr-only">
+                                                Role for {eachUser.userName}
+                                            </label>
+                                            <select
+                                                name = "UserRole"
+                                                id = {`${eachUser.id}_userRole`}
+                                                disabled = {isCurrentUser}
+                                                className={isCurrentUser ? 'cursor-not-allowed':''}
 
-                                            // Initially, set the dropdown to the user's current RoleLevel.
-                                            value = {selectedRoles[eachUser.id] ?? eachUser.roleLevel}
+                                                // Initially, set the dropdown to the user's current RoleLevel.
+                                                value = {selectedRoles[eachUser.id] ?? eachUser.roleLevel}
 
-                                            onChange = {(e) => setSelectedRoles({
-                                                ...selectedRoles,  // Keep the same values from before,
-                                                // except for this row's user.
-                                                [eachUser.id] : e.target.value
-                                            })}
-                                        >
-                                            <option>Basic</option>
-                                            <option>Moderator</option>
-                                            <option>Administrator</option>
-                                        </select>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {/* token! here means token is guaranteed.
-                                        If there was no token, this page's error would run instead
-                                        so the programming logic would never reach this line of code.*/}
-                                        <button
-                                            disabled = {isCurrentUser}
-                                            className = {isCurrentUser ? 'w-fit cursor-not-allowed opacity-50': 'w-fit'}
-                                            onClick={() => handleSaveRole(eachUser.id, selectedRoles[eachUser.id] as UserRole)}
-                                        >
-                                            Save
-                                        </button>
-                                    </td>
+                                                onChange = {(e) => setSelectedRoles({
+                                                    ...selectedRoles,  // Keep the same values from before,
+                                                    // except for this row's user.
+                                                    [eachUser.id] : e.target.value
+                                                })}
+                                            >
+                                                <option>Basic</option>
+                                                <option>Moderator</option>
+                                                <option>Administrator</option>
+                                            </select>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {/* token! here means token is guaranteed.
+                                            If there was no token, this page's error would run instead
+                                            so the programming logic would never reach this line of code.*/}
+                                            <button
+                                                disabled = {isCurrentUser}
+                                                className = {isCurrentUser ? 'w-fit cursor-not-allowed opacity-50': 'w-fit'}
+                                                onClick={() => handleSaveRole(eachUser.id, selectedRoles[eachUser.id] as UserRole)}
+                                                // a11y: aria-label names which user this save button applies to for screen readers
+                                                aria-label={`Save role for ${eachUser.userName}`}
+                                            >
+                                                Save
+                                            </button>
+                                        </td>
 
-                            </tr>
-                            );
-                        })}
-                        </tbody>
-                    </table>
+                                </tr>
+                                );
+                            })}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
 
                 <PaginationControls

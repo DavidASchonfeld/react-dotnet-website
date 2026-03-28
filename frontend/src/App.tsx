@@ -126,8 +126,11 @@ function App() {
           That tells App.tsx whether to use the normal or minimized padding variable,
           so <main> always offsets by the navbar's actual current size.
           */}
+      {/* a11y: skip-link — lets keyboard/screen-reader users jump past the navbar directly to page content */}
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <Navbar isTop={isTop} setIsTop={setIsTop} onMinimizedChange={setIsMinimized} />
-      <main style={isTop
+      {/* a11y: id + tabIndex={-1} so the skip-link href="#main-content" can move focus here programmatically */}
+      <main id="main-content" tabIndex={-1} style={isTop
         ? { paddingTop: isMinimized ? 'var(--navbar-top-minimized-height)' : 'var(--navbar-top-height)' }
         : { paddingLeft: isMinimized ? 'var(--navbar-left-minimized-width)' : 'var(--navbar-left-width)' }
       }>

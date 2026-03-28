@@ -151,37 +151,64 @@ export default function SearchBar({
 
             {/* Input row */}
             <div className={`relative flex items-center gap-1 ${isTop ? 'w-32 focus-within:w-52 transition-all duration-300' : 'w-full'}`}>
+                {/* a11y: sr-only label so screen readers announce "Search" when the input receives focus */}
+                <label htmlFor="site-search" className="sr-only">Search</label>
                 <input
+                    id="site-search"
                     type="text"
                     value={inputQuery}
                     onChange={e => handleInputChange(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={selectedSource ? `${selectedSource.apiName}…` : searchType === 'lists' ? 'Lists…' : searchType === 'tags' ? 'Tags…' : 'Search…'}
                     className="form-input pl-3 pr-8 py-1 text-sm w-full rounded-lg"
+                    // a11y: aria-expanded tells screen readers whether the typeahead dropdown is currently open
+                    aria-expanded={mode === 'typeahead' ? isDropdownOpen : undefined}
+                    // a11y: aria-controls links the input to its dropdown listbox for screen readers
+                    aria-controls={mode === 'typeahead' ? 'search-suggestions' : undefined}
+                    // a11y: combobox role tells screen readers this input drives a dropdown selection widget
+                    role={mode === 'typeahead' ? 'combobox' : undefined}
+                    aria-autocomplete={mode === 'typeahead' ? 'list' : undefined}
                 />
-                <span className="absolute right-2 flex items-center text-text/50 hover:text-text/70 transition-colors duration-200 cursor-pointer"
-                    onClick={handleSubmit}
-                    onMouseLeave={() => setSearchLabelExpanded(false)}>
+                {/* Absolute icon area: clear button + search icon side by side, positioned at the right of the input */}
+                <div className="absolute right-2 flex items-center gap-0 text-text/50">
+                    {/* a11y: clear button — separate from search-submit so there is no nested button (invalid HTML) */}
                     {inputQuery.length > 0 && (
                         <button
+                            type="button"
                             onClick={e => { e.stopPropagation(); handleClear() }}
-                            className="text-xs leading-none px-2 py-1 hover:text-text"
+                            className="text-xs leading-none px-1 py-1 hover:text-text"
                             title="Clear"
+                            // a11y: aria-label names the clear button for screen readers
+                            aria-label="Clear search"
                             tabIndex={-1}
                         >
                             ✕
                         </button>
                     )}
-                    <span
-                        className="text-sm select-none"
-                        onMouseEnter={() => setSearchLabelExpanded(true)}>
-                            🔍
-                    </span>
-                    <span
-                        className={`${searchLabelExpanded ? 'max-w-[3rem]' : 'max-w-0'} overflow-hidden transition-all duration-300 text-xs whitespace-nowrap select-none pl-1`}>
-                        Search
-                    </span>
-                </span>
+                    {/* a11y: search-submit button — converted from <span> so keyboard users can activate it with Enter/Space */}
+                    <button
+                        type="button"
+                        className="flex items-center hover:text-text/70 transition-colors duration-200 px-1"
+                        onClick={handleSubmit}
+                        onMouseLeave={() => setSearchLabelExpanded(false)}
+                        // a11y: aria-label names this icon button so screen readers announce "Submit search"
+                        aria-label="Submit search"
+                    >
+                        <span
+                            className="text-sm select-none"
+                            // a11y: aria-hidden hides the emoji icon from screen readers (button aria-label covers it)
+                            aria-hidden="true"
+                            onMouseEnter={() => setSearchLabelExpanded(true)}>
+                                🔍
+                        </span>
+                        <span
+                            className={`${searchLabelExpanded ? 'max-w-[3rem]' : 'max-w-0'} overflow-hidden transition-all duration-300 text-xs whitespace-nowrap select-none pl-1`}
+                            // a11y: aria-hidden hides the expanding "Search" label from screen readers (redundant with aria-label)
+                            aria-hidden="true">
+                            Search
+                        </span>
+                    </button>
+                </div>
             </div>
 
             {/* API source pills — hidden when showApiSourcePills=false (Navbar uses SearchFilterDropdown instead) */}
@@ -191,6 +218,8 @@ export default function SearchBar({
                         <button
                             key={source.id}
                             onClick={() => handleSourceSelect(source.id)}
+                            // a11y: aria-pressed tells screen readers which API source filter is currently active
+                            aria-pressed={selectedApiSourceId === source.id}
                             className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
                                 selectedApiSourceId === source.id
                                     ? 'bg-primary text-white border-primary'
@@ -224,7 +253,13 @@ export default function SearchBar({
                     />
 
                     {/* Dropdown panel */}
-                    <div className={`absolute z-50 min-w-[260px] bg-surface-raised rounded-xl shadow-2xl border border-border overflow-hidden
+                    {/* a11y: role="listbox" marks this as a selectable suggestion list for screen readers */}
+                    {/* mobile: min-w-[min(260px,90vw)] prevents the dropdown from overflowing narrow phone screens */}
+                    <div
+                        id="search-suggestions"
+                        role="listbox"
+                        aria-label="Search suggestions"
+                        className={`absolute z-50 min-w-[min(260px,90vw)] bg-surface-raised rounded-xl shadow-2xl border border-border overflow-hidden
                         ${isTop ? 'top-full left-0 mt-1' : 'top-0 left-full ml-2'}`}
                     >
                         {isSearching && (
@@ -236,6 +271,9 @@ export default function SearchBar({
                         {!isSearching && dropdownResults.map(result => (
                             <button
                                 key={result.externalId}
+                                // a11y: role="option" marks each item as a selectable suggestion within the listbox
+                                role="option"
+                                aria-selected={false}
                                 className="w-full px-3 py-2 hover:bg-surface transition-colors text-left"
                                 onClick={() => handleResultClick(result)}
                             >

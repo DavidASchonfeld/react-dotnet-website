@@ -241,9 +241,11 @@ export default function ManageLinkModal({
 
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-                <h2 className="font-semibold text-lg">{modalTitle}</h2>
+                {/* a11y: id matches titleId so the dialog's aria-labelledby points here */}
+                <h2 id="manage-link-modal-title" className="font-semibold text-lg">{modalTitle}</h2>
                 {/* closeModal uses the frame-specific close so the slide-down animation runs on mobile */}
-                <button className="btn btn-secondary w-fit" onClick={closeModal}>✕</button>
+                {/* a11y: aria-label names the close button for screen readers (✕ is not announced clearly) */}
+                <button className="btn btn-secondary w-fit" onClick={closeModal} aria-label="Close modal">✕</button>
             </div>
 
             {/* Focused item — the subject of the linking action (e.g. the media item being tagged) */}
@@ -273,11 +275,15 @@ export default function ManageLinkModal({
             </div>
 
             {/* Tab bar — only shown in tabbed mode (when `tabs` is provided) */}
+            {/* a11y: role="tablist" marks this as a tab group so screen readers announce it correctly */}
             {tabs && (
-                <div className="flex border-b border-border shrink-0">
+                <div role="tablist" aria-label="Content tabs" className="flex border-b border-border shrink-0">
                     {tabs.map((tab, i) => (
                         <button
                             key={tab.label}
+                            // a11y: role="tab" + aria-selected tell screen readers which tab is active
+                            role="tab"
+                            aria-selected={activeTabIndex === i}
                             className={`flex-1 py-2 text-sm ${activeTabIndex === i ? 'font-semibold border-b-2 border-primary text-primary' : 'text-text-muted'}`}
                             onClick={() => setActiveTabIndex(i)}
                         >{tab.label}</button>
@@ -288,10 +294,12 @@ export default function ManageLinkModal({
             {/* Note / reason input — shown when noteInput prop is provided */}
             {noteInput && (
                 <div className="px-4 py-3 border-b border-border shrink-0">
-                    <label className="text-xs text-text-muted mb-1 block">
+                    {/* a11y: htmlFor links this label to the textarea so screen readers announce the field name */}
+                    <label htmlFor="manage-link-note" className="text-xs text-text-muted mb-1 block">
                         {noteInput.label ?? 'Note (optional)'}
                     </label>
                     <textarea
+                        id="manage-link-note"
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
                         placeholder={noteInput.placeholder ?? 'Add a reason for this tag...'}
@@ -315,14 +323,22 @@ export default function ManageLinkModal({
                                     const linked = linkedIds.includes(item.id);
                                     const pendingToAdd = pendingAddIds.has(item.id);
                                     return (
-                                        <div
+                                        // a11y: button instead of div so keyboard users can Tab to rows and press Enter/Space to toggle
+                                        <button
                                             key={item.id}
+                                            type="button"
                                             className={
-                                                `flex items-center gap-3 cursor-pointer px-2 py-2 border-b border-border last:border-b-0 hover:bg-border/30 ${linked ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`
+                                                `w-full text-left flex items-center gap-3 cursor-pointer px-2 py-2 border-b border-border last:border-b-0 hover:bg-border/30 ${linked ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`
                                             }
                                             // Guard: block clicks on rows where hasModifyLinkAccess is explicitly false
                                             // (Example: public lists the user can see but cannot edit)
                                             onClick={() => !pendingToAdd && item.hasModifyLinkAccess !== false && handleToggle(item.id)}
+                                            // a11y: aria-pressed announces whether this item is currently linked/selected
+                                            aria-pressed={linked}
+                                            // a11y: aria-label describes the row action for screen readers
+                                            aria-label={`${linked ? 'Remove link to' : 'Add link to'} ${item.firstString}`}
+                                            // a11y: disabled prevents interaction for rows the user cannot edit
+                                            disabled={item.hasModifyLinkAccess === false}
                                         >
                                             {rowStatusIcon(linked, pendingToAdd)}
                                             <div className="flex-1 min-w-0">
@@ -342,13 +358,14 @@ export default function ManageLinkModal({
                                             )}
                                             {/* ⓘ icon — always shown; opens the detail panel when detailType is set */}
                                             <button
+                                                type="button"
                                                 className="shrink-0 text-text-muted hover:text-primary p-2"
                                                 onClick={e => handleShowDetail(e, item)}
                                                 aria-label={`View details for ${item.firstString}`}
                                             >
                                                 ⓘ
                                             </button>
-                                        </div>
+                                        </button>
                                     );
                                 })
                             )}
@@ -389,12 +406,13 @@ export default function ManageLinkModal({
                 The close function passed to renderContent differs per frame:
                   mobile  → DrawerModal's render-prop close (triggers slide-down animation before unmount)
                   desktop → direct onClose call (no exit animation needed) */}
+            {/* a11y: titleId="manage-link-modal-title" links the dialog's aria-labelledby to the visible heading */}
             {isMobile ? (
-                <DrawerModal open={true} onClose={() => onClose(linkedIds)}>
+                <DrawerModal open={true} onClose={() => onClose(linkedIds)} titleId="manage-link-modal-title">
                     {(close) => renderContent(close)}
                 </DrawerModal>
             ) : (
-                <DialogOverlay onBackdropClick={() => onClose(linkedIds)}>
+                <DialogOverlay onBackdropClick={() => onClose(linkedIds)} titleId="manage-link-modal-title" onEsc={() => onClose(linkedIds)}>
                     {renderContent(() => onClose(linkedIds))}
                 </DialogOverlay>
             )}

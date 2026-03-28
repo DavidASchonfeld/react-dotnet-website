@@ -20,6 +20,9 @@ export default function ImageCacheIndicatorDot({ src }: Props) {
                 isFromCache ? 'bg-green-500' : 'bg-orange-400'
             }`}
             title={isFromCache ? 'Served from backend cache' : 'Served from 3rd party CDN'}
+            // a11y: role="img" + aria-label expose the color-coded status to screen readers (color alone is not accessible)
+            role="img"
+            aria-label={isFromCache ? 'Image cached on server' : 'Image from external CDN'}
         />
     );
 }

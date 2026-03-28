@@ -158,7 +158,9 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
     // When isTop = true, put the navigation bar on the top of the screen
     // When isTop = false, put the navigation bar on the left of the screen
     return (
+        // a11y: aria-label="Main navigation" identifies this landmark for screen readers navigating by landmark
         <nav
+            aria-label="Main navigation"
             className={
                 // transition-all duration-300: the nav container's size change
                 //     animates smoothly instead of snapping to the new size instantly.
@@ -229,8 +231,10 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                 <MinimizableIconTextButton title="About" icon="ⓘ" label="About" onClick={() => navigate("/about")} mode={effectiveMinimized ? "minimized" : "expanded"} isTop={isTop} />
 
                 {effectiveMinimized ? (
+                        // a11y: aria-label names the icon-only search button when the navbar is minimized
                         <button
                             title="Search"
+                            aria-label="Search"
                             onClick={() => navigate("/search")}
                             className="flex items-center justify-center gap-0 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 transition-colors"
                         >
@@ -293,6 +297,10 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                             mode={effectiveMinimized ? "minimized" : "expanded"}
                             isTop={isTop}
+                            // a11y: aria-expanded announces whether the user dropdown menu is open or closed
+                            ariaExpanded={isUserMenuOpen}
+                            // a11y: aria-controls links this toggle button to the dropdown menu element
+                            ariaControls="user-dropdown-menu"
                         />
 
                         {/* The Dropdown Menu */}
@@ -322,12 +330,29 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
                                         -- in "Left" mode: the menu will be to the right of the sidebar
                                     */}
                                 <div
+                                    // a11y: id matches aria-controls on the toggle button so screen readers link them
+                                    id="user-dropdown-menu"
+                                    // a11y: role="menu" tells screen readers this is a popup menu with menuitem children
+                                    role="menu"
+                                    aria-label="User menu"
                                     className={`absolute min-w-[200px] bg-surface-raised rounded-xl shadow-2xl border border-border overflow-hidden z-50
                                         ${isTop ? 'top-full right-0 mt-2' : 'top-0 left-full ml-2'}`}
 
                                     // This onClick here, on the entire dropdown menu, means that no matter what you click in the dropdown menu itself,
                                     // it will still close the dropdown menu, so the dropdown menu doesn't awkwardly stay open when you navigate to another page.
                                     onClick={() => setIsUserMenuOpen(false)}
+                                    // a11y: arrow key navigation so keyboard users can move between menu items without Tabbing
+                                    onKeyDown={(e) => {
+                                        const items = Array.from(
+                                            (e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')
+                                        );
+                                        const idx = items.indexOf(document.activeElement as HTMLElement);
+                                        if (e.key === 'ArrowDown') { e.preventDefault(); items[(idx + 1) % items.length]?.focus(); }
+                                        if (e.key === 'ArrowUp')   { e.preventDefault(); items[(idx - 1 + items.length) % items.length]?.focus(); }
+                                        if (e.key === 'Home')      { e.preventDefault(); items[0]?.focus(); }
+                                        if (e.key === 'End')       { e.preventDefault(); items[items.length - 1]?.focus(); }
+                                        if (e.key === 'Escape')    { setIsUserMenuOpen(false); }
+                                    }}
                                 >
 
                                     {/* User info header — shows the logged-in username and role at the top of the menu.
@@ -402,10 +427,12 @@ export default function Navbar({ isTop, setIsTop, onMinimizedChange }: NavbarPro
             {/* When autoMinimized, the screen is too narrow to show all items, so the button is locked
                 and clicking it does nothing. The user can only expand by making the window wider. */}
             {/* Update: Now, when autoMinimzed, hide the expand/minimze button. */}
-            {!autoMinimized && 
+            {!autoMinimized &&
+                // a11y: aria-label describes what clicking will do so screen readers don't just hear the arrow character
                 <button
                     className="flex items-center justify-center shrink-0 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 transition-colors"
                     onClick={() => { if (!autoMinimized) setManualMinimized(!manualMinimized) }}
+                    aria-label={effectiveMinimized ? 'Expand navigation' : 'Collapse navigation'}
                 >
                     {isTop
                         ? (effectiveMinimized ? '▼' : '▲')

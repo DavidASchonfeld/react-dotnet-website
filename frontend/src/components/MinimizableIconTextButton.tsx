@@ -13,6 +13,12 @@ interface MinimizableIconTextButtonProps {
     // isTop mirrors Navbar's isTop: affects label max-widths and whether the button fills
     // its container. Defaults to false (left/sidebar layout).
     isTop?: boolean;
+    // a11y: optional aria-label — overrides title for screen readers when the two differ
+    ariaLabel?: string;
+    // a11y: optional aria-expanded — used on toggle buttons (e.g. user menu) to announce open/closed state
+    ariaExpanded?: boolean;
+    // a11y: optional aria-controls — links this button to the element it controls (e.g. a dropdown id)
+    ariaControls?: string;
 }
 
 export default function MinimizableIconTextButton({
@@ -22,6 +28,9 @@ export default function MinimizableIconTextButton({
     onClick,
     mode,
     isTop = false,
+    ariaLabel,
+    ariaExpanded,
+    ariaControls,
 }: MinimizableIconTextButtonProps) {
 
     // autoSmall is only used when mode === "auto".
@@ -90,7 +99,17 @@ export default function MinimizableIconTextButton({
     const buttonClass = `flex items-center${effectiveMinimized ? " justify-center gap-0" : " gap-2"} px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 transition-colors${!isTop ? " w-full" : ""}`;
 
     return (
-        <button title={title} className={buttonClass} onClick={onClick}>
+        <button
+            title={title}
+            className={buttonClass}
+            onClick={onClick}
+            // a11y: aria-label overrides title for screen readers (title is tooltip-only; not reliable for AT)
+            aria-label={ariaLabel ?? title}
+            // a11y: aria-expanded tells screen readers whether a controlled panel (e.g. dropdown) is open
+            aria-expanded={ariaExpanded}
+            // a11y: aria-controls links this button to the element it toggles (e.g. user menu dropdown id)
+            aria-controls={ariaControls}
+        >
             <span className={iconClass}>{icon}</span>
             <span className={labelClass}>{label}</span>
         </button>
