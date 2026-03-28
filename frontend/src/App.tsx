@@ -42,7 +42,6 @@ import { useState } from 'react'
 function App() {
 
   const location = useLocation()
-  const [isTop, setIsTop] = useState(true)
   const [isMinimized, setIsMinimized] = useState(false)
 
   const { currentTheme } = useSelector((state: RootState) => state.theme);
@@ -113,27 +112,12 @@ function App() {
   // The entire Website Structure
   return (
     <>
-      {/* Navbar's isTop variable is pulled into here App.tsx
-          because App.tsx manages the whole webpage,
-          so it needs to know whether navbar is
-          on the top or left of the page,
-          so it can pad the page's contents
-          aka move the page contents so the navbar
-          is not blocking them.
-          As a reminder, "--navbar-top-height"
-
-          onMinimizedChange: Navbar calls this whenever effectiveMinimized changes.
-          That tells App.tsx whether to use the normal or minimized padding variable,
-          so <main> always offsets by the navbar's actual current size.
-          */}
       {/* a11y: skip-link — lets keyboard/screen-reader users jump past the navbar directly to page content */}
       <a href="#main-content" className="skip-link">Skip to content</a>
-      <Navbar isTop={isTop} setIsTop={setIsTop} onMinimizedChange={setIsMinimized} />
+      {/* onMinimizedChange: Navbar calls this whenever its minimized state changes so <main> padding stays in sync */}
+      <Navbar onMinimizedChange={setIsMinimized} />
       {/* a11y: id + tabIndex={-1} so the skip-link href="#main-content" can move focus here programmatically */}
-      <main id="main-content" tabIndex={-1} style={isTop
-        ? { paddingTop: isMinimized ? 'var(--navbar-top-minimized-height)' : 'var(--navbar-top-height)' }
-        : { paddingLeft: isMinimized ? 'var(--navbar-left-minimized-width)' : 'var(--navbar-left-width)' }
-      }>
+      <main id="main-content" tabIndex={-1} style={{ paddingTop: isMinimized ? 'var(--navbar-top-minimized-height)' : 'var(--navbar-top-height)' }}>
       <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path = "/" element = {<HomePage />} />
