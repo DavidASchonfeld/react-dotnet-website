@@ -89,6 +89,29 @@ a:hover {
 
 
 /* ─────────────────────────────────────────────
+   GLOBAL BASE LAYERS
+   Shared defaults applied before per-theme blocks.
+   Per-theme blocks override these where values differ
+   (same specificity, later rule wins).
+────────────────────────────────────────────── */
+
+/* Shared for all themes whose name ends in -dark */
+[data-theme$="-dark"] {
+  --color-danger:    #ef4444; /* red-500 — standard dark theme danger */
+  --color-btn-hover: rgba(255, 255, 255, 0.10); /* light overlay for dark backgrounds */
+}
+
+/* Shared for all light-variant themes */
+[data-theme$="-light"],
+[data-theme="cream-office"],
+[data-theme="cream"] {
+  --color-danger:    #dc2626; /* red-600 — darker for light-bg contrast */
+  --color-btn-hover: rgba(0, 0, 0, 0.07); /* dark overlay for light backgrounds */
+  --polaroid-bg:     #ffffff; /* pure white polaroid for light themes */
+}
+
+
+/* ─────────────────────────────────────────────
    THEME: ocean-dark (DEFAULT — applied at :root)
    A cool, blue-tinted dark theme
 ────────────────────────────────────────────── */
@@ -102,9 +125,7 @@ a:hover {
   --color-text-muted:     #94a3b8; /* slate-400 — muted */
   --color-primary:        #3b82f6; /* blue-500 */
   --color-primary-hover:  #2563eb; /* blue-600 */
-  --color-danger:         #ef4444; /* red-500 */
   --color-accent:         #f59e0b; /* amber-500 */
-  --color-btn-hover:      rgba(255, 255, 255, 0.10); /* subtle light overlay on dark bg */
 }
 
 /* ─────────────────────────────────────────────
@@ -113,17 +134,14 @@ a:hover {
 ────────────────────────────────────────────── */
 [data-theme="ocean-light"] {
   --color-bg:             #f8fafc; /* slate-50 */
-  --color-surface:        #ffffff; /* white panels */
+  --color-surface:        #d8e8ff; /* blue-tinted panels */
   --color-surface-raised: #f1f5f9; /* slate-100 — subtle elevation */
   --color-border:         #cbd5e1; /* slate-300 */
   --color-text:           #0f172a; /* slate-900 — near-black */
   --color-text-muted:     #64748b; /* slate-500 */
   --color-primary:        #2563eb; /* blue-600 — darker for light bg contrast */
   --color-primary-hover:  #1d4ed8; /* blue-700 */
-  --color-danger:         #dc2626; /* red-600 */
   --color-accent:         #d97706; /* amber-600 */
-  --color-btn-hover:      rgba(0, 0, 0, 0.07); /* subtle dark overlay on light bg */
-  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
@@ -136,12 +154,10 @@ a:hover {
   --color-surface-raised: #243d28;
   --color-border:         #2d5235;
   --color-text:           #ecfdf5; /* green-50 */
-  --color-text-muted:     #6ee7b7; /* emerald-300 */
+  --color-text-muted:     #52a87a; /* muted sage-emerald — desaturated so it reads as secondary, not primary */
   --color-primary:        #10b981; /* emerald-500 */
   --color-primary-hover:  #059669; /* emerald-600 */
-  --color-danger:         #ef4444;
   --color-accent:         #f59e0b;
-  --color-btn-hover:      rgba(255, 255, 255, 0.10);
 }
 
 /* ─────────────────────────────────────────────
@@ -149,17 +165,14 @@ a:hover {
 ────────────────────────────────────────────── */
 [data-theme="forest-light"] {
   --color-bg:             #f0fdf4; /* green-50 */
-  --color-surface:        #ffffff;
+  --color-surface:        #cce8d4; /* green-tinted panels */
   --color-surface-raised: #dcfce7; /* green-100 */
   --color-border:         #86efac; /* green-300 */
   --color-text:           #14532d; /* green-900 */
-  --color-text-muted:     #16a34a; /* green-600 */
+  --color-text-muted:     #3a6b4a; /* dark sage-green — distinct from primary green-600; ~8:1 contrast on white */
   --color-primary:        #16a34a; /* green-600 */
   --color-primary-hover:  #15803d; /* green-700 */
-  --color-danger:         #dc2626;
   --color-accent:         #d97706;
-  --color-btn-hover:      rgba(0, 0, 0, 0.07);
-  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
@@ -172,12 +185,10 @@ a:hover {
   --color-surface-raised: #3d1a08;
   --color-border:         #6b2f10;
   --color-text:           #fff7ed; /* orange-50 */
-  --color-text-muted:     #fb923c; /* orange-400 */
+  --color-text-muted:     #b8784a; /* muted warm-brown — dusty, less neon than orange-400 */
   --color-primary:        #f97316; /* orange-500 */
   --color-primary-hover:  #ea580c; /* orange-600 */
-  --color-danger:         #ef4444;
   --color-accent:         #facc15; /* yellow-400 */
-  --color-btn-hover:      rgba(255, 255, 255, 0.10);
 }
 
 /* ─────────────────────────────────────────────
@@ -185,17 +196,14 @@ a:hover {
 ────────────────────────────────────────────── */
 [data-theme="sunset-light"] {
   --color-bg:             #fff7ed; /* orange-50 */
-  --color-surface:        #ffffff;
+  --color-surface:        #fcdfc4; /* warm orange-tinted panels */
   --color-surface-raised: #ffedd5; /* orange-100 */
   --color-border:         #fdba74; /* orange-300 */
   --color-text:           #7c2d12; /* orange-900 */
-  --color-text-muted:     #ea580c; /* orange-600 */
+  --color-text-muted:     #7a4a2a; /* muted dark warm-brown — distinct from primary orange-600; ~7:1 contrast on white */
   --color-primary:        #ea580c; /* orange-600 */
   --color-primary-hover:  #c2410c; /* orange-700 */
-  --color-danger:         #dc2626;
   --color-accent:         #ca8a04; /* yellow-600 */
-  --color-btn-hover:      rgba(0, 0, 0, 0.07);
-  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
@@ -208,12 +216,10 @@ a:hover {
   --color-surface-raised: #27143d;
   --color-border:         #4a2d6e;
   --color-text:           #faf5ff; /* purple-50 */
-  --color-text-muted:     #c084fc; /* purple-400 */
+  --color-text-muted:     #8a60a8; /* muted purple-gray — low chroma so it reads as secondary, not vivid */
   --color-primary:        #a855f7; /* purple-500 */
   --color-primary-hover:  #9333ea; /* purple-600 */
-  --color-danger:         #ef4444;
   --color-accent:         #f59e0b;
-  --color-btn-hover:      rgba(255, 255, 255, 0.10);
 }
 
 /* ─────────────────────────────────────────────
@@ -221,17 +227,14 @@ a:hover {
 ────────────────────────────────────────────── */
 [data-theme="lavender-light"] {
   --color-bg:             #faf5ff; /* purple-50 */
-  --color-surface:        #ffffff;
+  --color-surface:        #e8d0ff; /* purple-tinted panels */
   --color-surface-raised: #f3e8ff; /* purple-100 */
   --color-border:         #d8b4fe; /* purple-300 */
   --color-text:           #3b0764; /* purple-950 */
-  --color-text-muted:     #9333ea; /* purple-600 */
+  --color-text-muted:     #6b4d85; /* muted dark purple — distinct from primary purple-600; ~6:1 contrast on white */
   --color-primary:        #9333ea; /* purple-600 */
   --color-primary-hover:  #7e22ce; /* purple-700 */
-  --color-danger:         #dc2626;
   --color-accent:         #d97706;
-  --color-btn-hover:      rgba(0, 0, 0, 0.07);
-  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
@@ -244,12 +247,10 @@ a:hover {
   --color-surface-raised: #2e1016;
   --color-border:         #5e1a22;
   --color-text:           #fff1f2; /* rose-50 */
-  --color-text-muted:     #fb7185; /* rose-400 */
+  --color-text-muted:     #9a5a68; /* muted rose-gray — desaturated, clearly secondary vs rose primary */
   --color-primary:        #f43f5e; /* rose-500 */
   --color-primary-hover:  #e11d48; /* rose-600 */
-  --color-danger:         #ef4444;
-  --color-accent:         #f59e0b;
-  --color-btn-hover:      rgba(255, 255, 255, 0.10);
+  --color-accent:         #06b6d4; /* cyan-500 — true complement of red on the color wheel (warm red + cool teal) */
 }
 
 /* ─────────────────────────────────────────────
@@ -257,17 +258,14 @@ a:hover {
 ────────────────────────────────────────────── */
 [data-theme="crimson-light"] {
   --color-bg:             #fff1f2; /* rose-50 */
-  --color-surface:        #ffffff;
+  --color-surface:        #f5c8d0; /* rose-tinted panels */
   --color-surface-raised: #ffe4e6; /* rose-100 */
   --color-border:         #fda4af; /* rose-300 */
   --color-text:           #881337; /* rose-900 */
-  --color-text-muted:     #e11d48; /* rose-600 */
+  --color-text-muted:     #7a3d50; /* muted dark rose — distinct from primary rose-600; ~7:1 contrast on white */
   --color-primary:        #e11d48; /* rose-600 */
   --color-primary-hover:  #be123c; /* rose-700 */
-  --color-danger:         #dc2626;
-  --color-accent:         #d97706;
-  --color-btn-hover:      rgba(0, 0, 0, 0.07);
-  --polaroid-bg:          #ffffff; /* pure white for light themes */
+  --color-accent:         #0e7490; /* cyan-700 — complement of rose; darker for light-bg contrast */
 }
 
 /* ─────────────────────────────────────────────
@@ -280,12 +278,10 @@ a:hover {
   --color-surface-raised: #30200a;
   --color-border:         #57350a; /* yellow-900 */
   --color-text:           #fffbeb; /* amber-50 */
-  --color-text-muted:     #fbbf24; /* amber-400 */
+  --color-text-muted:     #a07a30; /* muted amber-brown — dusty gold, less neon than amber-400 */
   --color-primary:        #f59e0b; /* amber-500 */
   --color-primary-hover:  #d97706; /* amber-600 */
-  --color-danger:         #ef4444;
   --color-accent:         #84cc16; /* lime-500 — complement on warm wheel */
-  --color-btn-hover:      rgba(255, 255, 255, 0.10);
 }
 
 /* ─────────────────────────────────────────────
@@ -293,17 +289,14 @@ a:hover {
 ────────────────────────────────────────────── */
 [data-theme="amber-light"] {
   --color-bg:             #fffbeb; /* amber-50 */
-  --color-surface:        #ffffff;
+  --color-surface:        #fce6a8; /* amber-tinted panels */
   --color-surface-raised: #fef3c7; /* amber-100 */
   --color-border:         #fcd34d; /* amber-300 */
   --color-text:           #78350f; /* amber-900 */
-  --color-text-muted:     #d97706; /* amber-600 */
+  --color-text-muted:     #6b5020; /* muted dark amber-brown — distinct from primary amber-600; ~8:1 contrast on white */
   --color-primary:        #d97706; /* amber-600 */
   --color-primary-hover:  #b45309; /* amber-700 */
-  --color-danger:         #dc2626;
   --color-accent:         #65a30d; /* lime-600 */
-  --color-btn-hover:      rgba(0, 0, 0, 0.07);
-  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
@@ -316,12 +309,10 @@ a:hover {
   --color-surface-raised: #1a1b4b; /* indigo-950 */
   --color-border:         #312e81; /* indigo-900 */
   --color-text:           #eef2ff; /* indigo-50 */
-  --color-text-muted:     #818cf8; /* indigo-400 */
+  --color-text-muted:     #6870c8; /* muted indigo — slightly desaturated so it reads as secondary */
   --color-primary:        #6366f1; /* indigo-500 */
   --color-primary-hover:  #4f46e5; /* indigo-600 */
-  --color-danger:         #ef4444;
   --color-accent:         #f59e0b;
-  --color-btn-hover:      rgba(255, 255, 255, 0.10);
 }
 
 /* ─────────────────────────────────────────────
@@ -329,25 +320,22 @@ a:hover {
 ────────────────────────────────────────────── */
 [data-theme="midnight-light"] {
   --color-bg:             #eef2ff; /* indigo-50 */
-  --color-surface:        #ffffff;
+  --color-surface:        #ccd2ff; /* indigo-tinted panels */
   --color-surface-raised: #e0e7ff; /* indigo-100 */
   --color-border:         #a5b4fc; /* indigo-300 */
   --color-text:           #1e1b4b; /* indigo-950 */
-  --color-text-muted:     #4f46e5; /* indigo-600 */
+  --color-text-muted:     #505090; /* muted indigo-gray — distinct from primary indigo-600; ~6:1 contrast on white */
   --color-primary:        #4f46e5; /* indigo-600 */
   --color-primary-hover:  #4338ca; /* indigo-700 */
-  --color-danger:         #dc2626;
   --color-accent:         #d97706;
-  --color-btn-hover:      rgba(0, 0, 0, 0.07);
-  --polaroid-bg:          #ffffff; /* pure white for light themes */
 }
 
 /* ─────────────────────────────────────────────
-   THEME: glass-dark
+   THEME: azure-dark
    Glassmorphism — frosted semi-transparent panels over a vivid gradient background.
    Requires backdrop-filter support (all modern browsers).
 ────────────────────────────────────────────── */
-[data-theme="glass-dark"] {
+[data-theme="azure-dark"] {
   --color-bg:             #0a0f1e; /* Deep navy base so gradient layers pop through */
   --color-surface:        rgba(255, 255, 255, 0.18); /* Frosted glass panel */
   --color-surface-raised: rgba(255, 255, 255, 0.30); /* Slightly more opaque for modals */
@@ -356,20 +344,19 @@ a:hover {
   --color-text-muted:     #8899cc; /* Muted blue-slate */
   --color-primary:        #7eb8f7; /* Soft sky blue — readable on frosted bg */
   --color-primary-hover:  #5aa0ee;
-  --color-danger:         #ff6b81;
+  --color-danger:         #ff6b81; /* Softer pink-red for glass aesthetic */
   --color-accent:         #ffd166; /* Warm gold */
-  --color-btn-hover:      rgba(255, 255, 255, 0.10);
 }
 /* Gradient background that "bleeds through" the glass panels */
-[data-theme="glass-dark"] body {
+[data-theme="azure-dark"] body {
   background: radial-gradient(ellipse at 20% 20%, #1a3a6e 0%, transparent 60%),
-              radial-gradient(ellipse at 80% 80%, #2d1060 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 80%, #0d4a5e 0%, transparent 60%),
               #0a0f1e;
 }
 /* Frosted blur effect on cards and modals for glass theme */
-[data-theme="glass-dark"] .card,
-[data-theme="glass-dark"] .modal-panel,
-[data-theme="glass-dark"] .drawer-panel {
+[data-theme="azure-dark"] .card,
+[data-theme="azure-dark"] .modal-panel,
+[data-theme="azure-dark"] .drawer-panel {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -388,9 +375,8 @@ a:hover {
   --color-text-muted:     #1a8c1a; /* Dimmer green */
   --color-primary:        #33ff33; /* Phosphor green accent */
   --color-primary-hover:  #22dd22;
-  --color-danger:         #ff3333; /* Red error */
   --color-accent:         #ffaa00; /* Amber — secondary phosphor */
-  --color-btn-hover:      rgba(51, 255, 51, 0.08); /* Green overlay */
+  --color-btn-hover:      rgba(51, 255, 51, 0.08); /* Green overlay — overrides global dark base */
 }
 /* Monospace font stack for terminal feel */
 [data-theme="terminal-dark"] {
@@ -421,8 +407,46 @@ a:hover {
 
 
 /* ─────────────────────────────────────────────
-   THEME: cream-office
-   Warm cream office aesthetic — comfortable light theme with serif headings.
+   CREAM-OFFICE FAMILY: shared structural rules
+   Applies to both cream-office (light) and cream-office-dark.
+   Per-variant blocks below only specify what differs.
+────────────────────────────────────────────── */
+/* Serif font + ink-like smoothing for both variants */
+[data-theme^="cream-office"] {
+  font-family: Georgia, 'Times New Roman', serif;
+  -webkit-font-smoothing: auto; /* subpixel rendering = heavier strokes, more like printed ink */
+}
+/* Tighten heading letter-spacing — looks better at large sizes */
+[data-theme^="cream-office"] .h1-styling,
+[data-theme^="cream-office"] .h2-styling {
+  letter-spacing: -0.01em;
+}
+/* Tiled paper texture as the page background */
+[data-theme^="cream-office"] body {
+  background-image: url("/cream_office_400x400.svg");
+  background-size: 400px 400px;
+}
+/* Full-page texture overlay — texture shows through ALL content, not just background */
+[data-theme^="cream-office"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none; /* never blocks clicks */
+  background-image: url("/cream_office_400x400.svg");
+  background-size: 400px 400px;
+  /* mix-blend-mode and opacity differ per variant — defined in per-theme blocks below */
+}
+/* Paper texture on card surfaces too */
+[data-theme^="cream-office"] .card {
+  background-image: url("/cream_office_400x400.svg");
+  background-size: 400px 400px;
+}
+
+
+/* ─────────────────────────────────────────────
+   THEME: cream-office  (displayed as "Tan Office")
+   Warm tan office aesthetic — comfortable light theme with serif headings.
 ────────────────────────────────────────────── */
 [data-theme="cream-office"] {
   --color-bg:             #f0e8d0; /* Real newsprint cream — warm but not tan */
@@ -433,44 +457,39 @@ a:hover {
   --color-text-muted:     #6b5d4f; /* Warm brown muted text */
   --color-primary:        #8b1a1a; /* Deep editorial red */
   --color-primary-hover:  #6b0000;
-  --color-danger:         #dc2626;
   --color-accent:         #8b6914; /* Warm gold accent */
-  --color-btn-hover:      rgba(0, 0, 0, 0.07);
-  --polaroid-bg:          #f4edd8; /* Aged paper to match surface */
+  --polaroid-bg:          #f4edd8; /* Aged paper to match surface — overrides global light base */
 }
-/* Serif font applied to root; auto-smoothing makes letterforms heavier like ink on paper */
-[data-theme="cream-office"] {
-  font-family: Georgia, 'Times New Roman', serif;
-  -webkit-font-smoothing: auto; /* subpixel rendering = heavier strokes, more like printed ink */
-}
-/* Tighten letter-spacing on headings specifically — looks better at large sizes */
-[data-theme="cream-office"] .h1-styling,
-[data-theme="cream-office"] .h2-styling {
-  letter-spacing: -0.01em;
-}
-/* Page background: tiled texture image */
-[data-theme="cream-office"] body {
-  background-image: url("/cream_office_400x400.svg");
-  background-size: 400px 400px;
-}
-/* Full-page texture overlay via multiply blend — texture shows through ALL content, not just background */
+/* Light variant body overlay: multiply blend so texture darkens content */
 [data-theme="cream-office"] body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  pointer-events: none; /* never blocks clicks */
-  background-image: url("/cream_office_400x400.svg");
-  background-size: 400px 400px;
   mix-blend-mode: multiply; /* light texture areas = no-op; dark areas darken all content below */
   opacity: 0.55;
 }
-/* Real texture on card surfaces too — body texture is hidden under card's own background */
-[data-theme="cream-office"] .card {
-  background-image: url("/cream_office_400x400.svg");
-  background-size: 400px 400px;
-}
 
+
+/* ─────────────────────────────────────────────
+   THEME: cream-office-dark  (displayed as "Tan Office — Dark")
+   Dark academic / evening-office aesthetic — deep warm mahogany, editorial red, gold.
+────────────────────────────────────────────── */
+[data-theme="cream-office-dark"] {
+  --color-bg:             #1a1008; /* Deep mahogany — warm near-black */
+  --color-surface:        #2a1c0e; /* Dark aged wood panel */
+  --color-surface-raised: #3a2a18; /* Slightly lifted — drawers, modals */
+  --color-border:         #4a3820; /* Warm brown border */
+  --color-text:           #f0e0c0; /* Warm cream text */
+  --color-text-muted:     #a08860; /* Warm tan muted */
+  --color-primary:        #c04030; /* Editorial red — brightened for dark bg */
+  --color-primary-hover:  #a03020;
+  --color-danger:         #e05050; /* Warmer red for dark academic feel — overrides global dark base */
+  --color-accent:         #c8a020; /* Warm gold */
+  --color-btn-hover:      rgba(192, 64, 48, 0.12); /* Red-tinted hover — overrides global dark base */
+  --polaroid-bg:          #2a1c0e; /* Dark paper */
+}
+/* Dark variant body overlay: overlay blend works better on dark backgrounds */
+[data-theme="cream-office-dark"] body::before {
+  mix-blend-mode: overlay;
+  opacity: 0.20;
+}
 
 
 /* ─────────────────────────────────────────────
@@ -512,9 +531,9 @@ a:hover {
 
 
 /* ─────────────────────────────────────────────
-   THEME: glass-light
+   THEME: azure-light
    Light glassmorphism — animated conic-gradient borders that cycle through
-   the iridescent spectrum (cyan → blue → purple → pink → green), frosted glass
+   the iridescent spectrum (cyan → blue → teal → green), frosted glass
    surfaces over a pale sky background, and pill/rounded shapes.
 
    Key technique: padding-box / border-box trick
@@ -524,7 +543,7 @@ a:hover {
 
    @property --bubble-angle lets CSS smoothly interpolate the conic-gradient's
    start angle, producing a living shimmer. inherits:true means all children share
-   the single animated value cascading from [data-theme="glass-light"].
+   the single animated value cascading from [data-theme="azure-light"].
 ────────────────────────────────────────────── */
 
 /* Animatable custom property for the conic-gradient start angle */
@@ -538,9 +557,9 @@ a:hover {
   to { --bubble-angle: 360deg; }
 }
 
-[data-theme="glass-light"] {
+[data-theme="azure-light"] {
   --color-bg:             #e8f4fd; /* Pale sky blue — looking up through a bubble */
-  --color-surface:        rgba(255, 255, 255, 0.75); /* Frosted white panel */
+  --color-surface:        rgba(190, 225, 255, 0.82); /* Frosted sky-blue panel */
   --color-surface-raised: rgba(255, 255, 255, 0.92); /* More opaque for modals/dropdowns */
   --color-border:         rgba(150, 210, 255, 0.50); /* Soft iridescent blue fallback */
   --color-text:           #1e3a5a; /* Deep navy — readable on pale background */
@@ -549,78 +568,78 @@ a:hover {
   --color-primary-hover:  #4a6ab8;
   --color-danger:         #e05080; /* Pink-red — bubble-tinted danger */
   --color-accent:         #5dc8b0; /* Iridescent teal accent */
-  --color-btn-hover:      rgba(100, 136, 200, 0.12);
+  --color-btn-hover:      rgba(100, 136, 200, 0.12); /* Iridescent blue tint — overrides global light base */
 
   /* Kick off the shimmer animation — all children inherit --bubble-angle */
   animation: bubble-shimmer 10s linear infinite;
 }
 
-/* Aurora-like background: pale blue, lavender, and mint radial blobs — like looking up through a bubble */
-[data-theme="glass-light"] body {
+/* Aurora-like background: pale blue, cyan, and mint radial blobs — like looking up through a bubble */
+[data-theme="azure-light"] body {
   background:
     radial-gradient(ellipse at 25% 15%, rgba(190, 225, 255, 0.90) 0%, transparent 50%),
-    radial-gradient(ellipse at 75% 80%, rgba(210, 190, 255, 0.70) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 80%, rgba(190, 235, 255, 0.70) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 10%, rgba(190, 255, 230, 0.55) 0%, transparent 40%),
-    radial-gradient(ellipse at 10% 85%, rgba(255, 210, 240, 0.45) 0%, transparent 40%),
+    radial-gradient(ellipse at 10% 85%, rgba(180, 235, 245, 0.45) 0%, transparent 40%),
     #e8f4fd;
 }
 
 /* Frosted glass blur on elevated surfaces */
-[data-theme="glass-light"] .card,
-[data-theme="glass-light"] .modal-panel,
-[data-theme="glass-light"] .drawer-panel {
+[data-theme="azure-light"] .card,
+[data-theme="azure-light"] .modal-panel,
+[data-theme="azure-light"] .drawer-panel {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
 
 /* Iridescent gradient border on cards */
-[data-theme="glass-light"] .card {
+[data-theme="azure-light"] .card {
   border: 1.5px solid transparent;
   background:
     rgba(255, 255, 255, 0.75) padding-box,
     conic-gradient(from var(--bubble-angle, 0deg),
-      #7dd3fc, #a78bfa, #f472b6, #34d399, #fde68a, #7dd3fc) border-box;
+      #7dd3fc, #22d3ee, #2dd4bf, #34d399, #fde68a, #7dd3fc) border-box;
   border-radius: 1.25rem; /* Rounder than default */
 }
-[data-theme="glass-light"] .card:hover {
+[data-theme="azure-light"] .card:hover {
   background:
     rgba(255, 255, 255, 0.88) padding-box,
     conic-gradient(from var(--bubble-angle, 0deg),
-      #38bdf8, #818cf8, #e879f9, #10b981, #fbbf24, #38bdf8) border-box;
+      #38bdf8, #0ea5e9, #14b8a6, #10b981, #fbbf24, #38bdf8) border-box;
 }
 
 /* Iridescent gradient border on all buttons; pill shape */
-[data-theme="glass-light"] .btn {
+[data-theme="azure-light"] .btn {
   border: 1.5px solid transparent;
   background:
     rgba(255, 255, 255, 0.82) padding-box,
     conic-gradient(from var(--bubble-angle, 0deg),
-      #7dd3fc, #a78bfa, #f472b6, #34d399, #7dd3fc) border-box;
+      #7dd3fc, #22d3ee, #2dd4bf, #34d399, #7dd3fc) border-box;
   border-radius: 9999px; /* Full pill */
 }
 
 /* Primary button: iridescent fill gradient so it reads as the main CTA */
-[data-theme="glass-light"] .btn-primary {
+[data-theme="azure-light"] .btn-primary {
   background:
-    linear-gradient(135deg, rgba(125, 211, 252, 0.85), rgba(167, 139, 250, 0.85)) padding-box,
+    linear-gradient(135deg, rgba(125, 211, 252, 0.85), rgba(34, 211, 238, 0.85)) padding-box,
     conic-gradient(from var(--bubble-angle, 0deg),
-      #7dd3fc, #a78bfa, #f472b6, #34d399, #7dd3fc) border-box;
+      #7dd3fc, #22d3ee, #2dd4bf, #34d399, #7dd3fc) border-box;
   color: #1e3a5a;
-  box-shadow: 0 2px 16px rgba(167, 139, 250, 0.30);
+  box-shadow: 0 2px 16px rgba(34, 211, 238, 0.30);
 }
 
 /* Form inputs: pill shape + iridescent border */
-[data-theme="glass-light"] .form-input {
+[data-theme="azure-light"] .form-input {
   border: 1.5px solid transparent;
   background:
     rgba(255, 255, 255, 0.88) padding-box,
     conic-gradient(from var(--bubble-angle, 0deg),
-      #7dd3fc, #a78bfa, #f472b6, #34d399, #7dd3fc) border-box;
+      #7dd3fc, #22d3ee, #2dd4bf, #34d399, #7dd3fc) border-box;
   border-radius: 9999px;
 }
 
 /* Row items get extra rounding so they feel bubbly */
-[data-theme="glass-light"] .row-item {
+[data-theme="azure-light"] .row-item {
   border-radius: 1rem;
 }
 
@@ -638,10 +657,170 @@ a:hover {
   --color-text-muted:     #8b6347; /* Mid-brown muted */
   --color-primary:        #c0622f; /* Terracotta / burnt sienna */
   --color-primary-hover:  #a04d22;
-  --color-danger:         #c0392b;
+  --color-danger:         #c0392b; /* Terracotta-adjacent red — overrides global light base */
   --color-accent:         #8b7355; /* Warm khaki accent */
-  --color-btn-hover:      rgba(0, 0, 0, 0.06);
-  --polaroid-bg:          #ffffff; /* Pure white for light theme */
+  --color-btn-hover:      rgba(0, 0, 0, 0.06); /* Slightly lighter overlay — overrides global light base */
+}
+
+
+/* ─────────────────────────────────────────────
+   THEME: cream-dark  (displayed as "Cream — Dark")
+   Dark cozy parchment — deep sepia tones, warm terracotta accent, evening reading nook.
+────────────────────────────────────────────── */
+[data-theme="cream-dark"] {
+  --color-bg:             #180c04; /* Very dark warm brown-black */
+  --color-surface:        #281808; /* Dark sepia panel */
+  --color-surface-raised: #382410; /* Modals / drawers */
+  --color-border:         #503820; /* Warm brown border */
+  --color-text:           #f5e8c8; /* Warm cream text */
+  --color-text-muted:     #b09070; /* Warm tan muted */
+  --color-primary:        #d4733a; /* Terracotta — brightened for dark bg */
+  --color-primary-hover:  #c05828;
+  --color-danger:         #e05050;
+  --color-accent:         #a08060; /* Warm khaki */
+  --color-btn-hover:      rgba(212, 115, 58, 0.12);
+  --polaroid-bg:          #281808; /* Dark sepia */
+}
+[data-theme="cream-dark"] {
+  font-family: Georgia, serif;
+}
+
+
+/* ─────────────────────────────────────────────
+   THEME: cowboy-light  (displayed as "Cowboy")
+   Western frontier daylight — warm tan parchment, rust red primary, brass accent.
+────────────────────────────────────────────── */
+[data-theme="cowboy-light"] {
+  --color-bg:             #faf2df; /* Warm tan parchment — lightened */
+  --color-surface:        #f3e8c5; /* Aged paper panel — lightened */
+  --color-surface-raised: #e4d098; /* Slightly deeper raised surface */
+  --color-border:         #c8a060; /* Warm leather border */
+  --color-text:           #1e0e04; /* Near-black brown */
+  --color-text-muted:     #7a4e28; /* Saddle brown muted */
+  --color-primary:        #8b2000; /* Deep rust red */
+  --color-primary-hover:  #6b1800;
+  --color-accent:         #b87800; /* Brass / gold */
+  --polaroid-bg:          #ede0b0; /* Aged parchment — wanted poster background; overrides global light base */
+}
+[data-theme="cowboy-light"] {
+  font-family: 'EB Garamond', Georgia, serif;
+  -webkit-font-smoothing: auto;
+}
+[data-theme="cowboy-light"] .h1-styling,
+[data-theme="cowboy-light"] .h2-styling {
+  font-family: 'Rye', Georgia, serif;
+  letter-spacing: -0.01em;
+}
+/* Page background: tiled worn paper texture */
+[data-theme="cowboy-light"] body {
+  background-image: url("/cowboy_paper_v2_400x400.svg");
+  background-size: 400px 400px;
+}
+/* Multiply blend overlay — texture shows through all content */
+[data-theme="cowboy-light"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("/cowboy_paper_v2_400x400.svg");
+  background-size: 400px 400px;
+  mix-blend-mode: multiply;
+  opacity: 0.28; /* reduced from 0.45 — less darkening, lighter overall feel */
+  pointer-events: none;
+  z-index: 0;
+}
+/* Texture on card surfaces too */
+[data-theme="cowboy-light"] .card {
+  background-image: url("/cowboy_paper_v2_400x400.svg");
+  background-size: 400px 400px;
+}
+/* Wanted poster card: paper texture lives on ::before so the filter only warps the background */
+[data-theme="cowboy-light"] .wanted-card::before {
+  background-image: url('/cowboy_paper_v2_400x400.svg');
+  background-size: 400px 400px;
+}
+
+
+/* ─────────────────────────────────────────────
+   THEME: cowboy-dark  (displayed as "Cowboy — Dark")
+   Campfire night — deep saddle leather, ember red primary, gold accent.
+────────────────────────────────────────────── */
+[data-theme="cowboy-dark"] {
+  --color-bg:             #180a02; /* Near-black saddle leather */
+  --color-surface:        #2a1408; /* Dark leather panel */
+  --color-surface-raised: #3a200e; /* Modals / drawers */
+  --color-border:         #5a3018; /* Dark warm border */
+  --color-text:           #f0d8a8; /* Warm cream text */
+  --color-text-muted:     #b08040; /* Muted gold-brown */
+  --color-primary:        #c04020; /* Ember red */
+  --color-primary-hover:  #e05030;
+  --color-danger:         #e05050;
+  --color-accent:         #c8980a; /* Gold */
+  --color-btn-hover:      rgba(192, 64, 32, 0.12);
+  --polaroid-bg:          #2a1408; /* Dark leather — wanted poster background */
+}
+[data-theme="cowboy-dark"] {
+  font-family: 'EB Garamond', Georgia, serif;
+  -webkit-font-smoothing: auto;
+}
+[data-theme="cowboy-dark"] .h1-styling,
+[data-theme="cowboy-dark"] .h2-styling {
+  font-family: 'Rye', Georgia, serif;
+  letter-spacing: -0.01em;
+}
+[data-theme="cowboy-dark"] body {
+  background-image: url("/cowboy_paper_v2_400x400.svg");
+  background-size: 400px 400px;
+}
+[data-theme="cowboy-dark"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("/cowboy_paper_v2_400x400.svg");
+  background-size: 400px 400px;
+  mix-blend-mode: overlay;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+[data-theme="cowboy-dark"] .card {
+  background-image: url("/cowboy_paper_v2_400x400.svg");
+  background-size: 400px 400px;
+}
+/* Wanted poster card: paper texture on ::before for isolated frayed-edge filtering */
+[data-theme="cowboy-dark"] .wanted-card::before {
+  background-image: url('/cowboy_paper_v2_400x400.svg');
+  background-blend-mode: overlay;
+  background-size: 400px 400px;
+}
+/* Shared: card itself is transparent — frayed background layer sits in ::before */
+[data-theme^="cowboy"] .wanted-card {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+/* ::before is the paper layer — filter applied here so text/image are never distorted */
+[data-theme^="cowboy"] .wanted-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--polaroid-bg); /* use background-color, not shorthand, to preserve background-image from theme rules */
+  filter: url(#frayed-paper);
+}
+/* Lift content above ::before paper layer */
+[data-theme^="cowboy"] .wanted-title {
+  position: relative;
+  z-index: 1;
+  /* Worn ink: sepia tint + slightly faded contrast */
+  filter: sepia(0.35) contrast(0.88) brightness(1.05);
+}
+[data-theme^="cowboy"] .wanted-photo {
+  z-index: 1;
+}
+/* Worn photo: SVG filter applies sepia + random aging spots for an uneven, natural look */
+[data-theme^="cowboy"] .wanted-photo img {
+  filter: url(#worn-photo);
 }
 
 
@@ -677,6 +856,193 @@ a:hover {
 [data-theme="amoled"] .card:hover {
   border-color: var(--color-primary);
   box-shadow: 0 0 18px color-mix(in srgb, var(--color-primary) 40%, transparent);
+}
+
+/* ─────────────────────────────────────────────
+   THEME: nord-dark
+   Arctic slate blues — cool muted tones, Nord palette.
+────────────────────────────────────────────── */
+[data-theme="nord-dark"] {
+  --color-bg:             #2E3440;
+  --color-surface:        #3B4252;
+  --color-surface-raised: #434C5E;
+  --color-border:         #4C566A;
+  --color-text:           #ECEFF4;
+  --color-text-muted:     #D8DEE9;
+  --color-primary:        #88C0D0;
+  --color-primary-hover:  #81A1C1;
+  --color-danger:         #BF616A;
+  --color-accent:         #EBCB8B;
+}
+
+/* ─────────────────────────────────────────────
+   THEME: nord-light
+   Snow-storm palette — pale cool grays, deep slate text.
+────────────────────────────────────────────── */
+[data-theme="nord-light"] {
+  --color-bg:             #E5E9F0;
+  --color-surface:        #ECEFF4;
+  --color-surface-raised: #C8D4E4; /* cool blue-gray — richer than white */
+  --color-border:         #D8DEE9;
+  --color-text:           #2E3440;
+  --color-text-muted:     #4C566A;
+  --color-primary:        #5E81AC;
+  --color-primary-hover:  #81A1C1;
+  --color-danger:         #BF616A;
+  --color-accent:         #D08770;
+}
+
+/* ─────────────────────────────────────────────
+   THEME: teal-dark
+   Teal (Dark) — deep teal-black with bright teal accents.
+────────────────────────────────────────────── */
+[data-theme="teal-dark"] {
+  --color-bg:             #081A1A;
+  --color-surface:        #0F2828;
+  --color-surface-raised: #173535;
+  --color-border:         #254545;
+  --color-text:           #C8E6E6;
+  --color-text-muted:     #7AADAD;
+  --color-primary:        #2DD4BF;
+  --color-primary-hover:  #14B8A6;
+  --color-danger:         #F87171;
+  --color-accent:         #34D399;
+}
+
+/* ─────────────────────────────────────────────
+   THEME: teal-light
+   Teal (Light) — rich deep teal surfaces with mint accents.
+────────────────────────────────────────────── */
+[data-theme="teal-light"] {
+  --color-bg:             #145454;
+  --color-surface:        #1A6464;
+  --color-surface-raised: #207474;
+  --color-border:         #2A8A8A;
+  --color-text:           #EEFAFA;
+  --color-text-muted:     #AADEDE;
+  --color-primary:        #5EEAD4;
+  --color-primary-hover:  #2DD4BF;
+  --color-danger:         #FF7B7B;
+  --color-accent:         #6EE7B7;
+}
+
+/* ─────────────────────────────────────────────
+   THEME: monochrome-dark
+   Pure grayscale dark — no hue, no distraction.
+────────────────────────────────────────────── */
+[data-theme="monochrome-dark"] {
+  --color-bg:             #0a0a0a;
+  --color-surface:        #1a1a1a;
+  --color-surface-raised: #252525;
+  --color-border:         #333333;
+  --color-text:           #f0f0f0;
+  --color-text-muted:     #909090;
+  --color-primary:        #e0e0e0;
+  --color-primary-hover:  #c0c0c0;
+  --color-danger:         #ff5555;
+  --color-accent:         #888888;
+}
+
+/* ─────────────────────────────────────────────
+   THEME: monochrome-light
+   Clean neutral white — high contrast, zero color.
+────────────────────────────────────────────── */
+[data-theme="monochrome-light"] {
+  --color-bg:             #f5f5f5;
+  --color-surface:        #cccccc; /* medium gray panels */
+  --color-surface-raised: #fafafa;
+  --color-border:         #e0e0e0;
+  --color-text:           #171717;
+  --color-text-muted:     #737373;
+  --color-primary:        #171717;
+  --color-primary-hover:  #404040;
+  --color-danger:         #dc2626;
+  --color-accent:         #525252;
+}
+
+
+/* ─────────────────────────────────────────────
+   STYLE MODIFIER: glass
+   Glassmorphism overlay — composites on top of any color theme.
+   Activated by setting data-modifier="glass" on <html>.
+   Standalone azure-dark / azure-light themes are unaffected and still work.
+────────────────────────────────────────────── */
+
+/* Dark themes + glass: white frosted panels */
+[data-theme$="-dark"][data-modifier="glass"],
+[data-theme="amoled"][data-modifier="glass"] {
+  --color-surface:        rgba(255, 255, 255, 0.18);
+  --color-surface-raised: rgba(255, 255, 255, 0.30);
+  --color-border:         rgba(255, 255, 255, 0.32);
+}
+
+/* Light themes + glass: more opaque frosted panels */
+[data-theme$="-light"][data-modifier="glass"],
+[data-theme="cream-office"][data-modifier="glass"],
+[data-theme="cream"][data-modifier="glass"] {
+  --color-surface:        rgba(255, 255, 255, 0.75);
+  --color-surface-raised: rgba(255, 255, 255, 0.92);
+  --color-border:         color-mix(in srgb, var(--color-primary) 50%, transparent);
+}
+
+/* Backdrop blur on elevated surfaces — all glass modifier themes */
+[data-modifier="glass"] .card,
+[data-modifier="glass"] .modal-panel,
+[data-modifier="glass"] .drawer-panel {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Dark glass body: radial blobs tinted by the theme's own primary color */
+[data-theme$="-dark"][data-modifier="glass"] body,
+[data-theme="amoled"][data-modifier="glass"] body {
+  background:
+    radial-gradient(ellipse at 20% 20%, color-mix(in srgb, var(--color-primary) 25%, transparent) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, color-mix(in srgb, var(--color-primary) 15%, transparent) 0%, transparent 60%),
+    var(--color-bg); /* falls back to theme's own bg color */
+}
+
+/* Light glass body: radial blobs tinted by the theme's own primary color */
+[data-theme$="-light"][data-modifier="glass"] body,
+[data-theme="cream-office"][data-modifier="glass"] body,
+[data-theme="cream"][data-modifier="glass"] body {
+  background:
+    radial-gradient(ellipse at 20% 20%, color-mix(in srgb, var(--color-primary) 25%, transparent) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, color-mix(in srgb, var(--color-primary) 15%, transparent) 0%, transparent 60%),
+    var(--color-bg);
+}
+
+/* ─────────────────────────────────────────────
+   STYLE MODIFIER: bordered
+   Bordered design — bold, vivid borders as the primary visual separator.
+   Activated by setting data-modifier="bordered" on <html>.
+
+   Root cause note: most components use inline Tailwind utilities
+   (border border-border) rather than a .card CSS class.
+   Overriding --color-border here propagates automatically to every
+   element using the border-border Tailwind utility across the whole app.
+────────────────────────────────────────────── */
+
+/* Vivid primary-tinted borders on dark themes */
+[data-theme$="-dark"][data-modifier="bordered"],
+[data-theme="amoled"][data-modifier="bordered"] {
+  --color-border: color-mix(in srgb, var(--color-primary) 55%, rgba(255, 255, 255, 0.35));
+}
+/* Vivid primary-tinted borders on light themes */
+[data-theme$="-light"][data-modifier="bordered"],
+[data-theme="cream-office"][data-modifier="bordered"],
+[data-theme="cream"][data-modifier="bordered"] {
+  --color-border: color-mix(in srgb, var(--color-primary) 65%, #111111);
+}
+/* Thicker borders on all Tailwind "border" elements — 3× the default 1px */
+[data-modifier="bordered"] .border {
+  border-width: 3px;
+}
+/* Explicit width on panels (3× the old 2px) + no shadow */
+[data-modifier="bordered"] .modal-panel,
+[data-modifier="bordered"] .drawer-panel {
+  border-width: 6px;
+  box-shadow: none;
 }
 
 
@@ -1060,6 +1426,55 @@ a:hover {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  /* --- Wanted Poster card — cowboy theme variant of the collage card --- */
+  .wanted-card {
+    display: block;
+    cursor: pointer;
+    position: absolute;
+    width: 130px;
+    background: var(--polaroid-bg);
+    padding: 5px 5px 8px 5px;
+    border-radius: 1px;
+    border: 2px solid var(--color-border);
+    transition: transform 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 220ms ease;
+    will-change: transform, box-shadow;
+    text-decoration: none;
+  }
+  @media (min-width: 640px) {
+    .wanted-card { width: 160px; }
+  }
+
+  .wanted-title {
+    font-family: 'Rye', Georgia, serif;
+    font-size: 9px;
+    font-weight: 400; /* Rye is naturally heavy */
+    color: var(--polaroid-text);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.25;
+    margin-bottom: 4px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  @media (min-width: 640px) {
+    .wanted-title { font-size: 10px; }
+  }
+
+  .wanted-photo {
+    aspect-ratio: 2 / 3;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* Ensure loading skeletons pick up the parchment color under cowboy themes */
+  [data-theme^="cowboy"] .polaroid-card {
+    background: var(--polaroid-bg);
   }
 
 }

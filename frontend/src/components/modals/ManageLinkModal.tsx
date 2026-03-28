@@ -171,7 +171,8 @@ export default function ManageLinkModal({
 
     function rowStatusIcon(linked: boolean, pendingToAdd: boolean) {
         return (
-            <span className="w-5 text-center shrink-0 text-primary">
+            // a11y: aria-hidden so screen readers don't double-announce the state (aria-pressed on the button already conveys it)
+            <span className="w-5 text-center shrink-0 text-primary" aria-hidden="true">
                 {pendingToAdd ? '…' : linked ? '✓' : ''}
             </span>
         );
@@ -281,10 +282,14 @@ export default function ManageLinkModal({
                     {tabs.map((tab, i) => (
                         <button
                             key={tab.label}
-                            // a11y: role="tab" + aria-selected tell screen readers which tab is active
+                            // a11y: id enables aria-controls wiring; role="tab" + aria-selected tell screen readers which tab is active
+                            id={`manage-link-tab-${i}`}
                             role="tab"
                             aria-selected={activeTabIndex === i}
-                            className={`flex-1 py-2 text-sm ${activeTabIndex === i ? 'font-semibold border-b-2 border-primary text-primary' : 'text-text-muted'}`}
+                            // a11y: aria-controls links each tab to the panel it controls
+                            aria-controls="manage-link-tab-panel"
+                            // a11y: min-h-[44px] meets WCAG 44px minimum touch target on mobile
+                            className={`flex-1 py-2 min-h-[44px] text-sm ${activeTabIndex === i ? 'font-semibold border-b-2 border-primary text-primary' : 'text-text-muted'}`}
                             onClick={() => setActiveTabIndex(i)}
                         >{tab.label}</button>
                     ))}
@@ -315,57 +320,73 @@ export default function ManageLinkModal({
                 {/* Candidate rows — hidden on mobile when the detail panel is open (too narrow for 50/50 split) */}
                 {(!isMobile || !activeDetail) && (
                     <div className={`flex flex-col overflow-hidden transition-all ${activeDetail ? 'w-1/2' : 'w-full'}`}>
-                        <div className="flex-1 overflow-y-auto">
+                        {/* a11y: role="tabpanel" + aria-labelledby link this region to its controlling tab (tabbed mode only) */}
+                        <div
+                            className="flex-1 overflow-y-auto"
+                            role={tabs ? "tabpanel" : undefined}
+                            id={tabs ? "manage-link-tab-panel" : undefined}
+                            aria-labelledby={tabs ? `manage-link-tab-${activeTabIndex}` : undefined}
+                        >
                             {candidatesLoading ? (
-                                <div className="p-4 opacity-50">Loading...</div>
+                                // a11y: role="status" + aria-live announce the loading state to screen readers
+                                <div className="p-4 opacity-50" role="status" aria-live="polite">Loading...</div>
+                            ) : displayed.length === 0 ? (
+                                // a11y: visible empty state so the silent blank list is never ambiguous
+                                <p className="p-4 text-text-muted text-sm">No results found.</p>
                             ) : (
                                 displayed.map(item => {
                                     const linked = linkedIds.includes(item.id);
                                     const pendingToAdd = pendingAddIds.has(item.id);
                                     return (
-                                        // a11y: button instead of div so keyboard users can Tab to rows and press Enter/Space to toggle
-                                        <button
+                                        // a11y: div wrapper + sibling buttons avoids invalid nested-button HTML
+                                        <div
                                             key={item.id}
-                                            type="button"
-                                            className={
-                                                `w-full text-left flex items-center gap-3 cursor-pointer px-2 py-2 border-b border-border last:border-b-0 hover:bg-border/30 ${linked ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`
-                                            }
-                                            // Guard: block clicks on rows where hasModifyLinkAccess is explicitly false
-                                            // (Example: public lists the user can see but cannot edit)
-                                            onClick={() => !pendingToAdd && item.hasModifyLinkAccess !== false && handleToggle(item.id)}
-                                            // a11y: aria-pressed announces whether this item is currently linked/selected
-                                            aria-pressed={linked}
-                                            // a11y: aria-label describes the row action for screen readers
-                                            aria-label={`${linked ? 'Remove link to' : 'Add link to'} ${item.firstString}`}
-                                            // a11y: disabled prevents interaction for rows the user cannot edit
-                                            disabled={item.hasModifyLinkAccess === false}
+                                            className="flex items-center border-b border-border last:border-b-0"
                                         >
-                                            {rowStatusIcon(linked, pendingToAdd)}
-                                            <div className="flex-1 min-w-0">
-                                                <RowItemContent
-                                                    firstString={item.firstString}
-                                                    secondString={item.secondString}
-                                                    labelPill={item.labelPill}
-                                                    photographOnLeft={item.previewThumbnailUrls ? undefined : item.photographOnLeft}
-                                                    customLeftElement={item.previewThumbnailUrls ? <ListCollageThumb urls={item.previewThumbnailUrls} /> : undefined}
-                                                />
-                                            </div>
-                                            {rowStatusIcon(linked, pendingToAdd)}
-                                            {item.countLabel && (
-                                                <span className="ml-auto text-sm opacity-50 shrink-0">
-                                                    {item.countLabel}
-                                                </span>
-                                            )}
-                                            {/* ⓘ icon — always shown; opens the detail panel when detailType is set */}
+                                            {/* Main toggle button — takes up all remaining row space */}
                                             <button
                                                 type="button"
-                                                className="shrink-0 text-text-muted hover:text-primary p-2"
+                                                className={
+                                                    `flex-1 text-left flex items-center gap-3 cursor-pointer px-2 py-2 hover:bg-border/30 ${linked ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`
+                                                }
+                                                // Guard: block clicks on rows where hasModifyLinkAccess is explicitly false
+                                                // (Example: public lists the user can see but cannot edit)
+                                                onClick={() => !pendingToAdd && item.hasModifyLinkAccess !== false && handleToggle(item.id)}
+                                                // a11y: aria-pressed announces whether this item is currently linked/selected
+                                                aria-pressed={linked}
+                                                // a11y: aria-label describes the row action for screen readers
+                                                aria-label={`${linked ? 'Remove link to' : 'Add link to'} ${item.firstString}`}
+                                                // a11y: disabled prevents interaction for rows the user cannot edit
+                                                disabled={item.hasModifyLinkAccess === false}
+                                            >
+                                                {rowStatusIcon(linked, pendingToAdd)}
+                                                <div className="flex-1 min-w-0">
+                                                    <RowItemContent
+                                                        firstString={item.firstString}
+                                                        secondString={item.secondString}
+                                                        labelPill={item.labelPill}
+                                                        photographOnLeft={item.previewThumbnailUrls ? undefined : item.photographOnLeft}
+                                                        customLeftElement={item.previewThumbnailUrls ? <ListCollageThumb urls={item.previewThumbnailUrls} /> : undefined}
+                                                    />
+                                                </div>
+                                                {item.countLabel && (
+                                                    <span className="ml-auto text-sm opacity-50 shrink-0">
+                                                        {item.countLabel}
+                                                    </span>
+                                                )}
+                                            </button>
+                                            {/* ⓘ detail button — sibling (not child) of the toggle button to avoid invalid nested-button HTML */}
+                                            <button
+                                                type="button"
+                                                // a11y: min-h/min-w ensure 44px touch target on mobile per WCAG guidelines
+                                                className="shrink-0 text-text-muted hover:text-primary p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                                 onClick={e => handleShowDetail(e, item)}
                                                 aria-label={`View details for ${item.firstString}`}
                                             >
-                                                ⓘ
+                                                {/* a11y: aria-hidden so screen readers use the button's aria-label instead of announcing the character */}
+                                                <span aria-hidden="true">ⓘ</span>
                                             </button>
-                                        </button>
+                                        </div>
                                     );
                                 })
                             )}

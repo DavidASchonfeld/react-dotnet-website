@@ -404,6 +404,7 @@ public class MediaApiRefService : IMediaApiRefService
 
         var allMatchingLists = await _context.MediaLists
             .Include(l => l.ItemLinks)
+                .ThenInclude(link => link.MediaApiRef)
             .Where(l => l.ItemLinks.Any(link => link.MediaApiRefId == mediaApiRefId))
             .ToListAsync();
 
@@ -421,6 +422,13 @@ public class MediaApiRefService : IMediaApiRefService
                 ItemCount = l.ItemLinks.Count,
                 CanEdit = PermissionHelper.CanModifyOrDeleteList(requesterUser, l),
                 Category = l.Category,
+                // First 4 thumbnail URLs ordered by position for the collage
+                PreviewThumbnailUrls = l.ItemLinks
+                    .Where(link => link.MediaApiRef.ThumbnailUrl != null)
+                    .OrderBy(link => link.Position)
+                    .Take(4)
+                    .Select(link => link.MediaApiRef.ThumbnailUrl!)
+                    .ToList()
             })
             .ToList();
 

@@ -33,6 +33,7 @@ export interface MediaListDetail
 {
     id: number;
     submittedById: string | null;
+    submittedByUserName: string | null;
     name: string;
     description: string | null;
     visibilityStatus: VisibilityStatus;

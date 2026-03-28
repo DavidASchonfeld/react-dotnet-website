@@ -848,12 +848,26 @@ export const apiSlice = createApi({
 
         // ---- User Preference Endpoints ----
 
+        // Fetches the app-wide default appearance values — public, no auth required.
+        getAppearanceDefaults: builder.query<{ theme: string; modifier: string }, void>({
+            query: () => '/api/user/appearance-defaults',
+        }),
+
         // Persists the authenticated user's chosen theme to their account on the backend.
         updateUserTheme: builder.mutation<string | null, string | null>({
             query: (theme) => ({
                 url: '/api/user/me/theme',
                 method: 'PATCH',
                 body: { theme },
+            }),
+        }),
+
+        // Persists the authenticated user's chosen style modifier (e.g. "glass") to the backend.
+        updateUserModifier: builder.mutation<string | null, string | null>({
+            query: (modifier) => ({
+                url: '/api/user/me/modifier',
+                method: 'PATCH',
+                body: { modifier },
             }),
         }),
 
@@ -936,6 +950,7 @@ export const {
     useGetAllApprovedMediaTypesQuery,
     useGetMediaTypeByIdQuery,
     // User Preferences
+    useGetAppearanceDefaultsQuery,
     useUpdateUserThemeMutation,
     useUpdateUsernameMutation,
     useUpdatePasswordMutation,

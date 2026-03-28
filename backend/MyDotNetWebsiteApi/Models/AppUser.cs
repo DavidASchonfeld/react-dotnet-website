@@ -27,6 +27,9 @@ public class AppUser : IdentityUser
     // User's selected UI theme; null means use app default. Stored as the Theme string key.
     public string? PreferredTheme { get; set; }
 
+    // User's selected style modifier (e.g. "glass"); null means no modifier active.
+    public string? PreferredThemeModifier { get; set; }
+
     // C# Only (does not exist in the SQL database)
     // Navigation Properties to your own tables
     public ICollection<MediaList> Lists {get; set; } = new List<MediaList>();

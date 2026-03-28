@@ -10,10 +10,6 @@ interface Props {
     initialDescription?: string | null;
     initialVisibility?: VisibilityStatus;
     showDescription?: boolean;  // defaults to true
-    showVisibility?: boolean;   // overrides the mode === 'edit' default when provided
-
-
-
 
     onConfirm: (newListName: string, newListDescription: string, visibility: VisibilityStatus) => void;  // For this parameter, pass in a function with the input parameters matching this line, and a void output (meaning no output)
     onCancel: () => void;  // For this parameter, pass in a function
@@ -26,19 +22,17 @@ export default function NameAndDescriptionModal({
     initialDescription,
     initialVisibility,
     showDescription = true,
-    showVisibility,
-
     onConfirm,
     onCancel
 }: Props){
     const [name, setName] = useState(initialName ?? '');
     const [description, setDescription] = useState(initialDescription ?? '');
-    const [visibility, setVisibility] = useState<VisibilityStatus>(initialVisibility ?? VisibilityStatus.Private);
+    // Visibility is not user-editable here; managed via the dedicated toggle on the list detail page.
+    // On create it defaults to Private; on edit it preserves the existing value passed via initialVisibility.
+    const [visibility] = useState<VisibilityStatus>(initialVisibility ?? VisibilityStatus.Private);
 
     // Selects the right panel class: drawer-panel (mobile bottom-sheet) vs modal-panel (desktop dialog)
     const isMobile = useIsMobile();
-
-    const shouldShowVisibility = showVisibility ?? mode === 'edit';
 
     function handleSubmit() {
         if (!name.trim()) return  //Prevents submitting empty name
@@ -81,27 +75,7 @@ export default function NameAndDescriptionModal({
                             />
                         </>
                     )}
-                    {/*
-                        I do not need to add flex-row because here, it by default fits things side-by-side
-                        until it runs out of room.
-                    */}
-                    {shouldShowVisibility && (
-                        <>
-                            {/* a11y: sr-only label so screen readers announce "Visibility" for this select */}
-                            <label htmlFor="ndm-visibility" className="sr-only">Visibility</label>
-                            <select
-                                id="ndm-visibility"
-                                value={visibility}
-                                onChange = {(e) => setVisibility(Number(e.target.value) as VisibilityStatus)}
-                                className="form-input"
-                            >
-                                <option value = {VisibilityStatus.Private}>Private</option>
-                                {/* <option value = {VisibilityStatus.Shared}>Shared</option> TODO: Implement Sharing.*/}
-                                {/* <option value = {VisibilityStatus.Public}>Public</option> TODO: Implement Submission/Approval System*/}
-                            </select>
-                        </>
-                    )}
-                    <div className="flex gap-2 justify-center">
+                    <div className="flex justify-between">
                         <button onClick={onCancel} className = "btn btn-secondary w-fit">Cancel</button>
                         <button onClick={handleSubmit} className = "btn btn-secondary w-fit">
                             {mode === 'create' ? 'Create' : 'Save'}

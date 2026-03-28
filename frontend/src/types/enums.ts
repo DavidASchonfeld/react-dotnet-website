@@ -2,10 +2,11 @@
 // and translated it to .ts (aka TypeScript):
 
 
+// NOTE: Uses string values to match what the backend's JsonStringEnumConverter serializes (e.g. "Public", not 1)
 export enum VisibilityStatus {
-    Private = 0,
-    Public = 1,
-    Shared = 2
+    Private = 'Private',
+    Public = 'Public',
+    Shared = 'Shared'
 }
 
 // Mirror of backend MediaListCategory enum — determines list behavior, badge display, and deletion rules

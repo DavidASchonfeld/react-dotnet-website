@@ -171,6 +171,7 @@ public class MediaListService : IMediaListService
             .Include(l => l.ItemLinks)  // Load the link rows
                 .ThenInclude(link => link.MediaApiRef)  // and the MediaApiRef attached via the link row
                     .ThenInclude(r => r.ApiSource)
+            .Include(l => l.SubmittedBy)  // Load the owner for username display
             .FirstOrDefaultAsync(l => l.Id == mediaListId);
 
         if(mediaList_withIncludes == null) return ServiceResult<MediaListDetailDto>.NotFound();
@@ -181,6 +182,7 @@ public class MediaListService : IMediaListService
             Name = mediaList_withIncludes.Name,
             Description = mediaList_withIncludes.Description,
             SubmittedById = mediaList_withIncludes.SubmittedById,
+            SubmittedByUserName = mediaList_withIncludes.SubmittedBy?.UserName,
             VisibilityStatus = mediaList_withIncludes.VisibilityStatus,
             CanEdit = PermissionHelper.CanEditListMetadata(requesterUser, targetMediaList),  // Owner-only
             Category = mediaList_withIncludes.Category,
@@ -282,6 +284,10 @@ public class MediaListService : IMediaListService
 
         // Only mod/admin can promote a list to Public
         if (dto.VisibilityStatus == VisibilityStatus.Public && !PermissionHelper.IsModeratorOrAdmin(requesterUser))
+            return ServiceResult<MediaListSummaryDto>.Forbidden();
+
+        // Featured lists must never be made Public
+        if (dto.VisibilityStatus == VisibilityStatus.Public && mediaList.Category == MediaListCategory.Featured)
             return ServiceResult<MediaListSummaryDto>.Forbidden();
 
 

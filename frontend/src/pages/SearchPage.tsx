@@ -634,7 +634,6 @@ export default function SearchPage() {
             <NameAndDescriptionModal
                 mode="create"
                 showDescription={true}
-                showVisibility={true}
                 onConfirm={handleCreateTag}
                 onCancel={() => setShowCreateTagModal(false)}
             />

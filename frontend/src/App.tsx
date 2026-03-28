@@ -26,15 +26,14 @@ import AdminEditFeaturedPage from './pages/AdminEditFeaturedPage'
 // Other of My Code
 import { routePaths } from './utils/routes'
 import type { AppDispatch, RootState } from './store/store'
-import { useGetAllApprovedMediaTypesQuery } from './services/apiSlice'
+import { useGetAllApprovedMediaTypesQuery, useGetAppearanceDefaultsQuery } from './services/apiSlice'
 import AdminRoute from './components/route_protections/AdminRoute'
 import MediaApiRefDetailPage from './pages/MediaApiRefDetailPage'
 import TagDetailPage from './pages/TagDetailPage'
 import HomePage from './pages/HomePage'
 import SearchPage from './pages/SearchPage'
 import MySettingsPage from './pages/MySettingsPage'
-import MySettingsThemePage from './pages/MySettingsThemePage'
-import { DAY_NIGHT_MAP, setCurrentTheme, type DayNightTheme, type Theme } from './store/themeSlice'
+import { DAY_NIGHT_MAP, setCurrentTheme, setCurrentModifier, type DayNightTheme, type Theme, type ThemeModifier } from './store/themeSlice'
 import { useState } from 'react'
 
 
@@ -44,7 +43,7 @@ function App() {
   const location = useLocation()
   const [isMinimized, setIsMinimized] = useState(false)
 
-  const { currentTheme } = useSelector((state: RootState) => state.theme);
+  const { currentTheme, currentModifier } = useSelector((state: RootState) => state.theme);
 
 // When Website loads, pull in all MediaType details
   // into a frontend store in Redux
@@ -53,6 +52,18 @@ function App() {
   // Pre-load all media types when the user is logged in.
   // RTK Query fires the request automatically; skip=true suppresses it when there is no token.
   useGetAllApprovedMediaTypesQuery(undefined, { skip: !token });
+
+  // Fetch the app-wide default appearance values (public endpoint, always runs).
+  const { data: appearanceDefaults } = useGetAppearanceDefaultsQuery();
+
+  // On first visit (no persisted theme), apply the app defaults from the backend.
+  // setCurrentTheme/setCurrentModifier will auto-sync to the backend if the user is logged in.
+  useEffect(() => {
+    if (currentTheme === null && appearanceDefaults) {
+      dispatch(setCurrentTheme(appearanceDefaults.theme as Theme));
+      dispatch(setCurrentModifier(appearanceDefaults.modifier as ThemeModifier));
+    }
+  }, [appearanceDefaults]);  // re-runs only when defaults load; null check prevents overwriting a real saved theme
 
 
   // Handling Color Themes:
@@ -108,6 +119,15 @@ function App() {
 
   }, [currentTheme, dispatch])  // runs on load, and whenever its dependency: "theme" changes
 
+  // Apply or remove the style modifier attribute — independent of theme/day-night logic
+  useEffect(() => {
+    if (currentModifier) {
+      document.documentElement.setAttribute('data-modifier', currentModifier);
+    } else {
+      document.documentElement.removeAttribute('data-modifier');
+    }
+  }, [currentModifier])
+
 
   // The entire Website Structure
   return (
@@ -139,12 +159,6 @@ function App() {
         <Route path="/my-settings" element={
           <ProtectedRoute>
             <MySettingsPage />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/my-settings/theme" element={
-          <ProtectedRoute>
-            <MySettingsThemePage />
           </ProtectedRoute>
         } />
 

@@ -19,8 +19,8 @@ export function RoleAbilitiesInfoPanel() {
                 <p className="text-sm font-semibold text-text">Your Abilities</p>
             </div>
             <ul className="text-sm text-text/70 space-y-1 list-disc list-inside">
-                <li>Create public MediaLists and tags (basic users cannot)</li>
-                <li>Make your own MediaLists and tags public (basic users cannot)</li>
+                <li>Promote your own private lists and tags to public (basic users cannot)</li>
+                <li>Note: all lists and tags start as private; Featured lists cannot be made public</li>
             </ul>
 
             {/* Abilities exclusive to administrators */}
@@ -31,9 +31,10 @@ export function RoleAbilitiesInfoPanel() {
                         <p className="text-sm font-semibold text-text">Administrator-Only Abilities</p>
                     </div>
                     <ul className="text-sm text-text/70 space-y-1 list-disc list-inside">
+                        <li>Toggle visibility (public ↔ private) on any list or tag, even if you are not the owner</li>
+                        <li>Featured lists cannot be made public by anyone</li>
                         <li>Add or remove items from any public list or tag, even if you are not the owner</li>
                         <li>Delete any public MediaList or tag, even if you are not the owner</li>
-                        <li>Set any public MediaList or tag to private, even if you are not the owner</li>
                     </ul>
                 </div>
             )}

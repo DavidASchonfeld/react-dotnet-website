@@ -118,6 +118,19 @@ public class UserService : IUserService
     }
 
 
+    // Saves or clears the user's style modifier preference (e.g. "glass").
+    public async Task<ServiceResult<string?>> UpdateUserModifierAsync(string userId, string? modifier)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return ServiceResult<string?>.NotFound();
+
+        user.PreferredThemeModifier = modifier;
+        await _context.SaveChangesAsync();
+
+        return ServiceResult<string?>.Ok(user.PreferredThemeModifier);
+    }
+
+
     public async Task<ServiceResult<string>> UpdateUsernameAsync(string userId, UpdateUsernameDto dto)
     {
         var user = await _userManager.FindByIdAsync(userId);

@@ -51,10 +51,10 @@ export default function MediaListDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const { token, roleLevel } = useSelector((state: RootState) => state.auth);
+    const { token, roleLevel, userName } = useSelector((state: RootState) => state.auth);
     // Derived from the user's own roleLevel (already in Redux), not from DTO fields
-    const isModOrAdmin = roleLevel === 'Moderator' || roleLevel === 'Administrator';
     const isAdmin = roleLevel === 'Administrator';
+    const isModerator = roleLevel === 'Moderator';
 
     const mediaListId = parseInt(id ?? '');
     // RTK Query auto-fetches on mount and auto-cleans cache on unmount.
@@ -111,6 +111,9 @@ export default function MediaListDetailPage() {
     if (error) return <div>Error loading list</div>;
     if (!selectedMediaListDetail) return null;
 
+    // Cannot use canEdit alone — admins can edit public lists they don't own
+    const isMyList = !!userName && selectedMediaListDetail.submittedByUserName === userName;
+
     // Admin can fully manage (edit, add/remove contents) any public list they don't own
     const adminCanEditPublic = isAdmin && selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public;
     const canEditOrAdmin = selectedMediaListDetail.canEdit || adminCanEditPublic;
@@ -158,7 +161,8 @@ export default function MediaListDetailPage() {
                 isEditMode={isEditMode}
                 dragDisabled={dragDisabled}
                 swipeDisabled={swipeDisabled}
-                swipeLeftAction={{ label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }}
+                // Only show delete swipe if the current user can edit this list
+                {...(canEditOrAdmin ? { swipeLeftAction: { label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) } } : {})}
                 swipeRightAction={{ label: '📑 Details', onPress: () => navigate(routes.mediaApiRef(item.apiSourceName, item.externalId)) }}
             >
                 <RowItemContent
@@ -167,7 +171,8 @@ export default function MediaListDetailPage() {
                     onMenuClick={[
                         makeShareAction(item.name, routes.mediaApiRef(item.apiSourceName, item.externalId)),
                         makeGoToDetailsAction(navigate, routes.mediaApiRef(item.apiSourceName, item.externalId)),
-                        { icon: '⛓️‍💥', label: 'Remove from List', onClick: () => setConfirmRemoveItem({ id: item.id, name: item.name }) },
+                        // Only show "Remove from List" if the current user can edit this list
+                        ...(canEditOrAdmin ? [{ icon: '⛓️‍💥', label: 'Remove from List', onClick: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }] : []),
                     ]}
                 />
             </SwipeReorderRowItem>
@@ -198,7 +203,7 @@ export default function MediaListDetailPage() {
                         <button
                             className="btn btn-secondary w-fit"
                             onClick={handleToggleEditMode}>
-                            {isEditMode ? 'Exit "Edit Mode"' : 'Edit'}
+                            {isEditMode ? 'Stop Reordering' : 'Enable Reordering in List'}
                         </button>
                     )}
 
@@ -221,6 +226,16 @@ export default function MediaListDetailPage() {
 
             {/* -- List Info -- */}
             <h1 className="h1-styling">{selectedMediaListDetail.name}</h1>
+            {isMyList
+                ? <p className="text-sm text-[var(--color-text-muted)]">
+                    My List · {selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public ? 'Public' : 'Private'}
+                  </p>
+                : selectedMediaListDetail.submittedByUserName && (
+                    <p className="text-sm text-[var(--color-text-muted)]">
+                        by {selectedMediaListDetail.submittedByUserName} · {selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public ? 'Public' : 'Private'}
+                    </p>
+                )
+            }
             {/* Collage thumbnail — first 4 items' images in a 2×2 square grid; centered horizontally */}
             {orderedItems.length > 0 && (
                 <div className="w-32 h-32 rounded overflow-hidden my-2 mx-auto">
@@ -234,8 +249,10 @@ export default function MediaListDetailPage() {
             {selectedMediaListDetail.category === MediaListCategory.Library && <BadgePill label="Library" />}
             {selectedMediaListDetail.category === MediaListCategory.Featured && <BadgePill label="Featured" />}
 
-            {/* Visibility toggle — shown to mod/admin, derived from their own roleLevel */}
-            {isModOrAdmin && (
+            {/* Visibility toggle — admins can always toggle; moderators can only promote Private→Public; Featured lists can never be made Public */}
+            {(isAdmin || (isModerator && selectedMediaListDetail.visibilityStatus === VisibilityStatus.Private))
+                && !(selectedMediaListDetail.category === MediaListCategory.Featured && selectedMediaListDetail.visibilityStatus === VisibilityStatus.Private)
+                && (
                 <button
                     className="btn btn-secondary w-fit text-sm mt-1"
                     onClick={() => patchListMutation({
@@ -247,7 +264,7 @@ export default function MediaListDetailPage() {
                         },
                     })}
                 >
-                    {selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public ? 'Set Private' : 'Make Public'}
+                    {selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public ? 'Make it Private' : 'Make Public'}
                 </button>
             )}
 
@@ -295,7 +312,8 @@ export default function MediaListDetailPage() {
                                         key={item.id}
                                         id={item.id}
                                         isEditMode={isEditMode}
-                                        swipeLeftAction={{ label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }}
+                                        // Only show delete swipe if the current user can edit this list
+                                        {...(canEditOrAdmin ? { swipeLeftAction: { label: '🗑 Delete', onPress: () => setConfirmRemoveItem({ id: item.id, name: item.name }) } } : {})}
                                         swipeRightAction={{ label: '📑 Details', onPress: () => navigate(routes.mediaApiRef(item.apiSourceName, item.externalId)) }}
                                     >
                                         <RowItemContent
@@ -306,7 +324,8 @@ export default function MediaListDetailPage() {
                                             onMenuClick={[
                                                 makeShareAction(item.name, routes.mediaApiRef(item.apiSourceName, item.externalId)),
                                                 makeGoToDetailsAction(navigate, routes.mediaApiRef(item.apiSourceName, item.externalId)),
-                                                { icon: '⛓️‍💥', label: 'Remove from List', onClick: () => setConfirmRemoveItem({ id: item.id, name: item.name }) },
+                                                // Only show "Remove from List" if the current user can edit this list
+                                                ...(canEditOrAdmin ? [{ icon: '⛓️‍💥', label: 'Remove from List', onClick: () => setConfirmRemoveItem({ id: item.id, name: item.name }) }] : []),
                                             ]}
                                         />
                                     </SwipeReorderRowItem>

@@ -1,5 +1,5 @@
 import { createListenerMiddleware } from '@reduxjs/toolkit'
-import { setCurrentTheme } from './themeSlice'
+import { setCurrentTheme, setCurrentModifier } from './themeSlice'
 import { apiSlice } from '../services/apiSlice'
 
 // RTK listener middleware: intercepts actions before they hit reducers.
@@ -16,6 +16,20 @@ listenerMiddleware.startListening({
         if (!state.auth.isAuthenticated) return
         listenerApi.dispatch(
             apiSlice.endpoints.updateUserTheme.initiate(action.payload)
+        )
+    },
+})
+
+// When the user toggles glass mode AND is logged in, persist it to the server.
+// Uses setCurrentModifier (not loadModifierFromServer) so server-loaded modifier doesn't re-trigger this.
+listenerMiddleware.startListening({
+    actionCreator: setCurrentModifier,
+    effect: (action, listenerApi) => {
+        const state = listenerApi.getState() as { auth: { isAuthenticated: boolean } }
+        // Skip API call for unauthenticated users — modifier stays in localStorage only.
+        if (!state.auth.isAuthenticated) return
+        listenerApi.dispatch(
+            apiSlice.endpoints.updateUserModifier.initiate(action.payload)
         )
     },
 })

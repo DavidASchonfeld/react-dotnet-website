@@ -8,4 +8,6 @@ public class AuthResponseDto
     public string UserName { get; init; } = string.Empty;
     // Null means the user has no saved preference (use app/OS default).
     public string? PreferredTheme { get; init; }
+    // Null means no modifier active (no overlay).
+    public string? PreferredThemeModifier { get; init; }
 }

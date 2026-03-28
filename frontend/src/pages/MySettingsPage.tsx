@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import AnimatedPage from '../components/AnimatedPage';
 import type { AppDispatch, RootState } from '../store/store';
 import { setUserName } from '../store/authSlice';
-import { useUpdateUsernameMutation, useUpdatePasswordMutation } from '../services/apiSlice';
+import { useUpdateUsernameMutation, useUpdatePasswordMutation, useGetAppearanceDefaultsQuery } from '../services/apiSlice';
+import { setCurrentModifier, setCurrentTheme, type Theme, type ThemeModifier } from '../store/themeSlice';
 import { safeToast } from '../utils/safeToast';
+import { ThemePicker, type Variant, inferVariant } from '../components/ThemePicker';
+import { THEME_FAMILIES, getThemeDisplayName } from '../utils/themeDisplayName'; // THEME_FAMILIES: family lookup in handleVariantChange; getThemeDisplayName: current theme label in the Theme row
 
 
 // ---- Settings Section Card ----
@@ -32,11 +34,13 @@ function SettingsSection({ title, children }: { title: string; children: React.R
 function SettingsRow({
     label,
     description,
+    middleContent,
     control,
     expandedForm,
 }: {
     label: string;
     description?: string;
+    middleContent?: React.ReactNode;
     control: React.ReactNode;
     expandedForm?: React.ReactNode;
 }) {
@@ -47,14 +51,18 @@ function SettingsRow({
                     <p className="font-medium text-sm">{label}</p>
                     {description && <p className="text-xs text-text-muted mt-0.5">{description}</p>}
                 </div>
+                {/* Optional centered content between label and control */}
+                {middleContent && <div className="flex-1 text-center">{middleContent}</div>}
                 <div className="shrink-0">{control}</div>
             </div>
-            {/* Inline expanded form, shown when user clicks Edit */}
-            {expandedForm && (
-                <div className="px-5 pb-4">
-                    {expandedForm}
-                </div>
-            )}
+            {/* a11y: aria-live announces the form to screen readers when it appears, supplementing aria-expanded */}
+            <div aria-live="polite">
+                {expandedForm && (
+                    <div className="px-5 pb-4">
+                        {expandedForm}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -102,7 +110,8 @@ function ChangeUsernameForm({ currentUserName, onClose }: { currentUserName: str
             />
             {/* a11y: role="alert" causes screen readers to announce the error immediately when it appears */}
             {error && <p id="username-error" role="alert" className="text-xs text-red-500">{error}</p>}
-            <div className="flex gap-2">
+            {/* flex-wrap lets buttons stack on narrow mobile screens */}
+            <div className="flex flex-wrap gap-2">
                 <button type="submit" disabled={isLoading || !newUserName.trim()} className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
                     Save
                 </button>
@@ -179,7 +188,8 @@ function ChangePasswordForm({ onClose }: { onClose: () => void }) {
             />
             {/* a11y: role="alert" causes screen readers to announce the error immediately when it appears */}
             {error && <p id="password-error" role="alert" className="text-xs text-red-500">{error}</p>}
-            <div className="flex gap-2">
+            {/* flex-wrap lets buttons stack on narrow mobile screens */}
+            <div className="flex flex-wrap gap-2">
                 <button type="submit" disabled={isLoading || !currentPassword || !newPassword} className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
                     Change Password
                 </button>
@@ -192,23 +202,103 @@ function ChangePasswordForm({ onClose }: { onClose: () => void }) {
 }
 
 
+// ---- Circle Option Row ----
+// A settings row with 3 circular icon-buttons on the left (one active at a time) and a
+// description of the currently selected option on the right. Mirrors the variant-selector
+// style from ThemePicker.
+
+type CircleOption = {
+    icon: string;
+    label: string;
+    isActive: boolean;
+    onClick: () => void;
+};
+
+function CircleOptionRow({
+    options,
+    activeLabel,
+    activeDescription,
+    ariaLabel,
+}: {
+    options: CircleOption[];
+    activeLabel: string;
+    activeDescription?: string;
+    ariaLabel: string;
+}) {
+    return (
+        <div className="flex items-center justify-between gap-4 px-5 py-4">
+            {/* Circular selector buttons */}
+            <div className="flex gap-4" role="group" aria-label={ariaLabel}>
+                {options.map(({ icon, label, isActive, onClick }) => (
+                    <button
+                        key={label}
+                        onClick={onClick}
+                        aria-label={label}
+                        aria-pressed={isActive}
+                        className="flex flex-col items-center gap-1.5 cursor-pointer group"
+                    >
+                        <div
+                            className="w-11 h-11 rounded-full flex items-center justify-center text-xl transition-all group-hover:scale-110"
+                            style={{
+                                background:    isActive ? 'var(--color-primary)' : 'transparent',
+                                outline:       isActive ? '2px solid var(--color-primary)' : '2px solid var(--color-border)',
+                                outlineOffset: '2px',
+                            }}
+                        >
+                            {icon}
+                        </div>
+                        <span className="text-xs text-text-muted">{label}</span>
+                    </button>
+                ))}
+            </div>
+            {/* Description of the currently selected option */}
+            <div className="text-right shrink-0">
+                <p className="font-medium text-sm">{activeLabel}</p>
+                {activeDescription && <p className="text-xs text-text-muted mt-0.5">{activeDescription}</p>}
+            </div>
+        </div>
+    );
+}
+
+
 // ---- Main Page ----
 
 export default function MySettingsPage() {
-    const navigate = useNavigate();
+    const dispatch = useDispatch<AppDispatch>();
     const userName = useSelector((state: RootState) => state.auth.userName);
     const currentTheme = useSelector((state: RootState) => state.theme.currentTheme);
+    const currentModifier = useSelector((state: RootState) => state.theme.currentModifier);
 
-    // Track which inline form is open ('username' | 'password' | null)
-    const [openForm, setOpenForm] = useState<'username' | 'password' | null>(null);
+    // Track which inline form/picker is open ('username' | 'password' | 'theme' | null)
+    const [openForm, setOpenForm] = useState<'username' | 'password' | 'theme' | null>(null);
 
-    const toggle = (form: 'username' | 'password') =>
+    const toggle = (form: 'username' | 'password' | 'theme') =>
         setOpenForm(prev => (prev === form ? null : form));
 
-    // Format the theme name for display (e.g. "ocean-dayNight" → "Ocean Day/Night")
-    const displayTheme = currentTheme
-        ? currentTheme.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace('Daynight', 'Day/Night')
-        : 'Default';
+    // Active theme variant (Dark / Day/Night / Light) — initialized from the persisted theme
+    const [activeVariant, setActiveVariant] = useState<Variant>(() => inferVariant(currentTheme));
+
+    // Fetch app-wide defaults (cached by RTK Query after the first call in App.tsx).
+    const { data: appearanceDefaults } = useGetAppearanceDefaultsQuery();
+
+    // Resets theme + modifier to the app defaults; listener middleware auto-syncs to backend if logged in.
+    function handleResetToDefault() {
+        if (!appearanceDefaults) return;
+        dispatch(setCurrentTheme(appearanceDefaults.theme as Theme));
+        dispatch(setCurrentModifier(appearanceDefaults.modifier as ThemeModifier));
+        setActiveVariant('dayNight');  // keep variant row in sync with the default (teal-dayNight)
+    }
+
+    // Switch variant: update local state + apply to the active family theme if one is selected
+    function handleVariantChange(v: Variant) {
+        setActiveVariant(v);
+        if (currentTheme) {
+            const family = THEME_FAMILIES.find(f =>
+                currentTheme === f.dark || currentTheme === f.light || currentTheme === f.dayNight
+            );
+            if (family) dispatch(setCurrentTheme(family[v] as Theme)); // ThemeFamily values are always valid Theme strings
+        }
+    }
 
     return (
         <AnimatedPage>
@@ -226,6 +316,8 @@ export default function MySettingsPage() {
                                 onClick={() => toggle('username')}
                                 // a11y: aria-expanded tells screen readers whether the username form is currently shown
                                 aria-expanded={openForm === 'username'}
+                                // a11y: aria-label adds context so screen readers announce "Edit username" not just "Edit"
+                                aria-label={openForm === 'username' ? 'Cancel editing username' : 'Edit username'}
                             >
                                 {openForm === 'username' ? 'Cancel' : 'Edit'}
                             </button>
@@ -248,6 +340,8 @@ export default function MySettingsPage() {
                                 onClick={() => toggle('password')}
                                 // a11y: aria-expanded tells screen readers whether the password form is currently shown
                                 aria-expanded={openForm === 'password'}
+                                // a11y: aria-label adds context so screen readers announce "Edit password" not just "Edit"
+                                aria-label={openForm === 'password' ? 'Cancel editing password' : 'Edit password'}
                             >
                                 {openForm === 'password' ? 'Cancel' : 'Edit'}
                             </button>
@@ -262,18 +356,105 @@ export default function MySettingsPage() {
 
                 {/* Appearance section */}
                 <SettingsSection title="Appearance">
+
+                    {/* Theme row — expand/collapse the full color-palette picker */}
                     <SettingsRow
                         label="Theme"
-                        description={displayTheme}
+                        description="Choose your color theme"
+                        middleContent={<span className="text-sm font-medium">{getThemeDisplayName(currentTheme)}</span>}
                         control={
                             <button
                                 className="btn btn-secondary text-sm"
-                                onClick={() => navigate('/my-settings/theme')}
+                                onClick={() => toggle('theme')}
+                                // a11y: aria-expanded tells screen readers whether the theme picker is currently shown
+                                aria-expanded={openForm === 'theme'}
+                                // a11y: aria-label adds context so screen readers announce "Change theme" not just "Change"
+                                aria-label={openForm === 'theme' ? 'Close theme picker' : 'Change theme'}
                             >
-                                Change
+                                {openForm === 'theme' ? 'Close' : 'Change'}
                             </button>
                         }
+                        expandedForm={openForm === 'theme'
+                            ? <ThemePicker activeVariant={activeVariant} />
+                            : undefined}
                     />
+
+                    {/* Style modifier row — 🪟 Glass / 🔲 Bordered / 🚫 Standard */}
+                    <CircleOptionRow
+                        ariaLabel="Style modifier"
+                        options={[
+                            {
+                                icon: '🪟',
+                                label: 'Glass',
+                                isActive: currentModifier === 'glass',
+                                onClick: () => dispatch(setCurrentModifier('glass')),
+                            },
+                            {
+                                icon: '🔲',
+                                label: 'Bordered',
+                                isActive: currentModifier === 'bordered',
+                                onClick: () => dispatch(setCurrentModifier('bordered')),
+                            },
+                            {
+                                icon: '🚫',
+                                label: 'Standard',
+                                isActive: currentModifier === null,
+                                onClick: () => dispatch(setCurrentModifier(null)),
+                            },
+                        ]}
+                        activeLabel={
+                            currentModifier === 'glass'    ? 'Glass Mode'    :
+                            currentModifier === 'bordered' ? 'Bordered Mode' :
+                            'Standard'
+                        }
+                        activeDescription={
+                            currentModifier === 'glass'    ? 'Frosted glass surfaces'   :
+                            currentModifier === 'bordered' ? 'Bold borders, no shadows' :
+                            'No modifier applied'
+                        }
+                    />
+
+                    {/* Variant row — 🌙 Dark / 🌓 Day/Night / ☀️ Light */}
+                    <CircleOptionRow
+                        ariaLabel="Theme variant"
+                        options={[
+                            {
+                                icon: '🌙',
+                                label: 'Dark',
+                                isActive: activeVariant === 'dark',
+                                onClick: () => handleVariantChange('dark'),
+                            },
+                            {
+                                icon: '🌓',
+                                label: 'Day/Night',
+                                isActive: activeVariant === 'dayNight',
+                                onClick: () => handleVariantChange('dayNight'),
+                            },
+                            {
+                                icon: '☀️',
+                                label: 'Light',
+                                isActive: activeVariant === 'light',
+                                onClick: () => handleVariantChange('light'),
+                            },
+                        ]}
+                        activeLabel={
+                            activeVariant === 'dark'     ? 'Dark'      :
+                            activeVariant === 'light'    ? 'Light'     : 'Day / Night'
+                        }
+                        activeDescription={activeVariant === 'dayNight' ? 'Auto-switches based on time of day' : undefined}
+                    />
+
+                    {/* Reset button — restores theme, modifier, and variant to app defaults */}
+                    <div className="flex justify-end px-5 py-3">
+                        <button
+                            className="btn btn-secondary text-sm"
+                            onClick={handleResetToDefault}
+                            aria-label="Reset appearance to default settings"
+                        >
+                            Set Appearance to Default
+                        </button>
+                    </div>
+
                 </SettingsSection>
             </div>
         </AnimatedPage>

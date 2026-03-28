@@ -40,8 +40,10 @@ public class AuthController : ControllerBase
     {
         var user = new AppUser
         {
-            UserName = dto.UserName,
-            Email = dto.Email
+            UserName              = dto.UserName,
+            Email                 = dto.Email,
+            PreferredTheme        = AppearanceDefaults.Theme,      // seed with app default theme
+            PreferredThemeModifier = AppearanceDefaults.Modifier,  // seed with app default modifier
         };
 
         var result = await _userManager.CreateAsync(user, dto.Password);
@@ -145,7 +147,8 @@ public class AuthController : ControllerBase
             AccessToken = accessToken,
             RoleLevel = user.RoleLevel.ToString(),
             UserName = user.UserName!,
-            PreferredTheme = user.PreferredTheme  // return saved theme so client can restore it
+            PreferredTheme = user.PreferredTheme,                    // return saved theme so client can restore it
+            PreferredThemeModifier = user.PreferredThemeModifier     // return saved modifier so client can restore it
         };
     }
 

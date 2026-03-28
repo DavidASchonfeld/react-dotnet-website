@@ -23,6 +23,14 @@ public class UserController : ControllerBase
 
     // Routing and Endpoints
 
+    // Returns app-wide default appearance values — public so the frontend can apply them on first visit.
+    [HttpGet("appearance-defaults")]
+    [AllowAnonymous]
+    public IActionResult GetAppearanceDefaults()
+    {
+        return Ok(new { theme = AppearanceDefaults.Theme, modifier = AppearanceDefaults.Modifier });
+    }
+
     [HttpGet("all")]
     public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = AppConstants.DefaultPageSize)
     {
@@ -39,6 +47,15 @@ public class UserController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var result = await _userService.UpdateUserThemeAsync(userId, dto.Theme);
+        return result.ToActionResult(this);
+    }
+
+    // Saves the caller's style modifier preference (e.g. "glass"); null clears it.
+    [HttpPatch("me/modifier")]
+    public async Task<IActionResult> UpdateMyModifier([FromBody] UpdateUserModifierDto dto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _userService.UpdateUserModifierAsync(userId, dto.Modifier);
         return result.ToActionResult(this);
     }
 

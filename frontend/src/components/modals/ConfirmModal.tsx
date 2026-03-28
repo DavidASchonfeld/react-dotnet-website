@@ -57,7 +57,7 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
                     For lg: that's for large size (and larger screens
                     // This is helpful for scaling items based on the screen size
                     */}
-                    <div className="flex gap-1 md:gap-3 lg:gap-5 justify-center">
+                    <div className="flex justify-between">
                         <button className="btn btn-secondary w-fit"
                             onClick={onCancel}>Cancel</button>
                         <button className="btn btn-secondary w-fit"

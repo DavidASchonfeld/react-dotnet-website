@@ -187,14 +187,20 @@ function SwipeableRow({ isEditMode, dragDisabled, sortable, swipeLeftAction, swi
             {/* Right-action background — revealed by swiping right (blue; e.g. Details/navigation) */}
             {swipeRightAction && (
                 <div className={`row-item-swipe-reveal-left ${horizontalSwipeOffset >= 0 ? 'z-[1]' : 'z-0'}`}>
-                    {swipeRightAction.label}
+                    {/* Hide label until actually swiping so it can't bleed through semi-transparent themes */}
+                    <span style={{ opacity: horizontalSwipeOffset > 10 ? 1 : 0, transition: 'opacity 0.1s ease' }}>
+                        {swipeRightAction.label}
+                    </span>
                 </div>
             )}
 
             {/* Left-action background — revealed by swiping left (red; e.g. Delete/destructive) */}
             {swipeLeftAction && (
                 <div className={`row-item-swipe-reveal-right ${horizontalSwipeOffset < 0 ? 'z-[1]' : 'z-0'}`}>
-                    {swipeLeftAction.label}
+                    {/* Hide label until actually swiping so it can't bleed through semi-transparent themes */}
+                    <span style={{ opacity: horizontalSwipeOffset < -10 ? 1 : 0, transition: 'opacity 0.1s ease' }}>
+                        {swipeLeftAction.label}
+                    </span>
                 </div>
             )}
 

@@ -41,7 +41,7 @@ export function makeManageListContentsAction(onOpen: () => void): MenuAction {
 }
 
 export function makeEditBasicInfo(onOpen: () => void): MenuAction {
-    return { icon: '✏️', label: 'Name & Details', onClick: onOpen };
+    return { icon: '✏️', label: 'Name & Description', onClick: onOpen };
 }
 
 export function makeDeleteAction(onDelete: () => void): MenuAction {

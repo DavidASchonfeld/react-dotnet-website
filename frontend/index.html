@@ -8,9 +8,68 @@
     <!-- Newspaper theme fonts: Playfair Display (headlines) + EB Garamond (body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;1,400&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;1,400&family=Playfair+Display:wght@700;900&family=Rye&display=swap" rel="stylesheet">
   </head>
   <body>
+    <!-- Hidden SVG filter bank for cowboy wanted poster cards -->
+    <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+      <defs>
+        <!-- frayed-paper: displaces the background layer's edges to simulate torn paper fibers -->
+        <filter id="frayed-paper" x="-10%" y="-10%" width="120%" height="120%">
+          <!-- fractalNoise generates organic fiber-like noise for the edge displacement -->
+          <feTurbulence type="fractalNoise" baseFrequency="0.075" numOctaves="4" seed="12" result="noise"/>
+          <!-- Displace edge pixels using the noise — scale controls how far fibers extend -->
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+
+        <!-- worn-photo: three-layer organic aging using only multiply/screen (broad browser support) -->
+        <filter id="worn-photo" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <!-- Layer 1: sepia base with lifted blacks for vintage warmth -->
+          <feColorMatrix type="matrix"
+            values="0.36 0.64 0.14 0 0.05
+                    0.30 0.58 0.12 0 0.03
+                    0.20 0.40 0.10 0 0.00
+                    0    0    0    1 0"
+            result="sepiaFull"/>
+          <!-- Blend 40% original color back in so the photo retains visible hues -->
+          <feComposite operator="arithmetic" k1="0" k2="0.40" k3="0.60" k4="0"
+            in="SourceGraphic" in2="sepiaFull" result="sepia"/>
+
+          <!-- Layer 2: dark stain patches — large blobs, multiply pulls them clearly darker -->
+          <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" seed="9" result="darkNoise"/>
+          <feColorMatrix type="saturate" values="0" in="darkNoise" result="darkGray"/>
+          <!-- Range [0.20, 0.95]: slightly pulled back from full — visible but not overwhelming -->
+          <feComponentTransfer in="darkGray" result="darkMap">
+            <feFuncR type="linear" slope="0.75" intercept="0.20"/>
+            <feFuncG type="linear" slope="0.75" intercept="0.20"/>
+            <feFuncB type="linear" slope="0.75" intercept="0.20"/>
+          </feComponentTransfer>
+          <feBlend in="sepia" in2="darkMap" mode="multiply" result="stained"/>
+
+          <!-- Layer 3: bleach patches — different seed/frequency so they don't overlap dark stains -->
+          <feTurbulence type="fractalNoise" baseFrequency="0.020" numOctaves="2" seed="51" result="brightNoise"/>
+          <feColorMatrix type="saturate" values="0" in="brightNoise" result="brightGray"/>
+          <!-- Range [0.0, 0.70]: faded spots dialed back slightly -->
+          <feComponentTransfer in="brightGray" result="brightMap">
+            <feFuncR type="linear" slope="0.70" intercept="0.0"/>
+            <feFuncG type="linear" slope="0.70" intercept="0.0"/>
+            <feFuncB type="linear" slope="0.70" intercept="0.0"/>
+          </feComponentTransfer>
+          <feBlend in="stained" in2="brightMap" mode="screen" result="faded"/>
+
+          <!-- Layer 4: fine foxing specks — high frequency multiply for scattered age spots -->
+          <feTurbulence type="fractalNoise" baseFrequency="0.12" numOctaves="3" seed="37" result="fineNoise"/>
+          <feColorMatrix type="saturate" values="0" in="fineNoise" result="fineGray"/>
+          <!-- Range [0.35, 0.90]: slightly less dense specks -->
+          <feComponentTransfer in="fineGray" result="fineMap">
+            <feFuncR type="linear" slope="0.55" intercept="0.35"/>
+            <feFuncG type="linear" slope="0.55" intercept="0.35"/>
+            <feFuncB type="linear" slope="0.55" intercept="0.35"/>
+          </feComponentTransfer>
+          <feBlend in="faded" in2="fineMap" mode="multiply"/>
+        </filter>
+      </defs>
+    </svg>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

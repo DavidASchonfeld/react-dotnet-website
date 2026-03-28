@@ -4,6 +4,8 @@ public interface IUserService
     Task<ServiceResult<UserSummaryDto>> UpdateUserRoleAsync(string targetUserId, UpdateUserRoleDto dto, string requesterUserId);
     // Saves the caller's theme preference; null clears it (revert to app default).
     Task<ServiceResult<string?>> UpdateUserThemeAsync(string userId, string? theme);
+    // Saves the caller's style modifier preference; null clears it (no active modifier).
+    Task<ServiceResult<string?>> UpdateUserModifierAsync(string userId, string? modifier);
     // Changes the caller's username; fails if the new name is already taken.
     Task<ServiceResult<string>> UpdateUsernameAsync(string userId, UpdateUsernameDto dto);
     // Changes the caller's password; requires the current password for verification.

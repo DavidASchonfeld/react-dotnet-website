@@ -2,8 +2,8 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { loginUser, registerUser, logoutUser } from '../services/authService';
 import type { UserRole } from '../types/userRole';
-import { loadThemeFromServer } from './themeSlice';
-import type { Theme } from './themeSlice';
+import { loadThemeFromServer, loadModifierFromServer } from './themeSlice';
+import type { Theme, ThemeModifier } from './themeSlice';
 
 // This file replaces my AuthContext.tsx for storing/taking care of cookies for being logged in.
 
@@ -92,6 +92,8 @@ export const loginThunk = createAsyncThunk(
 
         // Apply server-saved theme on login, overwriting any local preference.
         if (data.preferredTheme) dispatch(loadThemeFromServer(data.preferredTheme as Theme));
+        // Apply server-saved style modifier on login.
+        if (data.preferredThemeModifier) dispatch(loadModifierFromServer(data.preferredThemeModifier as ThemeModifier));
 
         return { token: data.accessToken as string, userName: data.userName as string, roleLevel: data.roleLevel as UserRole };
     }
@@ -102,8 +104,9 @@ export const registerThunk = createAsyncThunk(
     async({ userName, email, password }: { userName: string; email: string; password: string }, { dispatch }) => {
         const data = await registerUser(userName, email, password);
 
-        // New accounts have no saved theme yet, but dispatch for consistency if one is ever seeded.
+        // Apply server-seeded defaults for new accounts.
         if (data.preferredTheme) dispatch(loadThemeFromServer(data.preferredTheme as Theme));
+        if (data.preferredThemeModifier) dispatch(loadModifierFromServer(data.preferredThemeModifier as ThemeModifier));
 
         return { token: data.accessToken as string, userName: data.userName as string, roleLevel: data.roleLevel as UserRole };
     }

@@ -9,6 +9,7 @@ import AnimatedPage from '../components/AnimatedPage';
 import RowItemStyling from '../components/row_item_related/RowItemStyling';
 import RowItemContent from '../components/row_item_related/RowItemContent';
 import BadgePill from '../components/BadgePill';
+import ListCollageThumb from '../components/ListCollageThumb';
 import { routes } from '../utils/routes';
 
 
@@ -68,18 +69,25 @@ export default function AdminEditFeaturedPage() {
                 {featuredLists.length === 0 && (
                     <p className="text-center text-[var(--color-text-muted)]">No featured lists yet.</p>
                 )}
-                {featuredLists.map(list => (
-                    <RowItemStyling key={list.id} variant="larger">
-                        <RowItemContent
-                            firstString={list.name}
-                            secondString={`${list.listContent.length} items`}
-                            thirdString={list.description ?? undefined}
-                            larger
-                            labelPill={<BadgePill label="Featured" />}
-                            onClick={() => navigate(routes.mediaList(list.id))}
-                        />
-                    </RowItemStyling>
-                ))}
+                {featuredLists.map(list => {
+                    const thumbUrls = list.listContent
+                        .slice(0, 4)
+                        .map(item => item.thumbnailUrl)
+                        .filter((u): u is string => !!u);
+                    return (
+                        <RowItemStyling key={list.id} variant="larger">
+                            <RowItemContent
+                                firstString={list.name}
+                                secondString={`${list.listContent.length} items`}
+                                thirdString={list.description ?? undefined}
+                                larger
+                                labelPill={<BadgePill label="Featured" />}
+                                customLeftElement={<ListCollageThumb urls={thumbUrls} />}
+                                onClick={() => navigate(routes.mediaList(list.id))}
+                            />
+                        </RowItemStyling>
+                    );
+                })}
             </div>
 
             {showCreateModal && (
