@@ -84,6 +84,20 @@ Import NuGet package:
 dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer
 
 
+# For 3rd Party API Keys (OMDB & RAWG), Setting Up / Updating
+Note: Remember to navigate into backend/MyDotNetWebsiteApi folder first.
+
+dotnet user-secrets set "ExternalApiSettings:OmdbApiKey" "your-omdb-api-key-here"
+dotnet user-secrets set "ExternalApiSettings:RawgApiKey" "your-rawg-api-key-here"
+
+Note: Keys are read once at startup — restart the backend after updating them.
+
+For production, set them as environment variables on your deployment platform
+(using __ as the separator instead of :):
+ExternalApiSettings__OmdbApiKey=your-omdb-api-key-here
+ExternalApiSettings__RawgApiKey=your-rawg-api-key-here
+
+
 ## Testing API Directly
 # Creating a Test User
 
