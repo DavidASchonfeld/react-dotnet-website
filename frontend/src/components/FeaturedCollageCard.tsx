@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import { BACKEND_BASE_URL } from '../config';
 import { routes } from '../utils/routes';
 import ImageCacheIndicatorDot from './administrator_related/ImageCacheIndicatorDot';
-import type { RootState } from '../store/store';
 
 interface Props {
     apiSourceName: string;
@@ -19,9 +17,6 @@ interface Props {
 }
 
 export default function FeaturedCollageCard({ apiSourceName, externalId, name, creatorName, thumbnailUrl, rotation, boxShadow, defaultZ, style, className }: Props) {
-
-    const currentTheme = useSelector((s: RootState) => s.theme.currentTheme);
-    const isCowboy = currentTheme?.includes('cowboy') ?? false;
 
     const proxiedUrl = thumbnailUrl
         ? thumbnailUrl.startsWith('http')
@@ -44,32 +39,7 @@ export default function FeaturedCollageCard({ apiSourceName, externalId, name, c
         },
     };
 
-    // Cowboy theme: render as a western wanted poster (title on top, image below)
-    if (isCowboy) {
-        return (
-            <Link
-                to={routes.mediaApiRef(apiSourceName, externalId)}
-                className={`wanted-card ${className ?? ''}`}
-                style={{ ...style, transform: `rotate(${rotation}deg)`, boxShadow }}
-                {...hoverHandlers}
-            >
-                <div className="wanted-title">{name}</div>
-                <div className="wanted-photo bg-border relative">
-                    {proxiedUrl && (
-                        <img
-                            src={proxiedUrl}
-                            alt={name}
-                            className="w-full h-full object-cover"
-                            onError={e => { (e.currentTarget as HTMLImageElement).src = '/placeholder-poster.svg'; }}
-                        />
-                    )}
-                    <ImageCacheIndicatorDot src={proxiedUrl ?? ''} />
-                </div>
-            </Link>
-        );
-    }
-
-    // Default: polaroid layout
+    // Polaroid layout
     return (
         <Link
             to={routes.mediaApiRef(apiSourceName, externalId)}

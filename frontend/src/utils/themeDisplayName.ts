@@ -21,7 +21,6 @@ export const THEME_FAMILIES: ThemeFamily[] = [
     { name: 'Azure',      dark: 'azure-dark',         light: 'azure-light',    dayNight: 'azure-dayNight'         },
     { name: 'Tan Office', dark: 'cream-office-dark',  light: 'cream-office',   dayNight: 'cream-office-dayNight'  },
     { name: 'Cream',      dark: 'cream-dark',         light: 'cream',          dayNight: 'cream-dayNight'         },
-    { name: 'Cowboy',     dark: 'cowboy-dark',        light: 'cowboy-light',   dayNight: 'cowboy-dayNight'        },
     { name: 'Nord',       dark: 'nord-dark',          light: 'nord-light',     dayNight: 'nord-dayNight'          },
     { name: 'Teal',       dark: 'teal-dark',           light: 'teal-light',       dayNight: 'teal-dayNight'        },
     { name: 'Monochrome', dark: 'monochrome-dark',    light: 'monochrome-light', dayNight: 'monochrome-dayNight'  },

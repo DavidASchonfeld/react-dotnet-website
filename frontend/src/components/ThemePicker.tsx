@@ -38,8 +38,6 @@ const CSS_PREVIEW: Record<string, ThemePreview> = {
     'neon-dark':           { bg: '#05050e', surface: '#0d0d22', primary: '#00eeff', accent: '#ff00ff', text: '#e8f0ff' },
     'cream':               { bg: '#fef9f0', surface: '#fff8eb', primary: '#c0622f', accent: '#8b7355', text: '#3d2b1f' },
     'cream-dark':          { bg: '#180c04', surface: '#281808', primary: '#d4733a', accent: '#a08060', text: '#f5e8c8' },
-    'cowboy-light':        { bg: '#f5e8c8', surface: '#ede0b0', primary: '#8b2000', accent: '#b87800', text: '#1e0e04' },
-    'cowboy-dark':         { bg: '#180a02', surface: '#2a1408', primary: '#c04020', accent: '#c8980a', text: '#f0d8a8' },
     'amoled':              { bg: '#000000', surface: '#111111', primary: '#60a5fa', accent: '#fbbf24', text: '#ffffff' },
     // Popular / Professional Palettes
     'nord-dark':         { bg: '#2E3440', surface: '#3B4252', primary: '#88C0D0', accent: '#EBCB8B', text: '#ECEFF4' },
@@ -68,8 +66,6 @@ const THEME_STYLES: Record<string, ThemeStyle> = {
     'cream-office-dark': { fontFamily: "Georgia, 'Times New Roman', serif" },
     'cream':             { fontFamily: "Georgia, serif" },
     'cream-dark':        { fontFamily: "Georgia, serif" },
-    'cowboy-light':      { fontFamily: "'EB Garamond', Georgia, serif" },
-    'cowboy-dark':       { fontFamily: "'EB Garamond', Georgia, serif" },
     'neon-dark':     { fontFamily: "system-ui, sans-serif", glow: true },
     'azure-dark':    {
         fontFamily: "system-ui, sans-serif",

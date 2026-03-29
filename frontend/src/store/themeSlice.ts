@@ -23,8 +23,6 @@ export type CssTheme =
     | 'neon-dark'           // Cyberpunk — near-black with vivid neon cyan/magenta glow
     | 'cream'               // Cream (Light) — cozy parchment, warm sepia tones, terracotta accent
     | 'cream-dark'          // Cream (Dark) — deep sepia, terracotta, evening reading nook
-    | 'cowboy-light'        // Cowboy (Light) — warm tan parchment, rust red, brass accent, western serif
-    | 'cowboy-dark'         // Cowboy (Dark) — deep saddle leather, ember red, gold accent
     | 'amoled'              // Pure Black — AMOLED = Active Matrix Organic Light-Emitting Diode; pure black pixels are completely off on OLED screens, saving battery
     // Popular / Professional Palettes
     | 'nord-dark'           // Nord (Dark) — arctic slate blues, cool muted tones
@@ -48,7 +46,6 @@ export type DayNightTheme =
     | 'azure-dayNight'
     | 'cream-office-dayNight'
     | 'cream-dayNight'
-    | 'cowboy-dayNight'
     | 'nord-dayNight'
     | 'teal-dayNight'
     | 'monochrome-dayNight';
@@ -64,7 +61,6 @@ export const DAY_NIGHT_MAP: Record<DayNightTheme, {dayTheme: CssTheme; nightThem
     'azure-dayNight'         : { dayTheme: 'azure-light',    nightTheme: 'azure-dark'       },
     'cream-office-dayNight'  : { dayTheme: 'cream-office',   nightTheme: 'cream-office-dark' },
     'cream-dayNight'         : { dayTheme: 'cream',          nightTheme: 'cream-dark'        },
-    'cowboy-dayNight'        : { dayTheme: 'cowboy-light',   nightTheme: 'cowboy-dark'       },
     'nord-dayNight'          : { dayTheme: 'nord-light',       nightTheme: 'nord-dark'         },
     'teal-dayNight'          : { dayTheme: 'teal-light',       nightTheme: 'teal-dark'         },
     'monochrome-dayNight'    : { dayTheme: 'monochrome-light', nightTheme: 'monochrome-dark'   },
