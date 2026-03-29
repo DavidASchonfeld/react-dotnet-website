@@ -31,8 +31,9 @@ export default function ItemActionsButton({ preview, firstString, secondString, 
 
     return (
         <>
+            {/* inline-flex + items-center vertically centers the "..." text or a single icon within the button's height */}
             <button
-                className={buttonClassName ?? 'self-center shrink-0 px-2 py-1 text-text/60 hover:text-text leading-none'}
+                className={buttonClassName ?? 'self-center shrink-0 px-2 py-1 text-text/60 hover:text-text leading-none inline-flex items-center'}
                 onMouseDown={e => e.stopPropagation()}
                 onClick={e => { e.stopPropagation(); setOpen(true); }}
             >

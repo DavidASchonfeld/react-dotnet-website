@@ -65,15 +65,15 @@ export function mediaApiRefActions(item: {
     externalId: string;
     name: string;
     navigate: NavigateFunction;
-    onManageListsOpen: () => void;
-    onManageTagsOpen: () => void;
+    onManageListsOpen?: () => void;
+    onManageTagsOpen?: () => void;
     includeGoToDetails?: boolean;
 }): MenuAction[] {
     const path = routes.mediaApiRef(item.apiName, item.externalId);
     return [
         makeShareAction(item.name, path),
-        makeManageListsAction(item.onManageListsOpen),
-        makeManageTagsAction(item.onManageTagsOpen),
+        ...(item.onManageListsOpen ? [makeManageListsAction(item.onManageListsOpen)] : []),
+        ...(item.onManageTagsOpen ? [makeManageTagsAction(item.onManageTagsOpen)] : []),
 
         // if includeGoToDetails == false, do NOT include the link to the object's details page
         ...(item.includeGoToDetails !== false ? [makeGoToDetailsAction(item.navigate, path)] : []),

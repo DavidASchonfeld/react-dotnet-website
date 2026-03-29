@@ -971,17 +971,17 @@ a:hover {
 /* Dark themes + glass: white frosted panels */
 [data-theme$="-dark"][data-modifier="glass"],
 [data-theme="amoled"][data-modifier="glass"] {
-  --color-surface:        rgba(255, 255, 255, 0.18);
-  --color-surface-raised: rgba(255, 255, 255, 0.30);
-  --color-border:         rgba(255, 255, 255, 0.32);
+  --color-surface:        rgba(255, 255, 255, 0.25);
+  --color-surface-raised: rgba(255, 255, 255, 0.48);
+  --color-border:         rgba(255, 255, 255, 0.40);
 }
 
 /* Light themes + glass: more opaque frosted panels */
 [data-theme$="-light"][data-modifier="glass"],
 [data-theme="cream-office"][data-modifier="glass"],
 [data-theme="cream"][data-modifier="glass"] {
-  --color-surface:        rgba(255, 255, 255, 0.75);
-  --color-surface-raised: rgba(255, 255, 255, 0.92);
+  --color-surface:        rgba(255, 255, 255, 0.82);
+  --color-surface-raised: rgba(255, 255, 255, 0.96);
   --color-border:         color-mix(in srgb, var(--color-primary) 50%, transparent);
 }
 
@@ -996,7 +996,7 @@ a:hover {
 /* Navbar dropdowns: slightly more opaque in glass mode for readability */
 [data-theme$="-dark"][data-modifier="glass"] .navbar-dropdown,
 [data-theme="amoled"][data-modifier="glass"] .navbar-dropdown {
-  background-color: rgba(15, 15, 25, 0.88);
+  background-color: rgba(15, 15, 25, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }

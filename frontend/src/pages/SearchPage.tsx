@@ -269,14 +269,17 @@ export default function SearchPage() {
                                                     externalId: result.externalId,
                                                     name: result.name,
                                                     navigate,
-                                                    onManageListsOpen: () => {
-                                                        setSelectedResult(result)
-                                                        setActiveModalType('lists')
-                                                    },
-                                                    onManageTagsOpen: () => {
-                                                        setSelectedResult(result)
-                                                        setActiveModalType('tags')
-                                                    },
+                                                    // Only authenticated users can manage lists/tags
+                                                    ...(isAuthenticated ? {
+                                                        onManageListsOpen: () => {
+                                                            setSelectedResult(result)
+                                                            setActiveModalType('lists')
+                                                        },
+                                                        onManageTagsOpen: () => {
+                                                            setSelectedResult(result)
+                                                            setActiveModalType('tags')
+                                                        },
+                                                    } : {}),
                                                 })}
                                             />
                                         </RowItemStyling>
