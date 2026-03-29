@@ -806,17 +806,22 @@ a:hover {
   z-index: 0;
   pointer-events: none;
   background-color: var(--polaroid-bg); /* use background-color, not shorthand, to preserve background-image from theme rules */
-  filter: url(#frayed-paper);
+  filter: url(#frayed-paper) url(#worn-paper);
+}
+/* Wanted poster is always light parchment — overrides dark theme's --polaroid-bg */
+[data-theme="cowboy-dark"] .wanted-card::before {
+  background-color: #ede0b0;
 }
 /* Lift content above ::before paper layer */
 [data-theme^="cowboy"] .wanted-title {
   position: relative;
   z-index: 1;
   /* Worn ink: sepia tint + slightly faded contrast */
-  filter: sepia(0.35) contrast(0.88) brightness(1.05);
+  filter: sepia(0.20) contrast(0.94) brightness(1.02);
 }
 [data-theme^="cowboy"] .wanted-photo {
   z-index: 1;
+  background: transparent; /* don't use bg-border; let the parchment ::before show through */
 }
 /* Worn photo: SVG filter applies sepia + random aging spots for an uneven, natural look */
 [data-theme^="cowboy"] .wanted-photo img {

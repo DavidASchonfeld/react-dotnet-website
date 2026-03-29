@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- <link rel="icon" type="image/svg+xml" href="/vite.svg" /> -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Media List Website</title>
     <!-- Newspaper theme fonts: Playfair Display (headlines) + EB Garamond (body) -->
@@ -22,6 +22,43 @@
           <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
 
+        <!-- worn-paper: heavy aging applied to the parchment ::before layer — stains, bleach, foxing -->
+        <!-- Different seeds from worn-photo so patterns don't repeat across paper and image -->
+        <filter id="worn-paper" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <!-- Layer 1: dark stain patches — large blobs darken the parchment -->
+          <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" seed="7" result="darkNoise"/>
+          <feColorMatrix type="saturate" values="0" in="darkNoise" result="darkGray"/>
+          <!-- Range [0.20, 0.95]: heavy staining -->
+          <feComponentTransfer in="darkGray" result="darkMap">
+            <feFuncR type="linear" slope="0.75" intercept="0.20"/>
+            <feFuncG type="linear" slope="0.75" intercept="0.20"/>
+            <feFuncB type="linear" slope="0.75" intercept="0.20"/>
+          </feComponentTransfer>
+          <feBlend in="SourceGraphic" in2="darkMap" mode="multiply" result="stained"/>
+
+          <!-- Layer 2: bleach patches — faded light spots across the paper -->
+          <feTurbulence type="fractalNoise" baseFrequency="0.020" numOctaves="2" seed="23" result="brightNoise"/>
+          <feColorMatrix type="saturate" values="0" in="brightNoise" result="brightGray"/>
+          <!-- Range [0.0, 0.70]: visible bleaching -->
+          <feComponentTransfer in="brightGray" result="brightMap">
+            <feFuncR type="linear" slope="0.70" intercept="0.0"/>
+            <feFuncG type="linear" slope="0.70" intercept="0.0"/>
+            <feFuncB type="linear" slope="0.70" intercept="0.0"/>
+          </feComponentTransfer>
+          <feBlend in="stained" in2="brightMap" mode="screen" result="faded"/>
+
+          <!-- Layer 3: fine foxing specks — scattered age spots across the parchment -->
+          <feTurbulence type="fractalNoise" baseFrequency="0.12" numOctaves="3" seed="42" result="fineNoise"/>
+          <feColorMatrix type="saturate" values="0" in="fineNoise" result="fineGray"/>
+          <!-- Range [0.35, 0.90]: dense age spots -->
+          <feComponentTransfer in="fineGray" result="fineMap">
+            <feFuncR type="linear" slope="0.55" intercept="0.35"/>
+            <feFuncG type="linear" slope="0.55" intercept="0.35"/>
+            <feFuncB type="linear" slope="0.55" intercept="0.35"/>
+          </feComponentTransfer>
+          <feBlend in="faded" in2="fineMap" mode="multiply"/>
+        </filter>
+
         <!-- worn-photo: three-layer organic aging using only multiply/screen (broad browser support) -->
         <filter id="worn-photo" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
           <!-- Layer 1: sepia base with lifted blacks for vintage warmth -->
@@ -31,40 +68,40 @@
                     0.20 0.40 0.10 0 0.00
                     0    0    0    1 0"
             result="sepiaFull"/>
-          <!-- Blend 40% original color back in so the photo retains visible hues -->
-          <feComposite operator="arithmetic" k1="0" k2="0.40" k3="0.60" k4="0"
+          <!-- Blend 60% original color back in so the photo retains visible hues -->
+          <feComposite operator="arithmetic" k1="0" k2="0.60" k3="0.40" k4="0"
             in="SourceGraphic" in2="sepiaFull" result="sepia"/>
 
-          <!-- Layer 2: dark stain patches — large blobs, multiply pulls them clearly darker -->
+          <!-- Layer 2: dark stain patches — kept light; heavy staining lives on the paper layer -->
           <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" seed="9" result="darkNoise"/>
           <feColorMatrix type="saturate" values="0" in="darkNoise" result="darkGray"/>
-          <!-- Range [0.20, 0.95]: slightly pulled back from full — visible but not overwhelming -->
+          <!-- Range [0.40, 0.90]: subtle stains on photo -->
           <feComponentTransfer in="darkGray" result="darkMap">
-            <feFuncR type="linear" slope="0.75" intercept="0.20"/>
-            <feFuncG type="linear" slope="0.75" intercept="0.20"/>
-            <feFuncB type="linear" slope="0.75" intercept="0.20"/>
+            <feFuncR type="linear" slope="0.50" intercept="0.40"/>
+            <feFuncG type="linear" slope="0.50" intercept="0.40"/>
+            <feFuncB type="linear" slope="0.50" intercept="0.40"/>
           </feComponentTransfer>
           <feBlend in="sepia" in2="darkMap" mode="multiply" result="stained"/>
 
-          <!-- Layer 3: bleach patches — different seed/frequency so they don't overlap dark stains -->
+          <!-- Layer 3: bleach patches — kept light -->
           <feTurbulence type="fractalNoise" baseFrequency="0.020" numOctaves="2" seed="51" result="brightNoise"/>
           <feColorMatrix type="saturate" values="0" in="brightNoise" result="brightGray"/>
-          <!-- Range [0.0, 0.70]: faded spots dialed back slightly -->
+          <!-- Range [0.0, 0.45]: faint bleach on photo -->
           <feComponentTransfer in="brightGray" result="brightMap">
-            <feFuncR type="linear" slope="0.70" intercept="0.0"/>
-            <feFuncG type="linear" slope="0.70" intercept="0.0"/>
-            <feFuncB type="linear" slope="0.70" intercept="0.0"/>
+            <feFuncR type="linear" slope="0.45" intercept="0.0"/>
+            <feFuncG type="linear" slope="0.45" intercept="0.0"/>
+            <feFuncB type="linear" slope="0.45" intercept="0.0"/>
           </feComponentTransfer>
           <feBlend in="stained" in2="brightMap" mode="screen" result="faded"/>
 
-          <!-- Layer 4: fine foxing specks — high frequency multiply for scattered age spots -->
+          <!-- Layer 4: fine foxing specks — kept light -->
           <feTurbulence type="fractalNoise" baseFrequency="0.12" numOctaves="3" seed="37" result="fineNoise"/>
           <feColorMatrix type="saturate" values="0" in="fineNoise" result="fineGray"/>
-          <!-- Range [0.35, 0.90]: slightly less dense specks -->
+          <!-- Range [0.55, 0.90]: light specks on photo -->
           <feComponentTransfer in="fineGray" result="fineMap">
-            <feFuncR type="linear" slope="0.55" intercept="0.35"/>
-            <feFuncG type="linear" slope="0.55" intercept="0.35"/>
-            <feFuncB type="linear" slope="0.55" intercept="0.35"/>
+            <feFuncR type="linear" slope="0.35" intercept="0.55"/>
+            <feFuncG type="linear" slope="0.35" intercept="0.55"/>
+            <feFuncB type="linear" slope="0.35" intercept="0.55"/>
           </feComponentTransfer>
           <feBlend in="faded" in2="fineMap" mode="multiply"/>
         </filter>
