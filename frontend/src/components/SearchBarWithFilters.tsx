@@ -39,7 +39,6 @@ interface SearchBarWithFiltersProps {
 
 export default function SearchBarWithFilters({
     query,
-    defaultApiSourceId,
     urlFilters,
     activeApiSources,
     isModerator,

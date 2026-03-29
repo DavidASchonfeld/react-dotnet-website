@@ -993,6 +993,22 @@ a:hover {
   -webkit-backdrop-filter: blur(16px);
 }
 
+/* Navbar dropdowns: slightly more opaque in glass mode for readability */
+[data-theme$="-dark"][data-modifier="glass"] .navbar-dropdown,
+[data-theme="amoled"][data-modifier="glass"] .navbar-dropdown {
+  background-color: rgba(15, 15, 25, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+[data-theme$="-light"][data-modifier="glass"] .navbar-dropdown,
+[data-theme="cream-office"][data-modifier="glass"] .navbar-dropdown,
+[data-theme="cream"][data-modifier="glass"] .navbar-dropdown {
+  background-color: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
 /* Dark glass body: radial blobs tinted by the theme's own primary color */
 [data-theme$="-dark"][data-modifier="glass"] body,
 [data-theme="amoled"][data-modifier="glass"] body {

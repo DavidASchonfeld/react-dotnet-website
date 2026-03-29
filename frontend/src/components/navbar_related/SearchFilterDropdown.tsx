@@ -78,7 +78,7 @@ export default function SearchFilterDropdown({
 
                     {/* Dropdown panel — opens below in top mode, opens rightward in left sidebar mode */}
                     <div
-                        className={`absolute z-50 min-w-[180px] bg-surface-raised rounded-xl shadow-2xl border border-border overflow-hidden
+                        className={`navbar-dropdown absolute z-50 min-w-[180px] bg-surface-raised rounded-xl shadow-2xl border border-border overflow-hidden
                             ${isTop ? 'top-full left-0 mt-2' : 'top-0 left-full ml-2'}`}
                         onClick={e => e.stopPropagation()} // keep open when clicking inside
                     >

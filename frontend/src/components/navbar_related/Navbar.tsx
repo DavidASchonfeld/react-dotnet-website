@@ -249,7 +249,7 @@ export default function Navbar({ onMinimizedChange }: NavbarProps) {
                                     // a11y: role="menu" tells screen readers this is a popup menu with menuitem children
                                     role="menu"
                                     aria-label="User menu"
-                                    className="absolute min-w-[200px] bg-surface-raised rounded-xl shadow-2xl border border-border overflow-hidden z-50 top-full right-0 mt-2"
+                                    className="navbar-dropdown absolute min-w-[200px] bg-surface-raised rounded-xl shadow-2xl border border-border overflow-hidden z-50 top-full right-0 mt-2"
 
                                     // This onClick here, on the entire dropdown menu, means that no matter what you click in the dropdown menu itself,
                                     // it will still close the dropdown menu, so the dropdown menu doesn't awkwardly stay open when you navigate to another page.
