@@ -10,6 +10,7 @@ import SearchFilterDropdown from "./SearchFilterDropdown";
 import DropdownMenuButton from "./DropdownMenuButton";
 import MinimizableIconTextButton from "../MinimizableIconTextButton";
 import RoleBadge from "../administrator_related/RoleBadge";
+import AdminOnly from "../administrator_related/AdminOnly";
 import { NAVBAR_AUTO_MINIMIZE_BREAKPOINT } from "../../constants";
 import { useGetActiveApiSourcesQuery } from "../../services/apiSlice";
 
@@ -284,16 +285,14 @@ export default function Navbar({ onMinimizedChange }: NavbarProps) {
                                         <DropdownMenuButton icon="⚙" label="My Settings" title="My Settings" onClick={() => navigate("/my-settings")} />
 
                                         {/* These options only appear to users who are Administrators */}
-                                        {roleLevel === 'Administrator' && (
-                                            <>
-                                                {/* Thin divider + "Admin" label to visually group admin-only actions */}
-                                                <div className="h-px bg-border mx-3 my-1" />
-                                                <p className="px-4 py-1 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">Admin</p>
-                                                <DropdownMenuButton icon="⚙" label="Manage Users" title="Manage Users" onClick={() => navigate("/admin/users")} />
-                                                <DropdownMenuButton icon="★" label="Edit Featured" title="Edit Featured" onClick={() => navigate("/admin/edit-featured")} />
-                                                <DropdownMenuButton icon="📊" label="API Usage" title="API Usage" onClick={() => navigate("/admin/api-usage")} />
-                                            </>
-                                        )}
+                                        <AdminOnly roleLevel={roleLevel}>
+                                            {/* Thin divider + "Admin" label to visually group admin-only actions */}
+                                            <div className="h-px bg-border mx-3 my-1" />
+                                            <p className="px-4 py-1 text-xs font-semibold text-text-muted uppercase tracking-wider text-center">Admin</p>
+                                            <DropdownMenuButton icon="⚙" label="Manage Users" title="Manage Users" onClick={() => navigate("/admin/users")} />
+                                            <DropdownMenuButton icon="★" label="Edit Featured" title="Edit Featured" onClick={() => navigate("/admin/edit-featured")} />
+                                            <DropdownMenuButton icon="📊" label="API Usage" title="API Usage" onClick={() => navigate("/admin/api-usage")} />
+                                        </AdminOnly>
 
                                     </div>
 

@@ -45,15 +45,6 @@ public enum PermissionLevel
     Manager
 }
 
-public enum CreatorRole
-{
-    Author,
-    Director,
-    Developer,
-    Publisher,
-    TBD
-}
-
 // Determines a MediaList's special behavior: protection from deletion, mutual exclusivity, and site-wide visibility
 public enum MediaListCategory
 {

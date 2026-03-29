@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 // Check ImageCache by URL → cache hit returns blob; miss fetches from URL, stores, and returns
 public class ImageCacheService : IImageCacheService
@@ -6,12 +7,14 @@ public class ImageCacheService : IImageCacheService
     private readonly AppDbContext _context;
     private readonly HttpClient _httpClient;
     private readonly ILogger<ImageCacheService> _logger;
+    private readonly CacheSettings _cacheSettings; // TTL and size-cap values from appsettings.json
 
-    public ImageCacheService(AppDbContext context, HttpClient httpClient, ILogger<ImageCacheService> logger)
+    public ImageCacheService(AppDbContext context, HttpClient httpClient, ILogger<ImageCacheService> logger, IOptions<CacheSettings> cacheSettings)
     {
         _context = context;
         _httpClient = httpClient;
         _logger = logger;
+        _cacheSettings = cacheSettings.Value;
     }
 
     // Single-param version: cache key and fetch URL are the same (the normal image proxy path).
@@ -91,7 +94,7 @@ public class ImageCacheService : IImageCacheService
             cached.ImageSizeBytes = blob.Length;
             cached.CachedAt = DateTime.UtcNow;
             cached.AccessedAt = DateTime.UtcNow;
-            cached.ExpiresAt = DateTime.UtcNow.AddDays(AppConstants.ImageCacheTtlDays);
+            cached.ExpiresAt = DateTime.UtcNow.AddDays(_cacheSettings.ImageTtlDays);
         }
         else
         {
@@ -103,7 +106,7 @@ public class ImageCacheService : IImageCacheService
                 ImageSizeBytes = blob.Length,
                 CachedAt = DateTime.UtcNow,
                 AccessedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(AppConstants.ImageCacheTtlDays),
+                ExpiresAt = DateTime.UtcNow.AddDays(_cacheSettings.ImageTtlDays),
             });
         }
 

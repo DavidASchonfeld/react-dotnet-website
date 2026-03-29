@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -59,7 +58,7 @@ public class ExternalApiSourceController : ControllerBase
     [HttpPatch("{id}/toggle-disabled")]
     public async Task<IActionResult> ToggleDisabled(int id)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return Unauthorized();
         if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
@@ -77,7 +76,7 @@ public class ExternalApiSourceController : ControllerBase
     [HttpPatch("{id}/toggle-poster-api")]
     public async Task<IActionResult> TogglePosterApi(int id)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return Unauthorized();
         if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();

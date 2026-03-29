@@ -1,18 +1,3 @@
-// Encapsulates all data-fetching, pagination, and search logic for ManageLinkModal.
-//
-// Three-mode behaviour:
-//   'lists' / 'tags':
-//     - Empty search bar  → getMyMediaLists / getMyCustomTags   (show all user's items)
-//     - Query ≥ SEARCH_MIN_CHARS → lazy search endpoints, mineOnly=true
-//   'media':
-//     - Always lazy external-API search (no "show all" mode; results only appear after a search)
-//     - Also returns activeApiSources, currentApiSource, and mediaSearchResults
-//       so the caller's onAdd handler can upsert MediaApiRef correctly.
-//
-// Usage:
-//   const modalSearch = useManageLinkModalSearch(activeModalType, showModal)
-//   <ManageLinkModal {...modalSearch} initialLinkedIds={...} onAdd={...} onRemove={...} ... />
-
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../store/store'
@@ -24,17 +9,33 @@ import {
     useLazySearchExternalApiQuery,
     useGetActiveApiSourcesQuery,
 } from '../services/apiSlice'
-import type { FilterState, SearchType } from '../components/SearchBarWithFilters'
-import { SEARCH_MIN_CHARS, SEARCH_DEFAULT_LIMIT } from '../constants'
+import { SEARCH_DEFAULT_LIMIT } from '../constants'
 import { MediaListCategory } from '../types/enums'
 import type { ExternalApiSourceSummary } from '../types/externalApiSource'
 import type { ExternalApiSearchResult } from '../types/externalApiSearch'
+import type { FilterState, SearchType } from '../components/SearchBarWithFilters'
 import type { DetailItemType } from '../components/modals/detail_panels/DetailSidePanel'
+
+// ---- useManageLinkModalSearch ----
+// Encapsulates all data-fetching, pagination, and search logic for ManageLinkModal.
+//
+// Three-mode behaviour:
+//   'lists' / 'tags':
+//     - Before first search   -> getMyMediaLists / getMyCustomTags  (show user's own items)
+//     - After any search      -> lazy search endpoints (empty query returns all matching items)
+//   'media':
+//     - Always lazy external-API search (no "show all" mode; results only appear after a search)
+//     - Also returns activeApiSources, currentApiSource, and mediaSearchResults
+//       so the caller's onAdd handler can upsert MediaApiRef correctly.
+//
+// Usage:
+//   const modalSearch = useManageLinkModalSearch(activeModalType, showModal)
+//   <ManageLinkModal {...modalSearch} initialLinkedIds={...} onAdd={...} onRemove={...} ... />
 
 const EXCLUDED_LIST_CATEGORIES = [MediaListCategory.VisitingStatus, MediaListCategory.Featured]
 
 // Candidate shape — includes optional detail metadata so the modal can open a side panel
-interface Candidate {
+export interface Candidate {
     id: string;
     firstString: string;
     secondString?: string;
@@ -44,7 +45,7 @@ interface Candidate {
     apiSourceName?: string;        // mediaApiRef only — needed for route link
 }
 
-interface ManageLinkModalSearchResult {
+export interface ManageLinkModalSearchResult {
     candidates: Candidate[]
     candidatesLoading: boolean
     // undefined in 'media' mode before the first search (so ManageLinkModal hides pagination)
@@ -65,7 +66,8 @@ export function useManageLinkModalSearch(
     const isAdmin = useSelector((state: RootState) => state.auth.roleLevel) === 'Administrator'
     const [page, setPage] = useState(1)
     const [query, setQuery] = useState('')
-    const shouldFetch = query.length >= SEARCH_MIN_CHARS // true once user has typed enough to search
+    // searchMode: true once user has explicitly submitted a search (even with empty text)
+    const [searchMode, setSearchMode] = useState(false)
 
     // Derived-state pattern: wipe page + query mid-render when activeType changes.
     // This is React's recommended alternative to useEffect+setState for prop-driven resets
@@ -79,6 +81,7 @@ export function useManageLinkModalSearch(
         setPrevActiveType(activeType)
         setPage(1)
         setQuery('')
+        setSearchMode(false)
         setCurrentApiSource(null)
         setLastMediaSearchParams(null)
         setMineOnly(false)
@@ -86,15 +89,15 @@ export function useManageLinkModalSearch(
 
     // --- Lists / tags mode ---
 
-    // No-query mode: fetch all the user's lists (skipped while a search query is active)
+    // No-query mode: fetch all the user's lists (skipped once the user submits a search)
     const { data: myListsResult, isFetching: myListsFetching } = useGetMyMediaListsQuery(
         { page },
-        { skip: !enabled || activeType !== 'lists' || shouldFetch }
+        { skip: !enabled || activeType !== 'lists' || searchMode }
     )
-    // No-query mode: fetch all the user's tags (skipped while a search query is active)
+    // No-query mode: fetch all the user's tags (skipped once the user submits a search)
     const { data: myTagsResult, isFetching: myTagsFetching } = useGetMyCustomTagsQuery(
         { page },
-        { skip: !enabled || activeType !== 'tags' || shouldFetch }
+        { skip: !enabled || activeType !== 'tags' || searchMode }
     )
 
     // Search mode: lazy so they only fire when explicitly triggered inside onSearch / onPageChange
@@ -115,21 +118,21 @@ export function useManageLinkModalSearch(
             const source = activeApiSources?.find(s => s.id === filters.apiSourceId) ?? activeApiSources?.[0]
             if (!source) return
             setCurrentApiSource(source)
-            setPage(1)
+            setPage(1) // always reset to page 1 on a new search
             setLastMediaSearchParams({ query: newQuery, mediaTypeId: source.mediaTypeId })
             triggerSearchMedia({ query: newQuery, mediaTypeId: source.mediaTypeId, limit: SEARCH_DEFAULT_LIMIT, page: 1 })
             return
         }
         setQuery(newQuery)
         setPage(1) // always reset to page 1 on a new search
-        if (newQuery.length >= SEARCH_MIN_CHARS) {
-            const isMineOnly = activeType === 'tags'
-                ? !isAdmin  // Admins can apply/manage any public tag; others only their own
-                : filters.subtype === 'mine'  // Lists: respect the user's scope filter
-            setMineOnly(isMineOnly)
-            if (filters.searchType === 'lists') triggerSearchLists({ query: newQuery, limit: SEARCH_DEFAULT_LIMIT, mineOnly: isMineOnly, page: 1 })
-            else triggerSearchTags({ query: newQuery, limit: SEARCH_DEFAULT_LIMIT, mineOnly: isMineOnly, page: 1 })
-        }
+        // For lists/tags, allow empty query (returns all matching items)
+        const isMineOnly = activeType === 'tags'
+            ? !isAdmin  // Admins can apply/manage any public tag; others only their own
+            : filters.subtype === 'mine'  // Lists: respect the user's scope filter
+        setMineOnly(isMineOnly)
+        setSearchMode(true)
+        if (filters.searchType === 'lists') triggerSearchLists({ query: newQuery, limit: SEARCH_DEFAULT_LIMIT, mineOnly: isMineOnly, page: 1 })
+        else triggerSearchTags({ query: newQuery, limit: SEARCH_DEFAULT_LIMIT, mineOnly: isMineOnly, page: 1 })
     }
 
     // Called by ManageLinkModal's PaginationControls
@@ -141,7 +144,7 @@ export function useManageLinkModalSearch(
             }
             return
         }
-        if (shouldFetch) {
+        if (searchMode) {
             // Re-run the active search at the new page
             if (activeType === 'lists') triggerSearchLists({ query, limit: SEARCH_DEFAULT_LIMIT, mineOnly, page: newPage })
             else triggerSearchTags({ query, limit: SEARCH_DEFAULT_LIMIT, mineOnly, page: newPage })
@@ -179,18 +182,18 @@ export function useManageLinkModalSearch(
 
     // --- Lists / tags mode ---
 
-    // Switch between "all mine" items and search results depending on whether a query is active
+    // Switch between "all mine" items and search results depending on whether user has searched
     const candidates: Candidate[] = activeType === 'lists'
-        ? (shouldFetch ? listSearchData ?? [] : myListsResult?.items ?? [])
+        ? (searchMode ? listSearchData ?? [] : myListsResult?.items ?? [])
             .filter(l => !EXCLUDED_LIST_CATEGORIES.includes(l.category))
             .map(l => ({ id: String(l.id), firstString: l.name, secondString: l.description ?? undefined, previewThumbnailUrls: l.previewThumbnailUrls, detailType: 'mediaList' as DetailItemType }))
-        : (shouldFetch ? tagSearchData ?? [] : myTagsResult?.items ?? [])
+        : (searchMode ? tagSearchData ?? [] : myTagsResult?.items ?? [])
             // Admins can manage all public tags; others only see their own
             .filter(t => t.canEdit || isAdmin)
             .map(t => ({ id: String(t.id), firstString: t.name, detailType: 'tag' as DetailItemType }))
 
     // Next-page exists if the last batch was full (search) or there are more pages in the paginated result (no-query)
-    const hasNextPage = shouldFetch
+    const hasNextPage = searchMode
         ? activeType === 'lists'
             ? (listSearchData?.length ?? 0) === SEARCH_DEFAULT_LIMIT
             : (tagSearchData?.length ?? 0) === SEARCH_DEFAULT_LIMIT
@@ -203,7 +206,7 @@ export function useManageLinkModalSearch(
         hasNextPage,
         hasPreviousPage: page > 1,
         // totalPages is only known in no-query mode (search results don't return a total count)
-        totalPages: shouldFetch
+        totalPages: searchMode
             ? undefined
             : activeType === 'lists' ? myListsResult?.totalPages : myTagsResult?.totalPages,
     }

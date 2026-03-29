@@ -2,6 +2,8 @@
 // Plans and rate limits are loaded from appsettings.json via ApiPlanConfiguration.
 // ApiKeyConfigPath is intentionally stored here so we know *which* APIs need
 // keys, but it must NEVER be exposed to the frontend — use ExternalApiMetadataDto instead.
+// NOTE: Initialized once at startup (Program.cs) — adding a new external API requires a code
+// change, a DB migration/seed entry, and an app restart. No dynamic registration at runtime.
 
 public record SubscriptionPlan
 {

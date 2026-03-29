@@ -74,6 +74,9 @@ builder.Services.AddAuthentication(options =>
 
 
 
+// Bind CacheSettings from appsettings.json — injected via IOptions<CacheSettings> into cache-aware services.
+builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection("CacheSettings"));
+
 // Register Service Files
 //  (They are in the backend/MyDotNetWebsiteApi/Services folder)
 builder.Services.AddScoped<IMediaTypeService, MediaTypeService>();

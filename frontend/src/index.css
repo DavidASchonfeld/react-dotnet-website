@@ -911,19 +911,19 @@ a:hover {
 
 /* ─────────────────────────────────────────────
    THEME: teal-light
-   Teal (Light) — rich deep teal surfaces with mint accents.
+   Teal (Light) — pale mint surfaces with dark teal text.
 ────────────────────────────────────────────── */
 [data-theme="teal-light"] {
-  --color-bg:             #145454;
-  --color-surface:        #1A6464;
-  --color-surface-raised: #207474;
-  --color-border:         #2A8A8A;
-  --color-text:           #EEFAFA;
-  --color-text-muted:     #AADEDE;
-  --color-primary:        #5EEAD4;
-  --color-primary-hover:  #2DD4BF;
-  --color-danger:         #FF7B7B;
-  --color-accent:         #6EE7B7;
+  --color-bg:             #E0F2F1; /* very light teal wash */
+  --color-surface:        #B2DFDB; /* soft teal panels */
+  --color-surface-raised: #FFFFFF; /* white dropdowns/modals — maximum contrast */
+  --color-border:         #80CBC4; /* medium teal border */
+  --color-text:           #00363A; /* very dark teal — high contrast on light bg */
+  --color-text-muted:     #00695C; /* dark teal — readable secondary text */
+  --color-primary:        #00897B; /* teal-600 primary action */
+  --color-primary-hover:  #00695C; /* teal-700 hover */
+  --color-danger:         #C62828; /* deep red — visible on light bg */
+  --color-accent:         #00BFA5; /* bright teal accent */
 }
 
 /* ─────────────────────────────────────────────

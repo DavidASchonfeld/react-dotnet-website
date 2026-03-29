@@ -12,10 +12,8 @@ import {
     useRemoveMediaApiRefFromListByExternalRefMutation,
     useAddTagToMediaApiRefMutation,
     useRemoveTagFromMediaApiRefMutation,
-    useGetMyMediaListsQuery,
     useCreateMediaListMutation,
     useDeleteMediaListMutation,
-    useGetMyCustomTagsQuery,
     useCreateCustomTagMutation,
     usePatchCustomTagMutation,
     useDeleteCustomTagMutation,
@@ -101,27 +99,22 @@ export default function SearchPage() {
     const { data: tagResults, isLoading: tagsLoading, isFetching: tagsFetching } =
         useSearchCustomTagsQuery(
             { query, limit: PAGE_SIZE, mineOnly: subtypeForNonMedia === 'mine', page },
-            { skip: !shouldFetch || urlSearchType !== 'tags' }
+            { skip: urlSearchType !== 'tags' }
         )
 
     const { data: listResults, isLoading: listsLoading, isFetching: listsFetching } =
         useSearchMediaListsQuery(
             { query, limit: PAGE_SIZE, mineOnly: subtypeForNonMedia === 'mine', page },
-            { skip: !shouldFetch || urlSearchType !== 'lists' }
+            { skip: urlSearchType !== 'lists' }
         )
 
     const [findOrCreate] = useFindOrCreateMediaApiRefMutation()
 
-    // ── My Lists (mine+no-query state) ────────────────────────────────────
+    // ── Lists CRUD state ──────────────────────────────────────────────────
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [listToDelete, setListToDelete] = useState<{ id: number; name: string } | null>(null)
     const [createList] = useCreateMediaListMutation()
     const [deleteList] = useDeleteMediaListMutation()
-
-    const { data: myListsResult, isLoading: myListsLoading } = useGetMyMediaListsQuery(
-        { page },
-        { skip: !isAuthenticated || urlSearchType !== 'lists' || subtypeForNonMedia !== 'mine' || shouldFetch }
-    )
 
     async function handleCreateMediaList(name: string, description: string, visibility: VisibilityStatus) {
         try {
@@ -145,18 +138,13 @@ export default function SearchPage() {
         }
     }
 
-    // ── My Tags (mine+no-query state) ─────────────────────────────────────
+    // ── Tags CRUD state ───────────────────────────────────────────────────
     const [showCreateTagModal, setShowCreateTagModal] = useState(false)
     const [editingTag, setEditingTag] = useState<{ id: number; name: string; description?: string | null; visibilityStatus?: VisibilityStatus } | null>(null)
     const [tagToDelete, setTagToDelete] = useState<{ id: number; name: string } | null>(null)
     const [createTag] = useCreateCustomTagMutation()
     const [patchTag] = usePatchCustomTagMutation()
     const [deleteTag] = useDeleteCustomTagMutation()
-
-    const { data: myTagsResult, isLoading: myTagsLoading } = useGetMyCustomTagsQuery(
-        { page },
-        { skip: !isAuthenticated || urlSearchType !== 'tags' || subtypeForNonMedia !== 'mine' || shouldFetch }
-    )
 
     async function handleCreateTag(name: string, description: string, visibility: VisibilityStatus) {
         await createTag({ name: name.trim(), description: description.trim() || undefined, visibilityStatus: visibility }).unwrap()
@@ -242,17 +230,15 @@ export default function SearchPage() {
 
             {/* Results section */}
             <div className="mt-4">
-                {/* No query entered */}
-                {!shouldFetch && !isListsSearch && !(isTagsSearch && isMineMode) && (
+                {/* No query entered (media only — lists/tags always fire the search API) */}
+                {!shouldFetch && !isListsSearch && !isTagsSearch && (
                     <p className="text-text/50 text-sm">
-                        {urlSearchType === 'media'
-                            ? 'Search for movies, games, books, and more'
-                            : `Search for ${urlSearchType}.`}
+                        Search for movies, games, books, and more
                     </p>
                 )}
 
                 {/* Loading */}
-                {shouldFetch && isLoading && (
+                {isLoading && (
                     <p className="text-text/50 text-sm">Searching…</p>
                 )}
 
@@ -319,10 +305,10 @@ export default function SearchPage() {
                 )}
 
                 {/* Tags results */}
-                {urlSearchType === 'tags' && shouldFetch && !isLoading && (
+                {urlSearchType === 'tags' && !isLoading && (
                     <>
                         {tagResults && tagResults.length === 0 && (
-                            <p className="text-text/50 text-sm">No tags found for "{query}".</p>
+                            <p className="text-text/50 text-sm">{query ? `No tags found for "${query}".` : 'No tags found.'}</p>
                         )}
                         {tagsHasResults && (
                             <div className="rounded-lg border border-border overflow-hidden">
@@ -378,58 +364,6 @@ export default function SearchPage() {
                     </button>
                 )}
 
-                {/* Tags — no-query state: show all user's tags */}
-                {isTagsSearch && isMineMode && !shouldFetch && (
-                    <>
-                        {myTagsLoading && <p className="text-text/50 text-sm">Loading your tags…</p>}
-                        {!myTagsLoading && myTagsResult && myTagsResult.items.length === 0 && (
-                            <p className="text-text/50 text-sm">You have no tags yet.</p>
-                        )}
-                        {!myTagsLoading && myTagsResult && myTagsResult.items.length > 0 && (
-                            <div className="rounded-lg border border-border overflow-hidden">
-                                {myTagsResult.items.map(tag => (
-                                    <RowItemStyling key={tag.id}>
-                                        <RowItemContent
-                                            firstString={tag.name}
-                                            secondString={tag.visibilityStatus === VisibilityStatus.Public ? 'Public' : 'Private'}
-                                            onClick={() => navigate(routes.tag(tag.id))}
-                                            onMenuClick={tagActions({
-                                                id: tag.id,
-                                                name: tag.name,
-                                                navigate,
-                                                // Only show edit/delete when the user can actually perform those actions
-                                                ...((tag.canEdit || (isAdmin && tag.visibilityStatus === VisibilityStatus.Public)) ? {
-                                                    onEditOpen: () => setEditingTag({ id: tag.id, name: tag.name, description: tag.description, visibilityStatus: tag.visibilityStatus }),
-                                                    onDeleteOpen: () => setTagToDelete({ id: tag.id, name: tag.name }),
-                                                } : {}),
-                                            })}
-                                        />
-                                    </RowItemStyling>
-                                ))}
-                            </div>
-                        )}
-                    </>
-                )}
-                {isTagsSearch && isMineMode && !shouldFetch && myTagsResult && myTagsResult.totalPages > 1 && (
-                    <div className="flex items-center gap-3 mt-4">
-                        <button
-                            className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
-                            disabled={!hasPrevPage}
-                            onClick={() => handlePageChange(page - 1)}
-                        >
-                            ← Prev
-                        </button>
-                        <span className="text-sm text-text/60">Page {page}</span>
-                        <button
-                            className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
-                            disabled={page >= myTagsResult.totalPages}
-                            onClick={() => handlePageChange(page + 1)}
-                        >
-                            Next →
-                        </button>
-                    </div>
-                )}
-
                 {/* Lists — Create button (mine mode only) */}
                 {isListsSearch && isMineMode && (
                     <button className="btn btn-secondary w-fit" onClick={() => setShowCreateModal(true)}>
@@ -437,18 +371,15 @@ export default function SearchPage() {
                     </button>
                 )}
 
-                {/* Lists — no-query state: show all user's lists */}
-                {isListsSearch && isMineMode && !shouldFetch && (
+                {/* Lists — search results (empty query returns all matching lists) */}
+                {isListsSearch && !isLoading && (
                     <>
-                        {myListsLoading && (
-                            <p className="text-text/50 text-sm">Loading your lists…</p>
+                        {listResults && listResults.length === 0 && (
+                            <p className="text-text/50 text-sm">{query ? `No lists found for "${query}".` : 'No lists found.'}</p>
                         )}
-                        {!myListsLoading && myListsResult && myListsResult.items.length === 0 && (
-                            <p className="text-text/50 text-sm">You have no lists yet.</p>
-                        )}
-                        {!myListsLoading && myListsResult && myListsResult.items.length > 0 && (
+                        {listsHasResults && (
                             <div className="rounded-lg border border-border overflow-hidden">
-                                {myListsResult.items.map(list => (
+                                {listResults.map(list => (
                                     <RowItemStyling key={list.id} variant="larger">
                                         <RowItemContent
                                             firstString={list.name}
@@ -466,60 +397,8 @@ export default function SearchPage() {
                                                 id: list.id,
                                                 name: list.name,
                                                 navigate,
-                                                // Only Standard lists can be deleted; all other categories are protected
-                                                ...(list.category === MediaListCategory.Standard ? { onDeleteOpen: () => setListToDelete({ id: list.id, name: list.name }) } : {}),
-                                            })}
-                                        />
-                                    </RowItemStyling>
-                                ))}
-                            </div>
-                        )}
-                    </>
-                )}
-
-                {isListsSearch && isMineMode && !shouldFetch && myListsResult && myListsResult.totalPages > 1 && (
-                    <div className="flex items-center gap-3 mt-4">
-                        <button
-                            className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
-                            disabled={!hasPrevPage}
-                            onClick={() => handlePageChange(page - 1)}
-                        >
-                            ← Prev
-                        </button>
-                        <span className="text-sm text-text/60">Page {page}</span>
-                        <button
-                            className="btn btn-secondary text-sm py-1 px-3 disabled:opacity-40"
-                            disabled={page >= myListsResult.totalPages}
-                            onClick={() => handlePageChange(page + 1)}
-                        >
-                            Next →
-                        </button>
-                    </div>
-                )}
-
-                {/* Lists — no-query state: all-lists mode placeholder */}
-                {isListsSearch && !isMineMode && !shouldFetch && (
-                    <p className="text-text/50 text-sm">Search for lists.</p>
-                )}
-
-                {/* Lists — search results */}
-                {isListsSearch && shouldFetch && !isLoading && (
-                    <>
-                        {listResults && listResults.length === 0 && (
-                            <p className="text-text/50 text-sm">No lists found for "{query}".</p>
-                        )}
-                        {listsHasResults && (
-                            <div className="rounded-lg border border-border overflow-hidden">
-                                {listResults.map(list => (
-                                    <RowItemStyling key={list.id}>
-                                        <RowItemContent
-                                            firstString={list.name}
-                                            customLeftElement={<ListCollageThumb urls={list.previewThumbnailUrls} />}
-                                            onClick={() => navigate(routes.mediaList(list.id))}
-                                            onMenuClick={mediaListActions({
-                                                id: list.id,
-                                                name: list.name,
-                                                navigate,
+                                                // Only Standard lists the user owns can be deleted
+                                                ...(list.canEdit && list.category === MediaListCategory.Standard ? { onDeleteOpen: () => setListToDelete({ id: list.id, name: list.name }) } : {}),
                                             })}
                                         />
                                     </RowItemStyling>

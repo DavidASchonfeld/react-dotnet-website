@@ -9,7 +9,7 @@ public class MediaTypeDetailDto
 
     // Submission Variables
 
-    public string? SubmittedById {get; set;}
+    public string? CreatedById {get; set;}
     public DateTime DateSubmitted {get; set;} = DateTime.UtcNow;
 
     // isApproved = false means only display to creator and the admins to approve/deny

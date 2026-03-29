@@ -1,5 +1,16 @@
 
-
+// Role capability matrix (what each role can do beyond a Basic user):
+//
+// Basic       — create/edit/delete own lists and tags; manage own profile
+// Moderator   — everything Basic can do, PLUS:
+//               set any list/tag visibility to Public (CanSetListVisibility, CanSetTagVisibility)
+//               see any MediaType (including unapproved ones)
+// Administrator — everything Moderator can do, PLUS:
+//               create/edit/delete Featured lists (site-wide curated content)
+//               edit/delete any user's Public list or tag
+//               manage all user accounts (see all users, change roles)
+//               toggle external API sources and bypass cache
+//               access admin-only pages (API usage dashboard, user management)
 public static class PermissionHelper
 {
     public static bool IsModeratorOrAdmin(AppUser user) =>

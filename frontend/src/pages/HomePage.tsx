@@ -5,7 +5,8 @@ import { DEFAULT_COLLAGE_CONFIGS } from "../data/collageConfigs";
 
 export default function HomePage() {
 
-    const { data: featuredLists, isLoading, isError } = useGetFeaturedListsQuery();
+    // refetch lets the retry button manually re-trigger the query without a full page reload
+    const { data: featuredLists, isLoading, isError, refetch } = useGetFeaturedListsQuery();
 
     const homepageList = featuredLists?.find(l => l.name === "Home Page") ?? featuredLists?.[0];
     const featuredItems = homepageList?.listContent.slice(0, 8) ?? [];
@@ -32,7 +33,11 @@ export default function HomePage() {
             </div>
 
             {isError && (
-                <p className="text-center text-text/50">Couldn't load featured content.</p>
+                <div className="text-center flex flex-col items-center gap-2">
+                    <p className="text-text/50">Couldn't load featured content.</p>
+                    {/* Retry button: re-runs the RTK Query without a full page reload */}
+                    <button onClick={refetch} className="btn-secondary text-sm">Try again</button>
+                </div>
             )}
 
             {!isError && !isLoading && featuredItems.length === 0 && (

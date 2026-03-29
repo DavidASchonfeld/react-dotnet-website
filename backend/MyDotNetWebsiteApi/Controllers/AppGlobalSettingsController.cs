@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,7 +22,9 @@ public class AppGlobalSettingsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        // [Authorize] at the top guarantees the claim is present; RequireId() throws loudly if it ever isn't.
+        var requesterUserId = User.RequireId();
+        
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return Unauthorized();
         if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
@@ -40,7 +41,7 @@ public class AppGlobalSettingsController : ControllerBase
     [HttpPatch("toggle-nonsearch-cache")]
     public async Task<IActionResult> ToggleNonSearchCache()
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return Unauthorized();
         if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
@@ -61,7 +62,7 @@ public class AppGlobalSettingsController : ControllerBase
     [HttpDelete("cache-items")]
     public async Task<IActionResult> ClearCacheItems()
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return Unauthorized();
         if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
@@ -77,7 +78,7 @@ public class AppGlobalSettingsController : ControllerBase
     [HttpPatch("toggle-search-cache")]
     public async Task<IActionResult> ToggleSearchCache()
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return Unauthorized();
         if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();

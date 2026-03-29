@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import type { ExternalApiSourceSummary } from '../../types/externalApiSource';
+import type { FilterState, SearchType } from '../SearchBarWithFilters';
 import ListCollageThumb from '../ListCollageThumb';
 import RowItemContent from "../row_item_related/RowItemContent";
 import type { RowItemDisplayProps } from '../../types/rowItemTypes';
@@ -7,8 +9,6 @@ import PaginationControls from "../PaginationControls";
 import DrawerModal from './modal_frame/DrawerModal';
 import DialogOverlay from './modal_frame/DialogOverlay';
 import SearchBarWithFilters from '../SearchBarWithFilters';
-import type { FilterState, SearchType } from '../SearchBarWithFilters';
-import type { ExternalApiSourceSummary } from '../../types/externalApiSource';
 import DetailSidePanel from './detail_panels/DetailSidePanel';
 import type { ActiveDetail, DetailItemType } from './detail_panels/DetailSidePanel';
 import { useIsMobile } from '../../hooks/useIsMobile';
@@ -481,3 +481,4 @@ export default function ManageLinkModal({
     )
 
 }
+

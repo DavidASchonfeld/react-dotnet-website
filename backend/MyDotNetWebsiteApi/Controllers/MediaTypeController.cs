@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,7 +29,7 @@ public class MediaTypeController : ControllerBase
     [HttpGet("{mediaTypeId}")]
     public async Task<IActionResult> GetMediaType(int mediaTypeId)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;  // I am adding a "!" here to tell C# that this will never return a null. I know this because this controller has a [Authorize] at the top, meaning that the user will always be logged in before he ever encounters this part of the code.
+        var requesterUserId = User.RequireId();
         var result = await _mediaTypeService.GetMediaTypeAsync(mediaTypeId, requesterUserId);
         return result.ToActionResult(this);  // This method is defined in backend/MyDotNetWebsiteApi/Services/ServiceResult.cs
     }

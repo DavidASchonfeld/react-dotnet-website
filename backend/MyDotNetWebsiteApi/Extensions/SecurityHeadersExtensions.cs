@@ -37,6 +37,10 @@ public static class SecurityHeadersExtensions
                 headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
             }
 
+            // Restricts which browser features this API response can enable — denies camera, microphone,
+            // and geolocation since a pure JSON API has no reason to access any of them.
+            headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+
             await next();
         });
 

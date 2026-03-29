@@ -1,4 +1,6 @@
 
+// Reserved for future list-sharing feature — schema exists but no service or controller reads/writes this table yet.
+// When implementing, add a ListSharingService and corresponding controller endpoints.
 public class LinkPermissionsForMediaListToAppUser
 {
     ///// Real SQL Columns

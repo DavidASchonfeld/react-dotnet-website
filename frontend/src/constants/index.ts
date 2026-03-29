@@ -1,21 +1,24 @@
 export const EXPLORE_PAGE_ITEM_COUNT = 5;
 
-// The window width (px) below which the top navbar auto-minimizes (Tailwind's "sm" breakpoint).
+// The window width (px) below which the top navbar auto-minimizes.
+// Must match Tailwind's 'sm' breakpoint (640px) — update both together if the breakpoint ever changes.
 export const NAVBAR_AUTO_MINIMIZE_BREAKPOINT = 640;
 
 // Swipe must travel this many px to trigger an action; shorter swipes snap back (same unit on laptops and phones)
 export const AMOUNT_TO_SWIPE_HORIZONTALLY_TO_ACTIVATE_TRIGGER = 100;
 
-// Number of days before a cached search result is considered stale — must stay in sync with backend's AppConstants.SearchCacheStaleDays (AppConstants.cs).
+// Number of days before a cached search result is considered stale — frontend UI hint only.
+// The backend enforces its own TTL via CacheSettings:SearchTtlDays in appsettings.json.
 export const SEARCH_CACHE_STALE_DAYS = 30;
 
-// Number of days before a cached detail-fetch result is considered stale — must stay in sync with backend's AppConstants.NonSearchCacheStaleDays (AppConstants.cs).
+// Number of days before a cached detail-fetch result is considered stale — frontend UI hint only.
+// The backend enforces its own TTL via CacheSettings:GetByIdTtlDays in appsettings.json.
 export const NONSEARCH_CACHE_STALE_DAYS = 30;
 
 // Search defaults — must stay in sync with backend's AppConstants (AppConstants.cs)
 export const SEARCH_DEBOUNCE_MS = 300;
-export const SEARCH_MIN_CHARS = 2;      // Matches AppConstants.SearchMinQueryLength
-export const SEARCH_DEFAULT_LIMIT = 10; // Per-keystroke result cap sent to the backend (backend also enforces its own cap)
+export const SEARCH_MIN_CHARS = 2;      // Matches AppConstants.SearchMinQueryLength in AppConstants.cs
+export const SEARCH_DEFAULT_LIMIT = 10; // Per-keystroke result cap sent to the backend (backend also enforces its own cap via AppConstants.SearchResultMaxLimit)
 
 // Default scope for non-media search types (Lists, Tags). Used in SearchBarWithFilters and SearchPage.
 export const DEFAULT_SITE_SEARCH_SUBTYPE = 'mine'
@@ -35,6 +38,7 @@ export const SITE_TYPE_SUBTYPES: Record<string, { value: string; label: string }
 
 // Primary emoji and human-readable description for each 3rd-party API source.
 // Used to label API selector buttons and generate accessible aria-labels.
+// NOTE: Must be updated manually when a new ExternalApiSource is added in the backend.
 export const API_SOURCE_META: Record<string, { icon: string; description: string }> = {
     OMDB: { icon: '🎬', description: 'Movies & TV Shows' },
     RAWG: { icon: '🎮', description: 'Video Games'       },

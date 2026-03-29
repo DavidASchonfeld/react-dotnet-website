@@ -1,21 +1,26 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
-// TTL eviction: delete expired CacheItems and ImageCaches nightly; LRU fallback for ImageCache size cap
-// TTL stands for "Time to Live" aka CacheItems have expiration dates and this script is about cleaning out expired CacheItems
+// TTL eviction: delete expired CacheItems and ImageCaches nightly; LRU fallback for ImageCache size cap.
+// TTL stands for "Time to Live" aka CacheItems have expiration dates and this script is about cleaning out expired CacheItems.
+// NOTE: CacheItemService.GetFreshAsync checks ExpiresAt > UtcNow before returning a hit, so expired
+// entries are never served to users — this nightly job is purely a cleanup pass, not a correctness concern.
 public class CacheEvictionService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<CacheEvictionService> _logger;
+    private readonly CacheSettings _cacheSettings; // Size-cap value from appsettings.json
 
     // This automatic nightly cache service is initialized/starts running
     // via being set up in this line in "backend/MyDotNetWebsiteApi/Program.cs"
     // This is the line in Program.cs that starts up CacheEvictionService: builder.Services.AddHostedService<CacheEvictionService>(); // Background eviction runs nightly: TTL + LRU for CacheItem and ImageCache
-    
-    // For LRU storage limit, that is stored in backend/MyDotNetWebsiteApi/AppConstant.cs's variable ImageCacheMaxSizeBytes
-    public CacheEvictionService(IServiceScopeFactory scopeFactory, ILogger<CacheEvictionService> logger)
+
+    // For LRU storage limit, see CacheSettings:ImageMaxSizeMb in appsettings.json.
+    public CacheEvictionService(IServiceScopeFactory scopeFactory, ILogger<CacheEvictionService> logger, IOptions<CacheSettings> cacheSettings)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _cacheSettings = cacheSettings.Value;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -79,9 +84,9 @@ public class CacheEvictionService : BackgroundService
     {
         // LRU fallback: if total ImageCache size exceeds cap, evict oldest-accessed entries first
         var totalSize = await db.ImageCaches.SumAsync(i => i.ImageSizeBytes);
-        if (totalSize <= AppConstants.ImageCacheMaxSizeBytes) return;
+        if (totalSize <= _cacheSettings.ImageMaxSizeBytes) return; // No need to run this if my image cache has not met the limit yet.
 
-        var excess = totalSize - AppConstants.ImageCacheMaxSizeBytes;
+        var excess = totalSize - _cacheSettings.ImageMaxSizeBytes;
         var oldest = await db.ImageCaches
             .OrderBy(i => i.AccessedAt)
             .ToListAsync();

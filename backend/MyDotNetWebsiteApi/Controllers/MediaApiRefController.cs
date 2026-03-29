@@ -31,7 +31,7 @@ public class MediaApiRefController : ControllerBase
     [HttpGet("{mediaApiRefId}")]
     public async Task<IActionResult> GetMediaApiRefDetail(int mediaApiRefId, [FromQuery] bool bypassCache = false)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaApiRefService.GetDetailByDbIdAsync(mediaApiRefId, requesterUserId, bypassCache);
         return WrapCachedResponse(result);
     }
@@ -63,7 +63,7 @@ public class MediaApiRefController : ControllerBase
         [FromQuery] int sourceId,
         [FromQuery] bool bypassCache = false)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaApiRefService.FetchRawItemFromExternalApiAsync(externalItemId, sourceId, requesterUserId, bypassCache);
         return WrapCachedResponse(result);
     }
@@ -74,7 +74,7 @@ public class MediaApiRefController : ControllerBase
     [EnableRateLimiting(RateLimiterExtensions.ExternalApiSearchPolicy)]
     public async Task<IActionResult> FindOrCreate([FromBody] FindOrCreateMediaApiRefDto dto)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaApiRefService.GetOrCreateMediaApiRefAsync(dto, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -82,7 +82,7 @@ public class MediaApiRefController : ControllerBase
     [HttpGet("{mediaApiRefId}/lists")]
     public async Task<IActionResult> GetListsContainingRef(int mediaApiRefId)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaApiRefService.GetListsContainingRefAsync(mediaApiRefId, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -90,7 +90,7 @@ public class MediaApiRefController : ControllerBase
     [HttpGet("{mediaApiRefId}/tags")]
     public async Task<IActionResult> GetTagsForRef(int mediaApiRefId)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaApiRefService.GetTagsForRefAsync(mediaApiRefId, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -98,7 +98,7 @@ public class MediaApiRefController : ControllerBase
     [HttpGet("{mediaApiRefId}/applied-tags")]
     public async Task<IActionResult> GetAppliedTagsWithNotes(int mediaApiRefId)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaApiRefService.GetAppliedTagsWithNotesAsync(mediaApiRefId, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -107,7 +107,7 @@ public class MediaApiRefController : ControllerBase
     [HttpPost("{mediaApiRefId}/refresh")]
     public async Task<IActionResult> RefreshDetails(int mediaApiRefId)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaApiRefService.GetDetailByDbIdAsync(mediaApiRefId, requesterUserId, bypassCache: true);
         return WrapCachedResponse(result);
     }

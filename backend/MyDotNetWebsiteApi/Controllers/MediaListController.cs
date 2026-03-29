@@ -22,7 +22,7 @@ public class MediaListController : ControllerBase
     [HttpGet("my-lists")]
     public async Task<IActionResult> GetMyLists([FromQuery] int page = 1, [FromQuery] int pageSize = AppConstants.DefaultPageSize)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;  // I am adding a "!" here to tell C# that this will never return a null. I know this because this controller has a [Authorize] at the top, meaning that the user will always be logged in before he ever encounters this part of the code.
+        var requesterUserId = User.RequireId();
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, AppConstants.DefaultPageSize);
         var result = await _mediaListService.GetMyListsAsync(requesterUserId, page, pageSize);
@@ -33,7 +33,7 @@ public class MediaListController : ControllerBase
     [HttpGet("my-visiting-status-lists")]
     public async Task<IActionResult> GetMyVisitingStatusLists()
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.GetMyVisitingStatusListsAsync(requesterUserId);
         return result.ToActionResult(this);
     }
@@ -41,7 +41,7 @@ public class MediaListController : ControllerBase
     [HttpGet("{mediaListId}")]
     public async Task<IActionResult> GetMediaListDetail(int mediaListId)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.GetMediaListDetailAsync(mediaListId, requesterUserId);
         return result.ToActionResult(this);  // This method is defined in backend/MyDotNetWebsiteApi/Services/ServiceResult.cs
     }
@@ -49,7 +49,7 @@ public class MediaListController : ControllerBase
     [HttpPost("create-list")]
     public async Task<IActionResult> CreateList([FromBody] CreateMediaListDto dto)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.CreateListAsync(dto, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -57,7 +57,7 @@ public class MediaListController : ControllerBase
     [HttpDelete("{mediaListId}")]
     public async Task<IActionResult> DeleteList(int mediaListId)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.DeleteListAsync(mediaListId, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -65,7 +65,7 @@ public class MediaListController : ControllerBase
     [HttpPatch("{mediaListId}")]
     public async Task<IActionResult> PatchListBasicInfo(int mediaListId, [FromBody] UpdateMediaListNotListContentDto dto)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.PatchListBasicInfoAsync(mediaListId, dto, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -73,7 +73,7 @@ public class MediaListController : ControllerBase
     [HttpPost("{mediaListId}/items/{mediaApiRefId}")]
     public async Task<IActionResult> AddMediaApiRefToMediaList(int mediaListId, int mediaApiRefId, [FromBody] AddMediaApiRefToMediaListDto dto)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.AddMediaApiRefToListAsync(mediaListId, mediaApiRefId, dto, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -84,7 +84,7 @@ public class MediaListController : ControllerBase
     [HttpPost("{mediaListId}/items/by-external")]
     public async Task<IActionResult> AddMediaApiRefToListByExternal(int mediaListId, [FromBody] AddToListByExternalRefDto dto)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.AddMediaApiRefToListByExternalAsync(mediaListId, dto, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -92,7 +92,7 @@ public class MediaListController : ControllerBase
     [HttpDelete("{mediaListId}/items/{mediaApiRefId}")]
     public async Task<IActionResult> RemoveMediaApiRefFromList(int mediaListId, int mediaApiRefId)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.RemoveMediaApiRefFromListAsync(mediaListId, mediaApiRefId, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -106,7 +106,7 @@ public class MediaListController : ControllerBase
         [FromQuery] int externalApiSourceId,
         [FromQuery] string externalId)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.RemoveMediaApiRefFromListByExternalAsync(mediaListId, externalApiSourceId, externalId, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -114,7 +114,7 @@ public class MediaListController : ControllerBase
     [HttpPatch("{mediaListId}/items/{mediaApiRefId}")]
     public async Task<IActionResult> MoveMediaApiRefWithinMediaList(int mediaListId, int mediaApiRefId, [FromBody] MoveMediaApiRefWithinMediaListDto dto)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.MoveMediaApiRefWithinMediaListAsync(mediaListId, mediaApiRefId, dto, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -128,7 +128,7 @@ public class MediaListController : ControllerBase
     [HttpGet("search")]
     [AllowAnonymous]
     public async Task<IActionResult> SearchLists(
-        [FromQuery] string q,
+        [FromQuery] string q = "",
         [FromQuery] int limit = 10,
         [FromQuery] string? ownedByUserId = null,
         [FromQuery] bool mineOnly = false, // when true, overrides ownedByUserId with requester's own ID
@@ -145,7 +145,7 @@ public class MediaListController : ControllerBase
     [HttpPatch("{mediaListId}/reorder")]
     public async Task<IActionResult> ReorderItems(int mediaListId, [FromBody] ReorderMediaListItemsDto dto)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.ReorderItemsAsync(mediaListId, dto.OrderedItemIds, requesterUserId);
         return result.ToActionResult(this);
     }
@@ -162,7 +162,7 @@ public class MediaListController : ControllerBase
     [HttpPost("create-featured-list")]
     public async Task<IActionResult> CreateFeaturedList([FromBody] CreateMediaListDto dto)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var result = await _mediaListService.CreateFeaturedListAsync(dto, requesterUserId);
         return result.ToActionResult(this);
     }

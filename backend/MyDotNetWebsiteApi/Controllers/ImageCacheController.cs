@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -53,7 +52,7 @@ public class ImageCacheController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeletePlaceholders()
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return Unauthorized();
         if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
@@ -111,7 +110,7 @@ public class ImageCacheController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DumpBigImages()
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return Unauthorized();
         if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 // Instead, permissions are in the Services level, specifically in backend/MyDotNetWebsiteApi/Services/UserService.cs
 // and specifically in the PermissionHelper file backend/MyDotNetWebsiteApi/Services/PermissionHelper.cs
 
+// Note: Route resolves to "api/user" (singular) — this is intentional and consistent with the frontend.
+// REST convention favors plural ("api/users") but changing it would require a coordinated frontend + backend update.
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]  // Means this using this controller needs a JwtToken aka needs to be logged in
@@ -34,7 +35,7 @@ public class UserController : ControllerBase
     [HttpGet("all")]
     public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = AppConstants.DefaultPageSize)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;  // I am adding a "!" here to tell C# that this will never return a null. I know this because this controller has a [Authorize] at the top, meaning that the user will always be logged in before he ever encounters this part of the code.
+        var requesterUserId = User.RequireId();  // [Authorize] at the top guarantees the claim is present; RequireId() throws loudly if it ever isn't
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, AppConstants.DefaultPageSize);
         var result = await _userService.GetAllUsersAsync(requesterUserId, page, pageSize);
@@ -45,7 +46,7 @@ public class UserController : ControllerBase
     [HttpPatch("me/theme")]
     public async Task<IActionResult> UpdateMyTheme([FromBody] UpdateUserThemeDto dto)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var userId = User.RequireId();
         var result = await _userService.UpdateUserThemeAsync(userId, dto.Theme);
         return result.ToActionResult(this);
     }
@@ -54,7 +55,7 @@ public class UserController : ControllerBase
     [HttpPatch("me/modifier")]
     public async Task<IActionResult> UpdateMyModifier([FromBody] UpdateUserModifierDto dto)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var userId = User.RequireId();
         var result = await _userService.UpdateUserModifierAsync(userId, dto.Modifier);
         return result.ToActionResult(this);
     }
@@ -63,7 +64,7 @@ public class UserController : ControllerBase
     [HttpPatch("me/username")]
     public async Task<IActionResult> UpdateMyUsername([FromBody] UpdateUsernameDto dto)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var userId = User.RequireId();
         var result = await _userService.UpdateUsernameAsync(userId, dto);
         return result.ToActionResult(this);
     }
@@ -72,7 +73,7 @@ public class UserController : ControllerBase
     [HttpPatch("me/password")]
     public async Task<IActionResult> UpdateMyPassword([FromBody] UpdatePasswordDto dto)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var userId = User.RequireId();
         var result = await _userService.UpdatePasswordAsync(userId, dto);
         return result.ToActionResult(this);
     }
@@ -82,7 +83,7 @@ public class UserController : ControllerBase
     [HttpPatch("{targetUserId}/role")]
     public async Task<IActionResult> UpdateUserRole(string targetUserId, [FromBody] UpdateUserRoleDto dto)
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;  // I am adding a "!" here to tell C# that this will never return a null. I know this because this controller has a [Authorize] at the top, meaning that the user will always be logged in before he ever encounters this part of the code.
+        var requesterUserId = User.RequireId();  // [Authorize] at the top guarantees the claim is present; RequireId() throws loudly if it ever isn't
 
         // Reminder: Permissions for whether a requesterUser is allowed to change a targetUser's Role is inside the Serivces layer, 
         // specifically in /backend/MyDotNetWebsiteApi/Services/UserService.cs

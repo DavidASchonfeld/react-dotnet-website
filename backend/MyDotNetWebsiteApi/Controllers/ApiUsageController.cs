@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,7 +21,7 @@ public class ApiUsageController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllUsageStats()
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return Unauthorized();
         if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
@@ -37,7 +36,7 @@ public class ApiUsageController : ControllerBase
     [HttpGet("history")]
     public async Task<IActionResult> GetUsageHistory()
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var requesterUser   = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return Unauthorized();
         if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();
@@ -53,7 +52,7 @@ public class ApiUsageController : ControllerBase
     [HttpGet("metadata")]
     public async Task<IActionResult> GetAllApiMetadata()
     {
-        var requesterUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var requesterUserId = User.RequireId();
         var requesterUser = await _context.Users.FindAsync(requesterUserId);
         if (requesterUser == null) return Unauthorized();
         if (!PermissionHelper.IsAdministrator(requesterUser)) return Forbid();

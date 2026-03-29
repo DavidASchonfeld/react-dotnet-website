@@ -95,7 +95,7 @@ public class MediaListService : IMediaListService
     {
         Id = mediaListObject.Id,
         Name = mediaListObject.Name,
-        SubmittedById = mediaListObject.SubmittedById,
+        CreatedById = mediaListObject.SubmittedById,
         Description = mediaListObject.Description,
         VisibilityStatus = mediaListObject.VisibilityStatus,
         ItemCount = itemCount,
@@ -125,7 +125,7 @@ public class MediaListService : IMediaListService
             {
                 Id = l.Id,
                 Name = l.Name,
-                SubmittedById = l.SubmittedById,
+                CreatedById = l.SubmittedById,
                 Description = l.Description,
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
@@ -181,8 +181,8 @@ public class MediaListService : IMediaListService
             Id = mediaList_withIncludes.Id,
             Name = mediaList_withIncludes.Name,
             Description = mediaList_withIncludes.Description,
-            SubmittedById = mediaList_withIncludes.SubmittedById,
-            SubmittedByUserName = mediaList_withIncludes.SubmittedBy?.UserName,
+            CreatedById = mediaList_withIncludes.SubmittedById,
+            CreatedByUserName = mediaList_withIncludes.SubmittedBy?.UserName,
             VisibilityStatus = mediaList_withIncludes.VisibilityStatus,
             CanEdit = PermissionHelper.CanEditListMetadata(requesterUser, targetMediaList),  // Owner-only
             Category = mediaList_withIncludes.Category,
@@ -205,6 +205,8 @@ public class MediaListService : IMediaListService
 
     }
 
+
+    // ---- List CRUD (Create / Update / Delete) ----
 
     // CreateList, when we create, we create an empty list. Items are added in AddMediaApiRefToList.
     public async Task<ServiceResult<MediaListSummaryDto>> CreateListAsync(CreateMediaListDto dto, string requesterUserId)
@@ -309,6 +311,8 @@ public class MediaListService : IMediaListService
         return ServiceResult<MediaListSummaryDto>.Ok(ToSummaryDto(mediaList, count, thumbnails, canEdit));
     }
 
+
+    // ---- List Item Management (Add / Remove / Reorder) ----
 
     public async Task<ServiceResult<MediaListSummaryDto>> AddMediaApiRefToListAsync(int mediaListId, int mediaApiRefId, AddMediaApiRefToMediaListDto dto, string requesterUserId)
     {
@@ -676,6 +680,8 @@ public class MediaListService : IMediaListService
 
 
 
+    // ---- Search & Discovery ----
+
     // ownedByUserId = null              : all visible lists (owner || admin || public) — mirrors CanSeeList()
     // ownedByUserId = requesterUserId   : own lists only
     // ownedByUserId = someOtherUserId   : that user's public lists (or all of their lists if requester is admin)
@@ -683,9 +689,6 @@ public class MediaListService : IMediaListService
     // Note: visibility bypass is admin-only (not moderator) — matches CanSeeList() which uses IsAdministrator, not IsModeratorOrAdmin.
     public async Task<ServiceResult<List<MediaListSummaryDto>>> SearchListsAsync(string query, int limit, string? ownedByUserId, string? requesterUserId, int page = 1)
     {
-        if (query.Length < AppConstants.SearchMinQueryLength)
-            return ServiceResult<List<MediaListSummaryDto>>.BadRequest("Search query must be at least 2 characters.");
-
         limit = Math.Min(limit, AppConstants.SearchResultMaxLimit);  // Server-side cap — ignore whatever limit the client sent
 
         var requesterUser = requesterUserId != null ? await _context.Users.FindAsync(requesterUserId) : null;
@@ -726,7 +729,7 @@ public class MediaListService : IMediaListService
             {
                 Id = l.Id,
                 Name = l.Name,
-                SubmittedById = l.SubmittedById,
+                CreatedById = l.SubmittedById,
                 Description = l.Description,
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
@@ -746,6 +749,8 @@ public class MediaListService : IMediaListService
     }
 
 
+    // ---- Special Category Lists (VisitingStatus & Featured) ----
+
     // Returns all VisitingStatus-category lists for the user — no pagination, since there are always a small fixed number
     public async Task<ServiceResult<List<MediaListSummaryDto>>> GetMyVisitingStatusListsAsync(string requesterUserId)
     {
@@ -759,7 +764,7 @@ public class MediaListService : IMediaListService
             {
                 Id = l.Id,
                 Name = l.Name,
-                SubmittedById = l.SubmittedById,
+                CreatedById = l.SubmittedById,
                 Description = l.Description,
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
@@ -793,7 +798,7 @@ public class MediaListService : IMediaListService
         {
             Id = l.Id,
             Name = l.Name,
-            SubmittedById = l.SubmittedById,
+            CreatedById = l.SubmittedById,
             Description = l.Description,
             VisibilityStatus = l.VisibilityStatus,
             CanEdit = false,      // Featured lists are managed through the admin panel only

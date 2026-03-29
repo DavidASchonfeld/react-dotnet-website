@@ -118,9 +118,6 @@ public class CustomTagService : ICustomTagService
 
     public async Task<ServiceResult<List<CustomTagSummaryDto>>> SearchTagsAsync(string query, int limit, string? requesterUserId, bool mineOnly = false, int page = 1)
     {
-        if (query.Length < AppConstants.SearchMinQueryLength)
-            return ServiceResult<List<CustomTagSummaryDto>>.BadRequest("Search query must be at least 2 characters.");
-
         limit = Math.Min(limit, AppConstants.SearchResultMaxLimit);
 
         var queryLower = query.ToLower();

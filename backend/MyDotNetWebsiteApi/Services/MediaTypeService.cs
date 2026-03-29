@@ -41,7 +41,7 @@ public class MediaTypeService : IMediaTypeService
             Id = targetedMediaType.Id,
             Name = targetedMediaType.Name,
             Description = targetedMediaType.Description,
-            SubmittedById = targetedMediaType.SubmittedById,
+            CreatedById = targetedMediaType.SubmittedById,
             DateSubmitted = targetedMediaType.DateSubmitted,
             IsApproved = targetedMediaType.IsApproved
         });

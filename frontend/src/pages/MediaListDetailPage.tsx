@@ -108,11 +108,17 @@ export default function MediaListDetailPage() {
 
 
     if (isLoading && !selectedMediaListDetail) return <div>Loading...</div>;
-    if (error) return <div>Error loading list</div>;
+    // Retry button: re-runs the RTK Query without a full page reload
+    if (error) return (
+        <div className="page flex-col items-center gap-2 text-center">
+            <p className="text-text/50">Error loading list.</p>
+            <button onClick={refetch} className="btn-secondary text-sm">Try again</button>
+        </div>
+    );
     if (!selectedMediaListDetail) return null;
 
     // Cannot use canEdit alone — admins can edit public lists they don't own
-    const isMyList = !!userName && selectedMediaListDetail.submittedByUserName === userName;
+    const isMyList = !!userName && selectedMediaListDetail.createdByUserName === userName;
 
     // Admin can fully manage (edit, add/remove contents) any public list they don't own
     const adminCanEditPublic = isAdmin && selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public;
@@ -230,9 +236,9 @@ export default function MediaListDetailPage() {
                 ? <p className="text-sm text-[var(--color-text-muted)]">
                     My List · {selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public ? 'Public' : 'Private'}
                   </p>
-                : selectedMediaListDetail.submittedByUserName && (
+                : selectedMediaListDetail.createdByUserName && (
                     <p className="text-sm text-[var(--color-text-muted)]">
-                        by {selectedMediaListDetail.submittedByUserName} · {selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public ? 'Public' : 'Private'}
+                        by {selectedMediaListDetail.createdByUserName} · {selectedMediaListDetail.visibilityStatus === VisibilityStatus.Public ? 'Public' : 'Private'}
                     </p>
                 )
             }

@@ -66,10 +66,22 @@ const baseQuery = fetchBaseQuery({
 // On a 401 response, we silently try to get a new access token via the HttpOnly
 // refresh cookie before giving up and logging the user out.
 //
-// Module-level flag prevents multiple simultaneous 401 responses from each
-// triggering a separate refresh call — only the first one refreshes; the rest
-// wait and then retry with the new token already in Redux state.
-let isRefreshing = false
+// Promise-based deduplication: all concurrent 401s share a single refresh call.
+// Each waiter receives the same resolved token and retries its own request independently,
+// so no request is silently dropped. This replaces the previous boolean-flag approach
+// which only let the first concurrent 401 retry.
+// "Instead of a boolean flag (which would silently drop concurrent 401s),
+// we store the refresh call itself as a promise.
+// Any 401 that arrives while a refresh is already in progress
+// just awaits the same promise. Everyone gets the token,
+// everyone retries — nothing is dropped."
+// Note: Waiter = something which is waiting. Here, it is waiting for the promise
+// Request B is suspended at that line until the promise resolves.
+// That suspended state — "I'm blocked, waiting for this promise to finish" —
+// is what's meant by "waiter." It's informal terminology for a
+// caller that is awaiting a shared async operation it didn't initiate.
+
+let refreshPromise: Promise<string | null> | null = null
 
 const baseQueryWithErrorHandling: BaseQueryFn<
     string | FetchArgs,
@@ -84,29 +96,34 @@ const baseQueryWithErrorHandling: BaseQueryFn<
         if (status === 401) {
             // Only attempt refresh if the user has an active session — skip for guests.
             const isAuthenticated = (api.getState() as { auth: { isAuthenticated: boolean } }).auth.isAuthenticated
-            if (!isRefreshing && isAuthenticated) {
-                isRefreshing = true
-                try {
+            if (isAuthenticated) {
+                // Start a refresh only if one isn't already in flight; otherwise share the existing promise.
+                if (!refreshPromise) {
+                    refreshPromise = refreshAccessToken()
+                        .catch(() => null) // Return null on failure so all waiters can handle it uniformly
+                        .finally(() => { refreshPromise = null }) // Reset after all waiters have resolved
+                }
+
+                const newToken = await refreshPromise
+
+                if (newToken) {
                     // Ask the backend for a new access token using the HttpOnly refresh cookie.
                     // If successful, store the new token so prepareHeaders picks it up on the retry.
-                    const newToken = await refreshAccessToken()
                     const state = api.getState() as { auth: { userName: string | null; roleLevel: UserRole | null } }
                     api.dispatch(setCredentials({
                         token: newToken,
                         userName: state.auth.userName ?? '',
                         roleLevel: state.auth.roleLevel,
                     }))
-                } catch {
+                    // Retry the original request — prepareHeaders now has the new token.
+                    result = await baseQuery(args, api, extra)
+                } else {
                     // Refresh failed — session is truly expired. Log the user out.
                     safeToast.error('Your session has expired. Please log in again.')
                     api.dispatch(clearCredentials())
-                    isRefreshing = false
                     return result
                 }
-                isRefreshing = false
             }
-            // Retry the original request — prepareHeaders now has the new token.
-            if (isAuthenticated) result = await baseQuery(args, api, extra)
         } else if (status === 'FETCH_ERROR') {
             safeToast.error('Unable to reach the server. Please try again later.')
         } else if (status === 403) {

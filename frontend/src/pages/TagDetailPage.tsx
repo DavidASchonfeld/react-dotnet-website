@@ -12,7 +12,6 @@ import {
     usePatchCustomTagMutation,
     useDeleteCustomTagMutation,
 } from '../services/apiSlice';
-import { useManageLinkModalSearch } from '../hooks/useManageLinkModalSearch';
 import AnimatedPage from '../components/AnimatedPage';
 import BackButton from '../components/BackButton';
 import RowItemStyling from '../components/row_item_related/RowItemStyling';
@@ -20,6 +19,7 @@ import RowItemContent from '../components/row_item_related/RowItemContent';
 import MediaTypeLabel from '../components/MediaTypeLabel';
 import PaginationControls from '../components/PaginationControls';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
+import { useManageLinkModalSearch } from '../hooks/useManageLinkModalSearch';
 import NameAndDescriptionModal from '../components/modals/NameAndDescriptionModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import ItemActionsButton from '../components/row_item_related/ItemActionsButton';
@@ -102,7 +102,7 @@ export default function TagDetailPage() {
             <h1 className="h1-styling">{tagName}</h1>
 
             {/* Visibility toggle — shown to mod/admin, derived from their own roleLevel */}
-            {isModOrAdmin && (
+            {isModOrAdmin && tagDetail && (
                 <button
                     className="btn btn-secondary w-fit text-sm mb-2"
                     onClick={() => patchTag({

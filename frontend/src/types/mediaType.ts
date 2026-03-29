@@ -22,7 +22,7 @@ export interface MediaTypeDetail {
     // isApproved = false means only display to creator and the admins to approve/deny
     // and isApproved = True means its an option to choose/view for everyone
     isApproved: boolean;
-    submittedById: string;
+    createdById: string;
     dateSubmitted: string;
     
 }

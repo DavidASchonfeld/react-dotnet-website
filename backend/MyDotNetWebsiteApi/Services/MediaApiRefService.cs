@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 public class MediaApiRefService : IMediaApiRefService
 {
@@ -10,8 +11,9 @@ public class MediaApiRefService : IMediaApiRefService
     private readonly IImageCacheService _imageCacheService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<MediaApiRefService> _logger;
+    private readonly CacheSettings _cacheSettings; // TTL and staleness values from appsettings.json
 
-    public MediaApiRefService(AppDbContext context, ExternalMediaApiAdapterFactory adapterFactory, IApiUsageService apiUsageService, ICacheItemService cacheItemService, IImageCacheService imageCacheService, IServiceScopeFactory scopeFactory, ILogger<MediaApiRefService> logger)
+    public MediaApiRefService(AppDbContext context, ExternalMediaApiAdapterFactory adapterFactory, IApiUsageService apiUsageService, ICacheItemService cacheItemService, IImageCacheService imageCacheService, IServiceScopeFactory scopeFactory, ILogger<MediaApiRefService> logger, IOptions<CacheSettings> cacheSettings)
     {
         _context = context;
         _adapterFactory = adapterFactory;
@@ -20,6 +22,7 @@ public class MediaApiRefService : IMediaApiRefService
         _imageCacheService = imageCacheService;
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _cacheSettings = cacheSettings.Value;
     }
 
 
@@ -98,7 +101,7 @@ public class MediaApiRefService : IMediaApiRefService
                     var responseJson = JsonSerializer.Serialize(detailedResult);
                     await _cacheItemService.UpsertAsync(
                         mediaApiRef.ApiSource.ApiName, "GetById", mediaApiRef.MediaType.Name,
-                        queryParams, responseJson, AppConstants.CacheItemGetByIdTtlDays);
+                        queryParams, responseJson, _cacheSettings.GetByIdTtlDays);
                 }
 
                 mediaApiRef.DetailsFetchedAt = DateTime.UtcNow;
@@ -193,7 +196,7 @@ public class MediaApiRefService : IMediaApiRefService
             var responseJson = JsonSerializer.Serialize(results);
             await _cacheItemService.UpsertAsync(
                 activeSource.ApiName, "Search", activeSource.MediaType.Name,
-                queryParams, responseJson, AppConstants.CacheItemSearchTtlDays);
+                queryParams, responseJson, _cacheSettings.SearchTtlDays);
         }
 
         PrewarmThumbnails(results);
@@ -272,7 +275,7 @@ public class MediaApiRefService : IMediaApiRefService
             var responseJson = JsonSerializer.Serialize(result);
             await _cacheItemService.UpsertAsync(
                 source.ApiName, "GetById", source.MediaType.Name,
-                queryParams, responseJson, AppConstants.CacheItemGetByIdTtlDays);
+                queryParams, responseJson, _cacheSettings.GetByIdTtlDays);
         }
 
         return ServiceResult<ExternalApiSearchResult>.Ok(result);
@@ -416,7 +419,7 @@ public class MediaApiRefService : IMediaApiRefService
             {
                 Id = l.Id,
                 Name = l.Name,
-                SubmittedById = l.SubmittedById,
+                CreatedById = l.SubmittedById,
                 Description = l.Description,
                 VisibilityStatus = l.VisibilityStatus,
                 ItemCount = l.ItemLinks.Count,
@@ -543,37 +546,55 @@ public class MediaApiRefService : IMediaApiRefService
     // Detail fields sourced from CacheItem.ResponseJson, not MediaApiRef columns.
     // AdminInfo is only populated for administrators — non-admins receive null.
     // isApiDisabled: set when the API source is disabled by admin and the cache was empty.
-    private static MediaApiRefDetailDto ToDetailDto(MediaApiRef r, ExternalApiSearchResult? details, AppUser? requesterUser, bool isApiDisabled = false) => new()
+    // Not static — accesses _cacheSettings instance field for staleness check
+    private MediaApiRefDetailDto ToDetailDto(MediaApiRef r, ExternalApiSearchResult? details, AppUser? requesterUser, bool isApiDisabled = false)
     {
-        Id = r.Id,
-        Name = r.Name,
-        MediaTypeId = r.MediaTypeId,
-        Subtype = r.Subtype,
-        CreatorName = r.CreatorName,
-        PublishedDate = r.PublishedDate,
-        ExternalApiSourceId = r.ExternalApiSourceId,
-        ApiSourceName = r.ApiSource.ApiName,
-        ExternalId = r.ExternalId,
-        ApiHomepageUrl = ExternalApiRegistry.Apis.TryGetValue(r.ApiSource.ApiName, out var metadata) ? metadata.HomepageUrl : null,
-        AdminInfo = requesterUser != null && PermissionHelper.IsAdministrator(requesterUser) ? new MediaApiRefAdminInfoDto
-        {
-            DateAdded = r.DateAdded,
-            DetailsFetchedAt = r.DetailsFetchedAt,
-            IsStale = r.DetailsFetchedAt.HasValue &&
-                      (DateTime.UtcNow - r.DetailsFetchedAt.Value).TotalDays > AppConstants.DetailsStaleDays,
-        } : null,
-        IsApiDisabled = isApiDisabled,
-        ThumbnailUrl = r.ThumbnailUrl,
+        string? apiHomepageUrl = null;
+        if (ExternalApiRegistry.Apis.TryGetValue(r.ApiSource.ApiName, out var metadata))
+            apiHomepageUrl = metadata.HomepageUrl;
+
+        MediaApiRefAdminInfoDto? adminInfo = null;
+        if (requesterUser != null && PermissionHelper.IsAdministrator(requesterUser))
+            adminInfo = new MediaApiRefAdminInfoDto
+            {
+                DateAdded = r.DateAdded,
+                DetailsFetchedAt = r.DetailsFetchedAt,
+                IsStale = r.DetailsFetchedAt.HasValue &&
+                          (DateTime.UtcNow - r.DetailsFetchedAt.Value).TotalDays > _cacheSettings.DetailsStaleDays,
+            };
+
         // BigPosterUrl is set when PosterUrl holds a pseudo-URL; null means no high-res poster is available.
-        BigPosterUrl = r.ApiSource.UsePosterApi
-            ? $"poster-api://{r.ApiSource.ApiName}/{r.ExternalId}"
-            : null,
+        string? bigPosterUrl = null;
+        if (r.ApiSource.UsePosterApi)
+            bigPosterUrl = $"poster-api://{r.ApiSource.ApiName}/{r.ExternalId}";
+
         // Poster is always a real CDN URL — skip PosterUrl when it's a pseudo-URL.
-        Poster = details?.Poster ?? (r.PosterUrl?.StartsWith("poster-api://") == true ? null : r.PosterUrl),
-        Plot = details?.Plot,
-        Runtime = details?.Runtime,
-        Country = details?.Country ?? r.Country,
-        Genres = details?.Genres,
-        Rated = details?.Rated,
-    };
+        string? poster = details?.Poster;
+        if (poster == null && r.PosterUrl?.StartsWith("poster-api://") != true)
+            poster = r.PosterUrl;
+
+        return new MediaApiRefDetailDto
+        {
+            Id = r.Id,
+            Name = r.Name,
+            MediaTypeId = r.MediaTypeId,
+            Subtype = r.Subtype,
+            CreatorName = r.CreatorName,
+            PublishedDate = r.PublishedDate,
+            ExternalApiSourceId = r.ExternalApiSourceId,
+            ApiSourceName = r.ApiSource.ApiName,
+            ExternalId = r.ExternalId,
+            ApiHomepageUrl = apiHomepageUrl,
+            AdminInfo = adminInfo,
+            IsApiDisabled = isApiDisabled,
+            ThumbnailUrl = r.ThumbnailUrl,
+            BigPosterUrl = bigPosterUrl,
+            Poster = poster,
+            Plot = details?.Plot,
+            Runtime = details?.Runtime,
+            Country = details?.Country ?? r.Country,
+            Genres = details?.Genres,
+            Rated = details?.Rated,
+        };
+    }
 }

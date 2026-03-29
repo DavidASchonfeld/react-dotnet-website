@@ -27,8 +27,8 @@ import { mediaApiRefActions, makeShareAction } from '../utils/menuActions';
 import { mediaApiRefToRowItemProps } from '../utils/mediaApiRefAdapter';
 import { routes } from '../utils/routes';
 import ManageLinkModal from '../components/modals/ManageLinkModal';
-import type { SearchType } from '../components/SearchBarWithFilters';
 import { useManageLinkModalSearch } from '../hooks/useManageLinkModalSearch';
+import type { SearchType } from '../components/SearchBarWithFilters';
 import VisitingStatusButton from '../components/VisitingStatusButton';
 import ListCollageThumb from '../components/ListCollageThumb';
 import { MediaListCategory } from '../types/enums';
@@ -42,7 +42,8 @@ export default function MediaApiRefDetailPage() {
     const decodedApiName = decodeURIComponent(apiName ?? '');
     const decodedExternalId = decodeURIComponent(externalId ?? '');
 
-    const { data: cachedResponse, isLoading, error } = useGetMediaApiRefByExternalQuery(
+    // refetch enables the retry button on error
+    const { data: cachedResponse, isLoading, error, refetch } = useGetMediaApiRefByExternalQuery(
         { apiName: decodedApiName, externalId: decodedExternalId },
         { skip: !apiName || !externalId }
     );
@@ -132,8 +133,18 @@ export default function MediaApiRefDetailPage() {
     if (isLoading) return <div>Loading...</div>;
     if (error) {
         const status = (error as { status?: number })?.status;
-        if (status === 503) return <div>This API is temporarily disabled. The item cannot be loaded right now.</div>;
-        return <div>Error loading item.</div>;
+        if (status === 503) return (
+            <div className="page flex-col items-center gap-2 text-center">
+                <p>This API is temporarily disabled. The item cannot be loaded right now.</p>
+            </div>
+        );
+        // Retry button: re-runs the RTK Query without a full page reload
+        return (
+            <div className="page flex-col items-center gap-2 text-center">
+                <p className="text-text/50">Error loading item.</p>
+                <button onClick={refetch} className="btn-secondary text-sm">Try again</button>
+            </div>
+        );
     }
     if (!detail) return null;
 
@@ -231,36 +242,36 @@ export default function MediaApiRefDetailPage() {
             {detail.plot && (
                 <div className="my-4">
                     <h2 className="font-semibold text-lg mb-2">Plot</h2>
-                    <p className="text-gray-700 dark:text-gray-300">{detail.plot}</p>
+                    <p className="text-text">{detail.plot}</p>
                 </div>
             )}
 
             {(detail.mediaTypeId === 1 || detail.mediaTypeId === 2) && detail.runtime && (
-                <div className="my-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="my-2 text-sm text-text-muted">
                     <span>Runtime: {detail.runtime}</span>
                 </div>
             )}
 
             {detail.country && (
-                <div className="my-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="my-2 text-sm text-text-muted">
                     <span>Country: {detail.country}</span>
                 </div>
             )}
 
             {detail.genres && (
-                <div className="my-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="my-2 text-sm text-text-muted">
                     <span>Genres: {detail.genres}</span>
                 </div>
             )}
 
             {detail.rated && (
-                <div className="my-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="my-2 text-sm text-text-muted">
                     <span>Rated: {detail.rated}</span>
                 </div>
             )}
 
 
-            <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 flex flex-col gap-1">
+            <div className="mt-2 text-sm text-text-muted flex flex-col gap-1">
                 {detail.creatorName && <span>Creator: {detail.creatorName}</span>}
                 {detail.publishedDate && <span>Published: {new Date(detail.publishedDate).getFullYear()}</span>}
                 

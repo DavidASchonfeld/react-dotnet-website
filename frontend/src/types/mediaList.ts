@@ -21,7 +21,7 @@ export interface MediaListSummary
     id: number;
     name: string;
     description: string | null;
-    submittedById: string | null;
+    createdById: string | null;
     visibilityStatus: VisibilityStatus;
     itemCount: number;
     canEdit: boolean;
@@ -32,8 +32,8 @@ export interface MediaListSummary
 export interface MediaListDetail
 {
     id: number;
-    submittedById: string | null;
-    submittedByUserName: string | null;
+    createdById: string | null;
+    createdByUserName: string | null;
     name: string;
     description: string | null;
     visibilityStatus: VisibilityStatus;

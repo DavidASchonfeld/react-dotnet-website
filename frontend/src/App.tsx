@@ -33,10 +33,26 @@ import TagDetailPage from './pages/TagDetailPage'
 import HomePage from './pages/HomePage'
 import SearchPage from './pages/SearchPage'
 import MySettingsPage from './pages/MySettingsPage'
-import { DAY_NIGHT_MAP, setCurrentTheme, setCurrentModifier, type DayNightTheme, type Theme, type ThemeModifier } from './store/themeSlice'
+import { DAY_NIGHT_MAP, setCurrentTheme, loadThemeFromServer, setCurrentModifier, type DayNightTheme, type Theme, type ThemeModifier } from './store/themeSlice'
 import { useState } from 'react'
 
 
+
+// Resolves a theme to its concrete CSS name.
+// Defined outside the component because it has no component-level dependencies —
+// keeping it out avoids the stale-closure risk in the useEffect dependency array.
+function resolveTheme(theme: Theme | null): string | null {
+  if (theme && theme in DAY_NIGHT_MAP){
+    const hour = new Date().getHours();
+    const { dayTheme, nightTheme } = DAY_NIGHT_MAP[theme as DayNightTheme];
+
+    // If the selected theme is a day/night theme (for example ocean-dayNight)
+    // Between 7am and 20 (aka 8pm), it is day, so return ocean-light
+    // otherwise, return ocean-dark.
+    return ((hour >= 7) && (hour < 20)) ? dayTheme : nightTheme;
+  }
+  return theme;
+}
 
 function App() {
 
@@ -63,22 +79,7 @@ function App() {
       dispatch(setCurrentTheme(appearanceDefaults.theme as Theme));
       dispatch(setCurrentModifier(appearanceDefaults.modifier as ThemeModifier));
     }
-  }, [appearanceDefaults]);  // re-runs only when defaults load; null check prevents overwriting a real saved theme
-
-
-  // Handling Color Themes:
-  function resolveTheme(theme: Theme | null): string | null {
-    if (theme && theme in DAY_NIGHT_MAP){
-      const hour = new Date().getHours();
-      const { dayTheme, nightTheme } = DAY_NIGHT_MAP[theme as DayNightTheme];
-
-      // If the selected theme is a day/night theme (for example ocean-dayNight)
-      // Between 7am and 20 (aka 8pm), it is day, so return ocean-light
-      // otherwise, return ocean-dark.
-      return ((hour >= 7) && (hour < 20)) ? dayTheme : nightTheme;
-    }
-    return theme;
-  }
+  }, [appearanceDefaults, currentTheme, dispatch]);  // re-runs only when defaults load; null check prevents overwriting a real saved theme
 
   useEffect(() => {
 
@@ -102,12 +103,11 @@ function App() {
       const msUntilNextHour = (60 - now.getMinutes()) * 60_000 - now.getSeconds() * 1000;
       const timer = setTimeout(() => {
 
-        // Re-trigger by setting currentTheme = to the same theme,
-        // this will cause the resolveTheme() to start again,
-        // causing another time check to potentially
-        // change the theme from day to night or vice versa,
-        // or keep it since it is still day or night
-        dispatch(setCurrentTheme(currentTheme));
+        // Re-trigger the day/night resolution without syncing to the backend.
+        // loadThemeFromServer re-runs resolveTheme (triggering a day→night or night→day
+        // CSS switch if the hour boundary crossed) without calling the listener middleware
+        // that would otherwise write a redundant theme-update to the server.
+        dispatch(loadThemeFromServer(currentTheme));
 
       }, msUntilNextHour)
 
