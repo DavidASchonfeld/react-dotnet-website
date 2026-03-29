@@ -203,7 +203,29 @@ Several accessibility and mobile-friendliness fixes applied to the main link-man
 
 ---
 
-## 15. Settings Page (`MySettingsPage.tsx`)
+## 15. ManageLinkModal — Enter Key Fix (`useFocusTrap.ts`, `SearchBar.tsx`, `SearchBarWithFilters.tsx`, `ManageLinkModal.tsx`)
+
+Pressing Enter in the `ManageLinkModal` search bar was closing the modal instead of sending the search.
+
+**Root cause:** `useFocusTrap` always moved initial focus to the *first* focusable element in the modal, which was the Close (✕) button (it appears first in the DOM). If the user pressed Enter without clicking the search input first, Enter activated the focused Close button and dismissed the modal.
+
+**Changes:**
+
+- **Initial focus on search input** — `useFocusTrap` now checks for a `[data-autofocus]` element inside the modal before falling back to the first focusable element. `ManageLinkModal` sets `autoFocusOnMount={true}` on `SearchBarWithFilters`, which passes it to `SearchBar`, which adds `data-autofocus="true"` to its `<input>`. When the modal opens, focus goes directly to the search field — the correct ARIA pattern for a search dialog and what users expect.
+- **`e.preventDefault()` on Enter in `SearchBar`** — the Enter `keydown` handler now calls `e.preventDefault()` before running the search. This prevents any implicit browser form-submission behavior from firing (e.g., if the component is ever placed inside a `<form>`).
+- **`type="button"` on the Close button** — the ✕ button in `ManageLinkModal` now has an explicit `type="button"`. Without it, the button's implicit type is `"submit"`, which can cause unintended activation in certain browser/form combinations.
+
+**Code location:**
+- `frontend/src/hooks/useFocusTrap.ts` — initial focus prefers `[data-autofocus]` over first focusable
+- `frontend/src/components/SearchBar.tsx` — `autoFocusOnMount` prop + `data-autofocus` attribute + `e.preventDefault()` on Enter
+- `frontend/src/components/SearchBarWithFilters.tsx` — passes `autoFocusOnMount` through to `SearchBar`
+- `frontend/src/components/modals/ManageLinkModal.tsx` — passes `autoFocusOnMount={true}` and adds `type="button"` to Close
+
+**Who it helps:** All users — the modal no longer closes unexpectedly on Enter. Keyboard users especially benefit from having the search input focused immediately on open.
+
+---
+
+## 16. Settings Page (`MySettingsPage.tsx`)
 
 Three accessibility and mobile-friendliness fixes applied to the Settings page.
 
@@ -274,6 +296,7 @@ On any page, press **Tab** once as soon as it loads. A "Skip to content" pill ap
 
 - **Tab** / **Shift+Tab** cycle focus through all controls inside the modal. Focus cannot leave the modal while it is open.
 - **Escape** closes the modal and returns focus to the element that originally opened it.
+- In **search modals** (e.g. ManageLinkModal), focus starts on the search input automatically — you can type and press **Enter** to search without clicking first.
 
 ### List rows (search results, media lists, tags, etc.)
 
@@ -306,4 +329,5 @@ On any page, press **Tab** once as soon as it loads. A "Skip to content" pill ap
 | Theme picker label | | ✓ | | | |
 | Admin table mobile | | ✓ | ✓ | | |
 | ManageLinkModal | ✓ | ✓ | ✓ | | |
+| ManageLinkModal Enter fix | ✓ | ✓ | | | |
 | Settings page | | ✓ | ✓ | | |
