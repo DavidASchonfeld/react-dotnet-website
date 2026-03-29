@@ -246,7 +246,7 @@ export default function ManageLinkModal({
                 <h2 id="manage-link-modal-title" className="font-semibold text-lg">{modalTitle}</h2>
                 {/* closeModal uses the frame-specific close so the slide-down animation runs on mobile */}
                 {/* a11y: aria-label names the close button for screen readers (✕ is not announced clearly) */}
-                <button className="btn btn-secondary w-fit" onClick={closeModal} aria-label="Close modal">✕</button>
+                <button type="button" className="btn btn-secondary w-fit" onClick={closeModal} aria-label="Close modal">✕</button>
             </div>
 
             {/* Focused item — the subject of the linking action (e.g. the media item being tagged) */}
@@ -272,6 +272,7 @@ export default function ManageLinkModal({
                     isAdmin={isAdmin ?? false}
                     roleLevel={roleLevel ?? null}
                     onSearch={handleSearch}
+                    autoFocusOnMount={true}
                 />
             </div>
 

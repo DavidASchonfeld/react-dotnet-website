@@ -30,11 +30,13 @@ export function useFocusTrap({ containerRef, enabled, onEsc }: UseFocusTrapOptio
         // a11y: save the currently focused element so focus can return here when the modal closes
         previousFocusRef.current = document.activeElement;
 
-        // a11y: move focus into the modal on open — targets the first focusable child
+        // a11y: move focus into the modal on open — prefers [data-autofocus] element (e.g. search input),
+        // falls back to the first focusable child (e.g. close button)
         const container = containerRef.current;
         if (container) {
-            const first = container.querySelector<HTMLElement>(FOCUSABLE);
-            first?.focus();
+            const autofocusTarget = container.querySelector<HTMLElement>('[data-autofocus]')
+                ?? container.querySelector<HTMLElement>(FOCUSABLE);
+            autofocusTarget?.focus();
         }
 
         function handleKeyDown(e: KeyboardEvent) {

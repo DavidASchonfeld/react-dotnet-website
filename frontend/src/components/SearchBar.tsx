@@ -26,6 +26,8 @@ interface SearchBarProps {
     showApiSourcePills?: boolean
     // When false, hides the Search button (Navbar submits via Enter key instead)
     showSearchButton?: boolean
+    // When true, adds data-autofocus to the input so useFocusTrap focuses it first on modal open
+    autoFocusOnMount?: boolean
 }
 
 export default function SearchBar({
@@ -38,6 +40,7 @@ export default function SearchBar({
     onSubmit,
     showApiSourcePills = true, // default true preserves backward compat for SearchResultsPage
     showSearchButton = true,
+    autoFocusOnMount,
 }: SearchBarProps) {
     const navigate = useNavigate()
 
@@ -107,7 +110,10 @@ export default function SearchBar({
     }, [inputQuery, searchType, effectiveSelectedApiSourceId, onSubmit])
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') handleSubmit()
+        if (e.key === 'Enter') {
+            e.preventDefault() // prevent implicit form submission / unintended default browser behavior
+            handleSubmit()
+        }
     }, [handleSubmit])
 
     // ---- Typeahead result click: navigate directly to detail page ----
@@ -159,6 +165,7 @@ export default function SearchBar({
                     value={inputQuery}
                     onChange={e => handleInputChange(e.target.value)}
                     onKeyDown={handleKeyDown}
+                    data-autofocus={autoFocusOnMount ? 'true' : undefined}
                     placeholder={selectedSource ? `${selectedSource.apiName}…` : searchType === 'lists' ? 'Lists…' : searchType === 'tags' ? 'Tags…' : 'Search…'}
                     /* rounded-full: pill shape for the search input; bg-primary/5 adds a barely-visible tint */
                     className={`form-input pl-3 pr-8 py-1 text-sm w-full rounded-full ${isTop ? 'bg-primary/5' : ''}`}

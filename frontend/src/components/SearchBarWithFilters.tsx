@@ -35,6 +35,7 @@ interface SearchBarWithFiltersProps {
     shouldShowFilters?: boolean
     allowedSearchTypes?: SearchType[]  // restrict visible type pills; undefined = show all
     onSearch: (query: string, filters: FilterState, bypassCache: boolean) => void
+    autoFocusOnMount?: boolean  // passed through to SearchBar to set initial focus in modal contexts
 }
 
 export default function SearchBarWithFilters({
@@ -48,6 +49,7 @@ export default function SearchBarWithFilters({
     shouldShowFilters = false,
     allowedSearchTypes,
     onSearch,
+    autoFocusOnMount,
 }: SearchBarWithFiltersProps) {
     const [isFiltersOpen, setIsFiltersOpen] = useState(shouldShowFilters)
     const [filters, setFilters] = useState<FilterState>(urlFilters)
@@ -163,6 +165,7 @@ export default function SearchBarWithFilters({
                     onSubmit={handleSearchBarSubmit}
                     showApiSourcePills={false}
                     showSearchButton={false}
+                    autoFocusOnMount={autoFocusOnMount}
                 />
             </div>
 
