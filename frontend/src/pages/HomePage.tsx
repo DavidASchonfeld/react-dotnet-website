@@ -29,7 +29,7 @@ export default function HomePage() {
                 <div className="page-header-accent mx-auto w-24" />
                 {/* Larger heading for stronger visual impact */}
                 <h1 className="text-4xl font-bold tracking-tight relative">Media Favorites</h1>
-                <p className="text-text/70 mt-2 text-base relative">Browse movies, books, music, and more — then build your own lists.</p>
+                <p className="text-text/70 mt-2 text-base relative">Browse movies, video games, and more — then build your own lists and tags.</p>
             </div>
 
             {isError && (

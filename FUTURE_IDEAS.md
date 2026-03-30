@@ -1,112 +1,72 @@
-## Future Ideas
+# Future Ideas
 
+## Core Feature Ideas
 
-- Plot Fragments
-- Tagging System
-- Make Creator Role a standardized list to choose from, with admins being able to approve/deny additional options
+### Series & Creator Information Display
+- **Display Creators for a Series**: Query all creators for each MediaItem inside that SeriesItem, remove duplicates and display those creators
+- **Display Genres for Creator**: When viewing a Creator's page, search through all of their MediaItems' Genre tags, remove duplicates and show aggregated genres
 
-- Approval System:
-  - Currently, approval will automatically be approved. Eventually, it will be great to build a more complicated approval system.
-  - Make the isApproved boolean used in many files into a more complicated system like "Not Submitted", "Pending", "Approval", "Rejection (Able to be Resubmitted)" etc.
-  - Consolidate the repeating fields for Approved, SubmittedBy etc. into a separate class to add:
-    - Visibility/AccessStatus
-    - SubmittedById
-    - SubmittedDate
-    - ApprovedById
-    - ApprovedDate
-    - RejectedById
-    - RejectedDate
-    - RejectionReason
-  - to classes to streamline/simplify/refactor the submission/approval process
-  - Also: Streamline "IsApproved" VS "AccessStatus"
-    - "isApproved": for private->submit because goal is for it to be public
-    - "AccessStatus": You choose if it is Public or Private
-- Edit history/audit trail
-- After editing, requiring approval for new edits/updates
-- Report button (for inappropriate content)
+### List Management
+- **Allow Duplicate MediaItems**: Currently duplicates in the same MediaList are not allowed. Add ability to allow duplicates after a confirmation popup.
+- **Implement List Sharing**: Enable users to share lists with others (with permission controls)
 
-- Admin Features
-  - Only Admins can edit MediaItems, Genres, MediaTypes after approval
-  - Only admins can edit descriptions/titles of MediaItems
-  - Only admins can edit descriptions/titles of public MediaLists
-- And after these features, build an edit/approval system of non-admins making edits that can be approved by the admins
+### External Links & URLs
+- **External Resource Links**: Give each MediaItem page and Creator page the ability to store URLs (each with their own custom title) to external websites
+  - Example use cases:
+    - Label: "Official Website", URL: officialWebsite.com
+    - Label: "IMDB Page", URL: imdb.com/thatThing
+    - Label: "Amazon Store", URL: amazon.com/officialBuyOnAmazon
+  - Include a disclaimer: "You are about to navigate to an external website not controlled by this website. Are you sure you wish to proceed?"
 
-- Creator Detail Characteristic:
-  - For Example: a Birthday field
+## User Experience & UI
 
-When Displaying a Series:
-- To Display Creators for that Series: I would query all of the creators for each piece of MediaItem inside that SeriesItem, remove duplicates and then display those creators
-- Same applies for when at a Creator's page, and wanting their Genres (search through all of their created MediaItems's Genre tags, remove duplicates and then show)
+### Refresh & Interactions
+- **Bouncy/Pull-to-Refresh**: Implement using @tanstack/react-query for a native mobile-like refresh experience
 
-- Instead of Deleting, Archiving (and then, after 30 days, automatically delete for real)
+### Content Discovery
+- **Recommendation Bar**: Display recommendations similar to GoodReads (e.g., "People who read this book also read...")
+- **Plot Fragment Tags**: Extend/Improve tags to better create/edit tags for specific plot fragments.
 
-- Deleting: When a user is deleted, I want a default "ghost" account that gets ownership of all of those items (besides MediaList) that the deleted user used to own.
-- Submission Queue Tool for Admins to Review/Approve/Deny etc. pending items
+## Data & Content Management
 
-Right now, duplicate MediaItems in the same MediaList is not allowed. In the future, I could add the ability to allow it after a Confirmation popup.
+### Deletion & Archiving
+- **Archive Instead of Delete**: Replace hard deletion with archiving (with automatic hard deletion after 30 days)
+- **Ghost Account for Deleted Users**: When a user is deleted, transfer ownership of all their items (except MediaLists) to a default "ghost" account
 
-Implement batching for requesting data from the backend (Means to split the data into chunks for the front-end to process). Very helpful when you have huge amounts of data to request from the backend.
+### Content Filtering & Ratings
+- **Explicit Content Handling**: If an album/series/franchise is marked as explicit, the system should respect user content filters
+  - Example: If a user has "Hide Explicit" or "Hide PG-13 and Over" enabled, anything in that album/series/franchise should also be hidden
 
-Implement bouncy refreshing,
-@tanstack/react-query: pull to refresh
+### History & Auditing
+- **Edit History & Audit Trail**: Track all changes made to items with full history
+- **Approval After Edits**: Require approval before new edits/updates take effect (especially for public items)
 
-- Administrators can see all private lists
-  - Formalize/neaten policy on administrators being able to see private lists for helpdesk support and safety purposes.
-  - It is optimal that Admin access to private data is audit-logged (who accessed what, and when.)
-- TODO: Implement Sharing Lists.
+## Admin & Moderation
 
-TODO: Implement into the MediaItem creation process:
-- Creators
-- Genres
+### Approval System
+- **Submission Workflow**: Currently, only moderators and administrators can post public lists/tags. Implement a full submission/approval workflow.
+- **Approval States**: Replace the simple `isApproved` boolean with a more nuanced system:
+  - States: "Not Submitted", "Pending", "Approved", "Rejected (Able to be Resubmitted)"
+  - Track: SubmittedById, SubmittedDate, ApprovedById, ApprovedDate, RejectedById, RejectedDate, RejectionReason
+- **Refactor Approval Fields**: Consolidate repeating `Approved`, `SubmittedBy` fields into a separate submission tracking class
+- **Clarify Approval vs. Access**:
+  - `isApproved`: For items transitioning from private → public (goal is public visibility)
+  - `AccessStatus`: User choice of Public or Private visibility
 
+### Admin Access & Security
+- **Admin Access to Private Lists**: Administrators can see all private lists for helpdesk support and safety purposes
+  - Formalize policy on when and how admins access private data
+  - Implement audit logging: track who accessed what data and when
+- **Submission Queue Tool**: Admin interface to review/approve/deny pending items
 
-Permission Giving: Complication:
-Maybe give Moderators the ability to upgrade regular users to Moderator (but not the ability to demote them - otherwise, it might cause potential drama/craziness, so only Admins could do that.)
+### Moderation Tools
+- **Report Button**: Allow users to report inappropriate content
+- **Content Moderation**: Central interface for handling reported content
 
-Give each MediaItem page and Creator page places to give URLS (each with their own title) to external websites
-- For example:
-  - Disclaimer for Users: You are about to navigate to an external website not controlled by this website's control. Are you sure you wish to proceed?
-  - Label: Official Website, URL: officialWebsite.com
-  - Label: IMDB Page, URL: imdb.com/thatThing
-  - Label: Amazon Store, URL: amazon.com/officialBuyOnAmazon
+## Design Inspirations
 
-Inspirations for this Website
-- GoodReads.com
-- IMDB.com
-- Spotify.com (except this website does not play songs)
-- TVTropes.org
-
-- Add a search bar to search ALL mediaItems
-  - And have a dropdown list of the 5 most popular items when each keystroke is typed in the search bar.
-
-- Import Data from 3rd Party Websites
-
-Create Default Playlists
-(Inspired by GoodReads):
-- Have Read, Currently Reading, Want to Read
-
-- Recommendation Bar (People who read this book also read this too.)
-
-Add to MediaItemDetailPage
-- A copy of GoodRead's DropDown
-- [an icon]
-
-If an album/series/franchise etc. is marked as explicit,
-my system should somehow handle that still.
-For example, if someone has "Hide Explicit" Or "Hide PG-13 and Over", anything in that album/series/franchise should also be hidden.
-
-Implement this (And this page is referenced (and commented out) on
-frontend/src/components/Modals/MediaItemsSettingsModal.tsx)
-navigate(`/mediaitem/${currentMediaItem.id}/creators`);
-
-
-
-For high-definition images for MediaItem deatils page, use the OMDB Poster API (which I get access to because I pay $5/month).
-The different URL than the standard OMDB API:
-http://img.omdbapi.com/?apikey=[yourkey]&
-
-
-Add a "color" theme that gives each MediaItem a frame like the user is looking at a stage with red curtains open and the MediaItem's cover on a dark (or lit) stage
-
-Check the website's front-end and, if needed, update it to be acessible to "Screen Readers" and other Accessibility options
-
+Borrow concepts from:
+- **GoodReads.com** — social reading, ratings, reviews
+- **IMDB.com** — comprehensive media databases, ratings
+- **Spotify.com** — discovery, recommendations (without audio playback)
+- **TVTropes.org** — detailed tagging and categorization
