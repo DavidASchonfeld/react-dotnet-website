@@ -16,8 +16,9 @@ var builder = WebApplication.CreateBuilder(args);
 // handles ConnectionStrings__DefaultConnection being set to a postgres:// URI manually.
 static string? ResolveConnectionString(string? raw)
 {
-    // Fall back to DATABASE_URL if DefaultConnection is not configured
-    raw ??= Environment.GetEnvironmentVariable("DATABASE_URL");
+    // Fall back to DATABASE_URL if DefaultConnection is null or empty string (appsettings.json default is "")
+    if (string.IsNullOrEmpty(raw))
+        raw = Environment.GetEnvironmentVariable("DATABASE_URL");
 
     if (raw is null) return null;
 

@@ -17,6 +17,52 @@ If it is not there, or you forgot etc., set them with this:
     dotnet user-secrets set "SeedAdmin:Email"    "admin@devWebsite.com"
 Then, restart the backend to implement these changes.
 
+## Local Development Database (Docker)
+
+The local dev database is PostgreSQL 16 running in Docker via `docker-compose.yml` in the repo root. Using Docker instead of a standalone PostgreSQL install keeps the dev environment portable, version-pinned, and isolated.
+
+### Why Docker instead of a standalone PostgreSQL install?
+
+- **Exact version match with production** — Docker pins PostgreSQL 16, the same major version Render uses. A standalone install might be a different version and behave differently.
+- **Zero global install** — PostgreSQL lives in a container, not on your system. No PATH conflicts, no lingering system services, no version collisions with other projects.
+- **One-command setup** — anyone (or future-you on a new machine) just needs Docker installed. No separate PostgreSQL installer, no manual service configuration.
+- **Clean wipe when needed** — `docker compose down -v` nukes the database and volume completely; `docker compose up -d` gives you a fresh one.
+- **Committed to the repo** — `docker-compose.yml` is version-controlled, so the exact DB config is always in sync with the codebase.
+
+### Starting the local database
+
+From the repo root:
+
+```bash
+docker compose up -d
+```
+
+This starts PostgreSQL 16 on `localhost:5432` with:
+- **Database:** `react_dotnet_dev`
+- **Username / Password:** `postgres` / `postgres`
+- **Named volume:** `postgres_data` — data persists across container restarts
+
+To fully wipe the database and start fresh:
+
+```bash
+docker compose down -v
+```
+
+### Connection string
+
+`appsettings.Development.json` already has the matching connection string:
+
+```
+Host=localhost;Port=5432;Database=react_dotnet_dev;Username=postgres;Password=postgres
+```
+
+EF Core migrations run automatically on startup (`db.Database.Migrate()` in `Program.cs`), so the schema is always up to date.
+
+### dotnet ef CLI (generating migrations)
+
+`AppDbContextDesignTimeFactory.cs` hardcodes the same local connection string so `dotnet ef migrations add` works without extra flags.
+
+
 ## Development - use "dotnet user-secrets"
 
 'dotnet user-secrets' stores secrets in a JSON file on your local machine only (and is never committed to git). .NET/C# loads them automatically when the setting 'ASPNETCORE_ENVIRONMENT=Development', which is the default when you run 'dotnet run' locally.
@@ -122,7 +168,7 @@ The backend is on a paid plan so it stays always-on — free-tier web services s
 
 ## Connecting the Render PostgreSQL Database
 
-The backend uses SQLite locally but switches to PostgreSQL in production (when `ASPNETCORE_ENVIRONMENT=Production`).
+The backend uses PostgreSQL everywhere — locally via Docker Compose, and in production via Render's managed PostgreSQL.
 
 Step 1: Create a PostgreSQL database on Render (if you haven't already):
 - Render Dashboard → New → PostgreSQL
@@ -141,14 +187,40 @@ Step 3: Add to your backend Web Service environment variables:
 - Click **Add Environment Variable** and fill in:
   - Key: `ConnectionStrings__DefaultConnection`
   - Value: *(paste the Internal Database URL you copied)*
+  - The value follows this format: `postgresql://USERNAME:PASSWORD@HOST/DBNAME`
+  - Example: `postgresql://reactdotnet_db:abc123@oregon-postgres.render.com/reactdotnet_db_xyz`
 - Click **Save Changes** — Render will prompt you that a redeploy is needed
 
 Step 4: Redeploy the backend.
 - Pushing your code commit to GitHub triggers a redeploy automatically (same as always).
 - Alternatively, Render may have already queued a redeploy after you saved the env var — check the **Deploys** tab on your backend Web Service.
 - Or trigger it manually: backend Web Service → **Deploys** tab → **Deploy latest commit**.
-- On first startup, EF Core automatically runs all 31 migrations to create the schema in PostgreSQL.
+- On first startup, EF Core automatically runs the `InitialCreate` migration to create the schema in PostgreSQL.
 - The admin user is also re-seeded (since the new database is empty).
+
+### Troubleshooting: `28P01 password authentication failed`
+
+If the deploy log shows this error, it almost always means the credentials in `ConnectionStrings__DefaultConnection` don't match the actual database.
+
+Common causes:
+- **Copied the wrong URL** — Render shows both an Internal and External Database URL; make sure you copied the **Internal** one.
+- **Password was regenerated** — if the PostgreSQL password was rotated, the env var needs to be updated to match (see "Rotating the PostgreSQL Credentials" section below).
+- **Typo in the value** — re-copy the Internal Database URL from Render → Connect and paste it fresh.
+
+The code falls back to a `DATABASE_URL` environment variable if `ConnectionStrings__DefaultConnection` is empty, but a manually-set `ConnectionStrings__DefaultConnection` always takes priority.
+
+
+## Rotating the PostgreSQL Credentials (Password Rotation)
+
+If the database password is compromised or you want to rotate it:
+
+1. Render PostgreSQL service → **Credentials** tab → **+ New default credential**
+2. Copy the new username and password Render generates
+3. Update `ConnectionStrings__DefaultConnection` in your backend Web Service → **Environment**
+4. Confirm the redeploy succeeds and the app works
+5. Delete the old credential from the **Credentials** tab
+
+Note: Render does not allow reusing a username once deleted. Choose a new username (e.g. `reactdotnet_db`) — the name has no functional significance.
 
 
 ## Auth Error Persistence Fix

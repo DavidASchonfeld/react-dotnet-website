@@ -34,7 +34,7 @@ export default function About(){
                     {/* UI / interaction libraries */}
                     <li><span className="text-text">UI Libraries:</span> Framer Motion, Recharts, dnd-kit, Sonner, react-select</li>
                     {/* Backend framework, ORM, auth, and database */}
-                    <li><span className="text-text">Back-End:</span> ASP.NET Core 10, EF Core, SQLite, JWT</li>
+                    <li><span className="text-text">Back-End:</span> ASP.NET Core 10, EF Core, PostgreSQL, JWT</li>
                     {/* API documentation tool */}
                     <li><span className="text-text">API Docs:</span> Scalar</li>
                 </ul>
