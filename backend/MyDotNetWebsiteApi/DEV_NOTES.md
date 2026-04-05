@@ -65,3 +65,39 @@ Render PostgreSQL — Port -1 Gotcha (follow-up to the above):
      so Npgsql received Port=-1 and rejected it.
 -- The fix: Default to 5432 (PostgreSQL standard port) when uri.Port is -1:
        var port = uri.Port > 0 ? uri.Port : 5432;
+
+
+Render Docker — Missing libgssapi_krb5.so.2 Gotcha:
+-- The error: "Cannot load library libgssapi_krb5.so.2"
+---- Root cause: Npgsql (the PostgreSQL driver) links against the Kerberos GSSAPI shared library
+     at runtime even when Kerberos authentication is not used. The slim ASP.NET runtime image
+     (mcr.microsoft.com/dotnet/aspnet:10.0) does not include this library by default.
+---- This caused the app to crash on startup in the Docker container on Render.
+-- The fix (Dockerfile — final/runtime stage):
+     Added an apt-get install step right after WORKDIR /app (before COPY):
+       RUN apt-get update && apt-get install -y --no-install-recommends libgssapi-krb5-2 && rm -rf /var/lib/apt/lists/*
+     --no-install-recommends keeps the image small; rm -rf /var/lib/apt/lists/* removes the
+     package index cache to avoid bloating the image layer.
+-- Bottom line: Any time you see a "Cannot load library" crash on startup in Docker,
+   check whether the missing .so is a system library not included in the slim runtime image.
+
+
+Render Deploy — PendingModelChangesWarning (EF Core):
+-- The warning: "The model for context 'AppDbContext' has pending model changes.
+   Add a new migration before updating the database."
+---- Root cause: EF Core 9+ added stricter "pending changes" detection that compares the
+     compiled model to the latest migration's snapshot. This can fire as a false positive
+     when migrations were generated locally against SQLite but run in production against
+     PostgreSQL — the two providers interpret some model configurations differently,
+     causing EF Core to flag a mismatch even when no real schema change exists.
+---- This is a warning (not a fatal error on its own), but it indicates the migration
+     snapshot baseline is out of sync with EF Core's current view of the model.
+-- The fix: Run `dotnet ef migrations add <AnyName>` locally.
+     If it produces an EMPTY migration (Up/Down both empty) — that is expected.
+     Commit it anyway. EF Core uses it to reset the snapshot baseline, which clears
+     the warning on the next deploy.
+     If it produces a NON-EMPTY migration, a real schema change was missed — commit and
+     the app's db.Database.Migrate() call in Program.cs will apply it at startup.
+-- Bottom line: When you see PendingModelChangesWarning, always run
+   `dotnet ef migrations add FixPendingModelChanges` (or any descriptive name), inspect
+   the output, and commit the result — empty or not.

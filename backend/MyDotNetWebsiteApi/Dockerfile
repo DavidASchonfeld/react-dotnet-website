@@ -95,6 +95,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 # So since we are now in "final", we are navigating to [final image]/app
 WORKDIR /app
 
+# Install Kerberos GSSAPI library required by Npgsql's PostgreSQL driver
+RUN apt-get update && apt-get install -y --no-install-recommends libgssapi-krb5-2 && rm -rf /var/lib/apt/lists/*
+
 
 # Copy the compiled output from Stage 1 into this new image
 
