@@ -26,3 +26,11 @@ Pre-Warming a Cache:
 
 
 Before saving an imageUrl to the imageCache, the backend will test the imageUrl to ensure it does not receive an error. If it does, it does not save/use the imageUrl (though, if the imageUrl is attached to other non-error data, it still uses that other data.)
+
+
+NuGet Package Version Gotcha (Npgsql):
+-- Microsoft .NET packages (e.g. JwtBearer, EF Core) follow the exact .NET patch version (e.g. 10.0.3)
+-- Third-party packages like Npgsql.EntityFrameworkCore.PostgreSQL follow their OWN release cadence
+---- DO NOT assume Npgsql matches the .NET patch version — it almost certainly doesn't
+---- Example: .NET 10.0.3 shipped, but Npgsql only had 10.0.1 available → `dotnet restore` fails in Docker
+---- Always check https://www.nuget.org/packages/Npgsql.EntityFrameworkCore.PostgreSQL for the latest version before upgrading
