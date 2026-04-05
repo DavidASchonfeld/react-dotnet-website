@@ -151,6 +151,13 @@ Step 4: Redeploy the backend.
 - The admin user is also re-seeded (since the new database is empty).
 
 
+## Auth Error Persistence Fix
+
+The `auth` Redux slice (including `error` and `status`) is fully persisted to localStorage via redux-persist. This means a failed login or registration error message could survive a page refresh and appear on the login page on the next visit — before the user does anything.
+
+**Fix (2026-04-05):** A `clearAuthError` action was added to `authSlice.ts`. `LoginOrRegisterPage.tsx` dispatches it on mount (via `useEffect`) and whenever the user switches between the Login/Register tabs. This ensures stale errors from a previous session are never shown to the user on a fresh visit.
+
+
 ## Password Requirements for Registration
 
 ASP.NET Identity enforces these password rules by default:

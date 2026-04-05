@@ -175,6 +175,12 @@ const authSlice = createSlice({
             // let's clear the error and the status just in case.
             state.status = 'idle';
             state.error = null;
+        },
+
+        // Clears any stale error left over from a previous session (persisted to localStorage).
+        clearAuthError: (state) => {
+            state.error = null;
+            state.status = 'idle';
         }
     },
     extraReducers: (builder) => {
@@ -239,7 +245,7 @@ const authSlice = createSlice({
 // Export the synchronous functions so components can import and dispatch them.
 // Dispatch: Call this authSlice.ts to run the dispatched functionm
 // To Dispatch:     dispatch(clearCredentials())
-export const { setCredentials, clearCredentials, setUserName } = authSlice.actions;
+export const { setCredentials, clearCredentials, setUserName, clearAuthError } = authSlice.actions;
 
 
 // Export the reducer.

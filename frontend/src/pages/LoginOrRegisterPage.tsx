@@ -1,12 +1,12 @@
 // Import from Libraries
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import AnimatedPage from "../components/AnimatedPage";
 
 // Import from My Files
 import type { AppDispatch, RootState } from "../store/store";
-import { loginThunk, registerThunk } from "../store/authSlice";
+import { loginThunk, registerThunk, clearAuthError } from "../store/authSlice";
 
 
 export default function LoginOrRegisterPage() {
@@ -23,6 +23,11 @@ export default function LoginOrRegisterPage() {
 
     const authStatus = useSelector((state: RootState) => state.auth.status);
     const authError = useSelector((state: RootState) => state.auth.error);
+
+    // Clear any error persisted from a previous session when the page loads.
+    useEffect(() => {
+        dispatch(clearAuthError());
+    }, [dispatch]);
 
 
     const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -90,7 +95,7 @@ export default function LoginOrRegisterPage() {
                         // a11y: aria-pressed indicates which tab (Login/Register) is currently active
                         aria-pressed={!isRegistering}
                         className={`px-4 py-2 w-full ${!isRegistering ? 'border-b-2 border-primary text-primary' : 'text-text-muted'}`}
-                        onClick={() => setIsRegistering(false)}>
+                        onClick={() => { setIsRegistering(false); dispatch(clearAuthError()); }}>
                         Login
                     </button>
                     <button
@@ -98,7 +103,7 @@ export default function LoginOrRegisterPage() {
                         // a11y: aria-pressed indicates which tab (Login/Register) is currently active
                         aria-pressed={isRegistering}
                         className={`px-4 py-2 w-full ${isRegistering ? 'border-b-2 border-primary text-primary' : 'text-text-muted'}`}
-                        onClick={() => setIsRegistering(true)}>
+                        onClick={() => { setIsRegistering(true); dispatch(clearAuthError()); }}>
                         Register
                     </button>
                 </div>
