@@ -106,6 +106,65 @@ So yes, every time I push my commits to Github, Render automatically re-deploys 
 It makes it really easy to publish and publish changes too.
 
 
+## Render Pricing
+
+All costs are paid to Render directly.
+
+| Service | Plan | Cost |
+|---------|------|------|
+| Frontend (Static Site) | Free | $0/month |
+| Backend (Web Service) | Starter ($7/month) | $7/month |
+| PostgreSQL Database | Starter ($7/month) | $7/month |
+| **Total** | | **$14/month** |
+
+The backend is on a paid plan so it stays always-on — free-tier web services spin down after inactivity and take ~60 seconds to wake up on the next request, which makes the site feel broken to visitors. The paid plan eliminates that.
+
+
+## Connecting the Render PostgreSQL Database
+
+The backend uses SQLite locally but switches to PostgreSQL in production (when `ASPNETCORE_ENVIRONMENT=Production`).
+
+Step 1: Create a PostgreSQL database on Render (if you haven't already):
+- Render Dashboard → New → PostgreSQL
+- Choose any name and region (pick the same region as your backend Web Service)
+
+Step 2: Get the internal connection string:
+- Open your Render PostgreSQL service → click "Connect"
+- Copy the **Internal Database URL** field (starts with `postgresql://...`)
+- Use Internal (not External) to keep traffic on Render's private network — faster and no SSL overhead
+
+Step 3: Add to your backend Web Service environment variables:
+- Go to your Render Dashboard
+- Click on your **backend Web Service** (not the PostgreSQL database, not the frontend)
+- In the left sidebar, click **Environment**
+- You'll see a table of existing env vars (like `JwtSettings__Secret`, etc.)
+- Click **Add Environment Variable** and fill in:
+  - Key: `ConnectionStrings__DefaultConnection`
+  - Value: *(paste the Internal Database URL you copied)*
+- Click **Save Changes** — Render will prompt you that a redeploy is needed
+
+Step 4: Redeploy the backend.
+- Pushing your code commit to GitHub triggers a redeploy automatically (same as always).
+- Alternatively, Render may have already queued a redeploy after you saved the env var — check the **Deploys** tab on your backend Web Service.
+- Or trigger it manually: backend Web Service → **Deploys** tab → **Deploy latest commit**.
+- On first startup, EF Core automatically runs all 31 migrations to create the schema in PostgreSQL.
+- The admin user is also re-seeded (since the new database is empty).
+
+
+## Password Requirements for Registration
+
+ASP.NET Identity enforces these password rules by default:
+- At least 6 characters
+- At least 1 uppercase letter
+- At least 1 lowercase letter
+- At least 1 digit (0–9)
+- At least 1 special character (e.g. `!`, `@`, `#`, `$`, `%`)
+
+Example of a valid password: `MyPass1!`
+
+If a user's password doesn't meet these requirements, the registration form now shows the specific error message returned by Identity (e.g. "Passwords must have at least one non alphanumeric character.") instead of a generic failure message.
+
+
 ## Frontend: API Response Wrapping (CachedResponse)
 
 ### The Pattern

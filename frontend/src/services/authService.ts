@@ -16,8 +16,19 @@ export async function registerUser(userName: string, email: string, password: st
 
     if (response.status === 429)
         throw new Error('Too many attempts. Please wait a moment and try again.')
-    if (!response.ok)
-        throw new Error('Registration failed')
+    if (!response.ok) {
+        // Parse Identity error descriptions (e.g. password policy failures) for display
+        let errorMessage = 'Registration failed';
+        try {
+            const errors = await response.json();
+            // Identity errors come back as [{ code: string, description: string }]
+            if (Array.isArray(errors) && errors.length > 0)
+                errorMessage = errors.map((e: { description: string }) => e.description).join(' ');
+        } catch {
+            // Response body not parseable — keep generic message
+        }
+        throw new Error(errorMessage);
+    }
 
     return response.json();
 }
