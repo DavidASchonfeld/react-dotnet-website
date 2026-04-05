@@ -142,6 +142,9 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        // Force all incoming DateTime values to UTC — PostgreSQL rejects DateTimeKind.Unspecified
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new UtcNullableDateTimeJsonConverter());
     });
 
 // The following line pulls from this logic from the appsettings.json:

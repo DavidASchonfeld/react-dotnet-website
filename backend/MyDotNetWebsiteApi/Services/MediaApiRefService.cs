@@ -381,7 +381,8 @@ public class MediaApiRefService : IMediaApiRefService
             MediaTypeId = dto.MediaTypeId,
             Subtype = dto.Subtype,
             CreatorName = dto.CreatorName,
-            PublishedDate = dto.PublishedDate,
+            // Normalize to UTC — PostgreSQL requires DateTimeKind.Utc for timestamp with time zone columns
+            PublishedDate = dto.PublishedDate.HasValue ? DateTime.SpecifyKind(dto.PublishedDate.Value, DateTimeKind.Utc) : null,
             ExternalApiSourceId = dto.ExternalApiSourceId,
             ExternalId = dto.ExternalId,
             ThumbnailUrl = dto.ThumbnailUrl,

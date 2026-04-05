@@ -114,6 +114,26 @@ Dev Setup — Running PostgreSQL Locally (Docker Compose):
 -- No need to run `dotnet ef database update` manually during local development.
 -- To fully reset local dev state: docker compose down -v && docker compose up -d, then restart the app.
 
+PostgreSQL — DateTime Kind=Unspecified Gotcha (find-or-create 500 error):
+-- The error: POST /api/mediaapiref/find-or-create returned 500 after switching to PostgreSQL.
+---- Root cause: PostgreSQL's "timestamp with time zone" column type requires DateTimeKind.Utc.
+     System.Text.Json deserializes ISO 8601 strings that have no 'Z' or offset suffix
+     (e.g. "2001-01-14T00:00:00") as DateTimeKind.Unspecified. Npgsql v6+ throws an
+     InvalidCastException when it receives a Unspecified DateTime, causing an unhandled 500.
+-- The field affected: PublishedDate in FindOrCreateMediaApiRefDto — the only client-supplied
+     DateTime in all request DTOs (all other DateTimes are set server-side with DateTime.UtcNow).
+-- The fix (applied 2026-04-05):
+   1. MediaApiRefService.GetOrCreateMediaApiRefAsync — wrap PublishedDate in SpecifyKind(Utc)
+      before assigning it to the new MediaApiRef entity.
+   2. Extensions/UtcDateTimeJsonConverter.cs — global JSON converters (DateTime and DateTime?)
+      that force DateTimeKind.Utc on all deserialized values, registered in Program.cs.
+      This prevents the same bug from affecting any future endpoints that accept DateTime in
+      a JSON request body.
+-- Bottom line: Any time you add a new DTO with a DateTime property that comes from the client,
+   you do NOT need to add SpecifyKind yourself — the global converter handles it. But if you
+   bypass JSON deserialization (e.g. set a date from string parsing), ensure Kind=Utc manually.
+
+
 Adding New Migrations (going forward):
 -- Run: dotnet ef migrations add <YourMigrationName>
 -- The DesignTimeFactory (Data/AppDbContextDesignTimeFactory.cs) ensures Npgsql is always
