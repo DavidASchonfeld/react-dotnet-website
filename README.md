@@ -16,7 +16,9 @@ A full-stack media tracking and collection app built with **React 19** and **ASP
 | Service | URL |
 |---------|-----|
 | Frontend | https://react-dotnet-website-frontend.onrender.com |
-| API Docs (Scalar) | https://react-dotnet-website.onrender.com/scalar/v1 — Interactive API explorer (no login required for browsing) |
+| API Docs (Scalar) | https://react-dotnet-website.onrender.com/scalar/v1 — Interactive API explorer (no login required for browsing). Scalar is intentionally enabled in production for this portfolio project so that anyone browsing this repo can easily explore the backend endpoints without any local setup. In a real production project, Scalar would only be enabled in development. |
+
+> **Note on CORS:** The Scalar docs page is publicly visible, but CORS remains fully enforced on the API. CORS is not about who can *view* the docs — it restricts which servers can make HTTP requests to the backend. Since Scalar is served directly from the backend itself, it is same-origin and unaffected by CORS. The API only accepts cross-origin requests from the frontend server.
 
 ---
 
@@ -216,6 +218,7 @@ Documented interactively at `/scalar/v1`. Controller groups:
 | SQL injection | All queries via EF Core parameterized LINQ — no raw SQL |
 | Secrets | `dotnet user-secrets` in dev; environment variables in production (never in source) |
 | Authorization | Role-level enforcement via `[Authorize(Policy = ...)]` on all protected endpoints |
+| CORS | Only the frontend origin is whitelisted — requests from any other server are blocked. Scalar docs are unaffected because they are served directly from the backend (same-origin, not cross-origin) |
 
 ---
 
