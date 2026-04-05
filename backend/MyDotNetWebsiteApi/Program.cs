@@ -6,6 +6,7 @@ using Scalar.AspNetCore;
 // JWT Libaries to Import
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 
 
@@ -43,6 +44,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString);  // Render PostgreSQL (persistent)
     else
         options.UseSqlite(connectionString);  // Local SQLite file for development
+
+    // Suppress false-positive: SQLite-generated migration snapshot differs from PostgreSQL's
+    // runtime model interpretation — EF Core 10 promotes this mismatch to a hard exception by default
+    options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
 });
 
 // Register ASP.NET Core Identity

@@ -82,22 +82,20 @@ Render Docker — Missing libgssapi_krb5.so.2 Gotcha:
    check whether the missing .so is a system library not included in the slim runtime image.
 
 
-Render Deploy — PendingModelChangesWarning (EF Core):
--- The warning: "The model for context 'AppDbContext' has pending model changes.
-   Add a new migration before updating the database."
----- Root cause: EF Core 9+ added stricter "pending changes" detection that compares the
-     compiled model to the latest migration's snapshot. This can fire as a false positive
-     when migrations were generated locally against SQLite but run in production against
-     PostgreSQL — the two providers interpret some model configurations differently,
-     causing EF Core to flag a mismatch even when no real schema change exists.
----- This is a warning (not a fatal error on its own), but it indicates the migration
-     snapshot baseline is out of sync with EF Core's current view of the model.
--- The fix: Run `dotnet ef migrations add <AnyName>` locally.
-     If it produces an EMPTY migration (Up/Down both empty) — that is expected.
-     Commit it anyway. EF Core uses it to reset the snapshot baseline, which clears
-     the warning on the next deploy.
-     If it produces a NON-EMPTY migration, a real schema change was missed — commit and
-     the app's db.Database.Migrate() call in Program.cs will apply it at startup.
--- Bottom line: When you see PendingModelChangesWarning, always run
-   `dotnet ef migrations add FixPendingModelChanges` (or any descriptive name), inspect
-   the output, and commit the result — empty or not.
+Render Deploy — PendingModelChangesWarning (EF Core 10):
+-- The error: System.InvalidOperationException: "The model for context 'AppDbContext' has pending changes."
+---- Root cause: EF Core 10 promoted PendingModelChangesWarning from a warning to a hard exception
+     by default. It fires because migrations are generated locally against SQLite, but production
+     runs PostgreSQL. The two providers interpret some model configurations differently, so EF Core's
+     runtime model (PostgreSQL) doesn't exactly match the snapshot baked into the latest migration
+     (SQLite). Running `dotnet ef migrations add` locally produces an EMPTY migration because SQLite
+     sees no changes — the mismatch only surfaces at runtime against PostgreSQL.
+---- Generating a new empty migration does NOT fix this; EF Core still detects the provider diff.
+-- The fix (Program.cs — AddDbContext call):
+     Added ConfigureWarnings to suppress the false-positive:
+       options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+     Requires: using Microsoft.EntityFrameworkCore.Diagnostics;
+---- This is safe because all real schema changes ARE tracked through migrations — the warning is
+     purely a SQLite-vs-PostgreSQL provider artifact with no actual missing columns or tables.
+-- Bottom line: If you see this exception on a project that uses SQLite locally but PostgreSQL
+   in production, suppress it via ConfigureWarnings. Do not waste time adding empty migrations.
