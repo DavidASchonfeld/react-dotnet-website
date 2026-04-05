@@ -28,7 +28,9 @@ static string? ResolveConnectionString(string? raw)
     // Parse URI and emit Npgsql key=value connection string (SSL required by Render)
     var uri = new Uri(raw);
     var userInfo = uri.UserInfo.Split(':');
-    return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+    // uri.Port returns -1 when the URI omits a port; fall back to the PostgreSQL default
+    var port = uri.Port > 0 ? uri.Port : 5432;
+    return $"Host={uri.Host};Port={port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
 }
 
 // Registers AppDbContext.cs as a service.

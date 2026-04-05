@@ -56,3 +56,12 @@ Render PostgreSQL — Connection String Format Gotcha:
    3. Also falls back to the DATABASE_URL env var, which Render auto-injects for linked
       PostgreSQL services — so the app works even if ConnectionStrings__DefaultConnection is unset
 -- Bottom line: You can paste either format into your Render env vars and it will just work.
+
+Render PostgreSQL — Port -1 Gotcha (follow-up to the above):
+-- The error: "Couldn't set port — value ('-1') must be a non-negative and non-zero value"
+---- Root cause: .NET's Uri.Port returns -1 when the URI omits an explicit port
+       (e.g., postgres://user:pass@host/database with no :5432).
+     The ResolveConnectionString helper was passing uri.Port directly to the connection string,
+     so Npgsql received Port=-1 and rejected it.
+-- The fix: Default to 5432 (PostgreSQL standard port) when uri.Port is -1:
+       var port = uri.Port > 0 ? uri.Port : 5432;
