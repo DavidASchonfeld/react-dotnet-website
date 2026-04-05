@@ -82,6 +82,8 @@ const baseQuery = fetchBaseQuery({
 // caller that is awaiting a shared async operation it didn't initiate.
 
 let refreshPromise: Promise<string | null> | null = null
+// Ensures only the first waiter shows the toast and dispatches logout when a refresh cycle fails
+let logoutDispatched = false
 
 const baseQueryWithErrorHandling: BaseQueryFn<
     string | FetchArgs,
@@ -99,6 +101,7 @@ const baseQueryWithErrorHandling: BaseQueryFn<
             if (isAuthenticated) {
                 // Start a refresh only if one isn't already in flight; otherwise share the existing promise.
                 if (!refreshPromise) {
+                    logoutDispatched = false // New refresh cycle — reset the logout guard
                     refreshPromise = refreshAccessToken()
                         .catch(() => null) // Return null on failure so all waiters can handle it uniformly
                         .finally(() => { refreshPromise = null }) // Reset after all waiters have resolved
@@ -118,9 +121,13 @@ const baseQueryWithErrorHandling: BaseQueryFn<
                     // Retry the original request — prepareHeaders now has the new token.
                     result = await baseQuery(args, api, extra)
                 } else {
-                    // Refresh failed — session is truly expired. Log the user out.
-                    safeToast.error('Your session has expired. Please log in again.')
-                    api.dispatch(clearCredentials())
+                    // Refresh failed — session is truly expired. Only the first waiter logs the user out
+                    // to avoid duplicate "Session Expired" toasts when multiple requests awaited the same refresh.
+                    if (!logoutDispatched) {
+                        logoutDispatched = true
+                        safeToast.error('Your session has expired. Please log in again.')
+                        api.dispatch(clearCredentials())
+                    }
                     return result
                 }
             }
@@ -631,6 +638,8 @@ export const apiSlice = createApi({
                 if (page && page > 1) params.set('page', String(page))
                 return `/api/customtag/search?${params}`
             },
+            // Invalidated by create/patch/delete tag mutations so SearchPage refetches after changes
+            providesTags: ['CustomTag'],
         }),
 
         addTagToMediaApiRef: builder.mutation<
