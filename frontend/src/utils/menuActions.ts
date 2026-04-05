@@ -53,7 +53,7 @@ export function makeManageTagItemsAction(onOpen: () => void): MenuAction {
 }
 
 export function makeRemoveFromTagAction(onRemove: () => void): MenuAction {
-    return { icon: '🏷️‍💥', label: 'Remove from Tag', onClick: onRemove };
+    return { icon: '🏷️', label: 'Remove from Tag', onClick: onRemove };
 }
 // ── Preset builders ────────────────────────────────────────────────────
 // A preset builder returns the full standard MenuAction[] for a given item type.
