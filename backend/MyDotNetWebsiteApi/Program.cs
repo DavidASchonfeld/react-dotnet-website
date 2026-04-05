@@ -6,7 +6,6 @@ using Scalar.AspNetCore;
 // JWT Libaries to Import
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 
 
@@ -35,19 +34,13 @@ static string? ResolveConnectionString(string? raw)
 }
 
 // Registers AppDbContext.cs as a service.
-// Uses PostgreSQL in production (Render) and SQLite locally for development.
+// Uses PostgreSQL for both development and production — eliminates SQLite/Postgres type-mapping mismatches.
+// Dev connection string comes from appsettings.Development.json; production uses DATABASE_URL on Render.
 // Every time that your controllers need database access, .NET automatically creates an AppDbContext and passes in the connection string.
 var connectionString = ResolveConnectionString(builder.Configuration.GetConnectionString("DefaultConnection"));
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    if (builder.Environment.IsProduction())
-        options.UseNpgsql(connectionString);  // Render PostgreSQL (persistent)
-    else
-        options.UseSqlite(connectionString);  // Local SQLite file for development
-
-    // Suppress false-positive: SQLite-generated migration snapshot differs from PostgreSQL's
-    // runtime model interpretation — EF Core 10 promotes this mismatch to a hard exception by default
-    options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+    options.UseNpgsql(connectionString);  // PostgreSQL for all environments
 });
 
 // Register ASP.NET Core Identity
@@ -297,14 +290,6 @@ using (var scope = app.Services.CreateScope())
     // In this file (yes, Program.cs lines 17-20)
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();  // Applies any unapplied migrations (if all migrations are applied already, this is still fine to call.)
-
-    // Enable WAL (Write-Ahead Logging) mode for SQLite.
-    // WAL allows concurrent reads while a write is in progress, significantly reducing
-    // "database is locked" conflicts when multiple requests hit the DB simultaneously.
-    // This setting persists in the database file — it only needs to be applied once.
-    // WAL mode only applies to SQLite — skip for PostgreSQL (which handles concurrency natively).
-    if (db.Database.IsSqlite())
-        db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
 
 
     // Pulls .NET's built-in UserManager for CRUDing users.

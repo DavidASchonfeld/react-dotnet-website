@@ -82,20 +82,40 @@ Render Docker — Missing libgssapi_krb5.so.2 Gotcha:
    check whether the missing .so is a system library not included in the slim runtime image.
 
 
-Render Deploy — PendingModelChangesWarning (EF Core 10):
--- The error: System.InvalidOperationException: "The model for context 'AppDbContext' has pending changes."
----- Root cause: EF Core 10 promoted PendingModelChangesWarning from a warning to a hard exception
-     by default. It fires because migrations are generated locally against SQLite, but production
-     runs PostgreSQL. The two providers interpret some model configurations differently, so EF Core's
-     runtime model (PostgreSQL) doesn't exactly match the snapshot baked into the latest migration
-     (SQLite). Running `dotnet ef migrations add` locally produces an EMPTY migration because SQLite
-     sees no changes — the mismatch only surfaces at runtime against PostgreSQL.
----- Generating a new empty migration does NOT fix this; EF Core still detects the provider diff.
--- The fix (Program.cs — AddDbContext call):
-     Added ConfigureWarnings to suppress the false-positive:
-       options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
-     Requires: using Microsoft.EntityFrameworkCore.Diagnostics;
----- This is safe because all real schema changes ARE tracked through migrations — the warning is
-     purely a SQLite-vs-PostgreSQL provider artifact with no actual missing columns or tables.
--- Bottom line: If you see this exception on a project that uses SQLite locally but PostgreSQL
-   in production, suppress it via ConfigureWarnings. Do not waste time adding empty migrations.
+Render Deploy — PendingModelChangesWarning + DateTime Cast Crash (EF Core 10):
+-- These errors were caused by using SQLite locally and PostgreSQL in production.
+   The two providers generate incompatible migration snapshots (SQLite maps DateTime as TEXT;
+   PostgreSQL uses timestamp with time zone), which caused two distinct crashes:
+   1. PendingModelChangesWarning promoted to a hard exception (EF Core 10 default behaviour)
+   2. System.InvalidCastException: "Unable to cast System.DateTime to System.String"
+      — thrown when PostgreSQL tried to generate INSERT SQL for seeded DateTime values
+        that were annotated as TEXT type in the SQLite-generated migration snapshot.
+-- The real fix (2026-04-05): Switch both dev and production to PostgreSQL.
+   This eliminates the entire class of SQLite/Postgres type-mapping bugs permanently.
+   Changes made:
+   1. appsettings.Development.json — added local PostgreSQL connection string
+   2. Program.cs — removed IsProduction branch; UseNpgsql() for all environments
+   3. Data/AppDbContextDesignTimeFactory.cs — created so `dotnet ef` always generates
+      migrations using the Npgsql provider (DateTime → timestamp with time zone, not TEXT)
+   4. All old migrations deleted; fresh single InitialCreate generated with Npgsql types
+   5. Render PostgreSQL database must be reset (drop all tables or recreate the DB)
+      before deploying, since old partially-applied migrations are incompatible.
+
+Dev Setup — Running PostgreSQL Locally (Docker Compose):
+-- Use docker-compose.yml at the project root (best practice: isolated, version-pinned, easy to wipe)
+-- Commands:
+     docker compose up -d                                         # start PostgreSQL in the background
+     docker compose stop                                          # stop without wiping data
+     docker compose down -v                                       # stop AND wipe all data (clean slate)
+     docker compose exec postgres psql -U postgres react_dotnet_dev  # open a psql shell
+-- Connection string (in appsettings.Development.json):
+     Host=localhost;Port=5432;Database=react_dotnet_dev;Username=postgres;Password=postgres
+-- The app runs db.Database.Migrate() on startup, so tables and seed data are created automatically.
+-- No need to run `dotnet ef database update` manually during local development.
+-- To fully reset local dev state: docker compose down -v && docker compose up -d, then restart the app.
+
+Adding New Migrations (going forward):
+-- Run: dotnet ef migrations add <YourMigrationName>
+-- The DesignTimeFactory (Data/AppDbContextDesignTimeFactory.cs) ensures Npgsql is always
+   used, so migration snapshots always use PostgreSQL types.
+-- Commit the generated migration files; the app applies them automatically on next startup.

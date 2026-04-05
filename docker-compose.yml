@@ -1,0 +1,18 @@
+# Local development services — not used in production (Render manages its own PostgreSQL)
+services:
+  postgres:
+    image: postgres:16                                       # pin to major version for reproducibility
+    container_name: react_dotnet_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: react_dotnet_dev                         # matches appsettings.Development.json
+    ports:
+      - "5432:5432"                                         # expose to localhost so dotnet run can connect
+    volumes:
+      - postgres_data:/var/lib/postgresql/data              # persist data across container restarts
+    restart: unless-stopped                                  # auto-restart on Docker daemon restart, but not manual stops
+
+# named volume so data survives `docker compose stop` (only wiped by `docker compose down -v`)
+volumes:
+  postgres_data:
