@@ -11,10 +11,30 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Converts Render's postgres:// URI format to the key=value format Npgsql requires.
+// Render injects DATABASE_URL automatically for linked PostgreSQL services; this also
+// handles ConnectionStrings__DefaultConnection being set to a postgres:// URI manually.
+static string? ResolveConnectionString(string? raw)
+{
+    // Fall back to DATABASE_URL if DefaultConnection is not configured
+    raw ??= Environment.GetEnvironmentVariable("DATABASE_URL");
+
+    if (raw is null) return null;
+
+    // Already key=value format — no conversion needed
+    if (!raw.StartsWith("postgres://") && !raw.StartsWith("postgresql://"))
+        return raw;
+
+    // Parse URI and emit Npgsql key=value connection string (SSL required by Render)
+    var uri = new Uri(raw);
+    var userInfo = uri.UserInfo.Split(':');
+    return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+}
+
 // Registers AppDbContext.cs as a service.
 // Uses PostgreSQL in production (Render) and SQLite locally for development.
 // Every time that your controllers need database access, .NET automatically creates an AppDbContext and passes in the connection string.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = ResolveConnectionString(builder.Configuration.GetConnectionString("DefaultConnection"));
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     if (builder.Environment.IsProduction())

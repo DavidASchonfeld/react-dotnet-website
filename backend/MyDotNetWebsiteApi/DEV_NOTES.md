@@ -34,3 +34,25 @@ NuGet Package Version Gotcha (Npgsql):
 ---- DO NOT assume Npgsql matches the .NET patch version — it almost certainly doesn't
 ---- Example: .NET 10.0.3 shipped, but Npgsql only had 10.0.1 available → `dotnet restore` fails in Docker
 ---- Always check https://www.nuget.org/packages/Npgsql.EntityFrameworkCore.PostgreSQL for the latest version before upgrading
+
+
+Render PostgreSQL — Connection String Format Gotcha:
+-- The error: "Format of the initialization string does not conform to specification starting at index 0"
+---- What it means: Npgsql received a connection string it couldn't parse. "index 0" means it failed on
+     the very first character — a sure sign the string is in the wrong format entirely.
+---- Root cause: Render provides PostgreSQL connection strings as a URI:
+       postgres://username:password@host:port/database
+     But Npgsql's UseNpgsql() expects key=value format:
+       Host=...;Port=...;Database=...;Username=...;Password=...
+     Pasting Render's "Internal Database URL" directly into the ConnectionStrings__DefaultConnection
+     env var triggers this crash every time.
+-- How we detected it: The stack trace pointed to NpgsqlConnectionStringBuilder..ctor → SetupDataSource
+   at startup (before the app even handled a request), and the "index 0" in the message is the
+   giveaway that the string starts with an unexpected character (the 'p' in "postgres://").
+-- The fix (Program.cs — ResolveConnectionString helper):
+   1. Check if the string starts with postgres:// or postgresql://
+   2. If yes, parse it as a URI and reconstruct it as Npgsql key=value format, adding
+      SSL Mode=Require;Trust Server Certificate=true (required by Render's TLS certs)
+   3. Also falls back to the DATABASE_URL env var, which Render auto-injects for linked
+      PostgreSQL services — so the app works even if ConnectionStrings__DefaultConnection is unset
+-- Bottom line: You can paste either format into your Render env vars and it will just work.
