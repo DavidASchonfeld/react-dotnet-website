@@ -45,7 +45,9 @@ public class RawgApiAdapter : IExternalMediaApiAdapter
             ThumbnailUrl = response.BackgroundImage,
             CreatorName = response.Developers?.Count > 0 ? string.Join(", ", response.Developers.Select(d => d.Name)) : null,
             Poster = response.BackgroundImage,
-            Plot = response.Description != null && response.Description != "N/A" ? response.Description : response.DescriptionRaw,
+            // Using DescriptionRaw instead of Description — Description contains HTML tags/entities from RAWG,
+            // and blindly processing HTML from external sources is a security risk. DescriptionRaw is the pre-cleaned plain-text equivalent.
+            Plot = response.DescriptionRaw,
             Country = null, // RAWG doesn't provide country info for games
             Genres = genres,
             Rated = null, // RAWG doesn't provide ESRB rating in the detail endpoint
