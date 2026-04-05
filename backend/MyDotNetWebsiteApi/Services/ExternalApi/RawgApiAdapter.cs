@@ -46,8 +46,9 @@ public class RawgApiAdapter : IExternalMediaApiAdapter
             CreatorName = response.Developers?.Count > 0 ? string.Join(", ", response.Developers.Select(d => d.Name)) : null,
             Poster = response.BackgroundImage,
             // Using DescriptionRaw instead of Description — Description contains HTML tags/entities from RAWG,
-            // and blindly processing HTML from external sources is a security risk. DescriptionRaw is the pre-cleaned plain-text equivalent.
-            Plot = response.DescriptionRaw,
+            // and blindly processing HTML from external sources is a security risk. DescriptionRaw is supposed to be
+            // plain text, but some RAWG entries (especially older games) still contain HTML tags/entities, so I strip them.
+            Plot = StripHtml(response.DescriptionRaw),
             Country = null, // RAWG doesn't provide country info for games
             Genres = genres,
             Rated = null, // RAWG doesn't provide ESRB rating in the detail endpoint
@@ -134,6 +135,20 @@ public class RawgApiAdapter : IExternalMediaApiAdapter
                 Subtype    = "developer"
             })
             .ToList();
+    }
+
+    // RAWG's description_raw is supposed to be plain text, but some entries still contain HTML tags/entities.
+    private static string? StripHtml(string? html)
+    {
+        if (string.IsNullOrEmpty(html)) return html; // skip processing if the input is null or empty
+        // Regex "<[^>]+>" matches any HTML tag:
+        //   <      literal "<" — marks the start of an HTML tag
+        //   [^>]   character class "not >" — matches any single character except ">"
+        //   +      quantifier — requires one or more of the preceding [^>] (i.e. the tag can't be empty)
+        //   >      literal ">" — marks the end of an HTML tag
+        // Regex.Replace scans the whole string and replaces every match with string.Empty, leaving only the text content.
+        var noTags = System.Text.RegularExpressions.Regex.Replace(html, "<[^>]+>", string.Empty);
+        return System.Net.WebUtility.HtmlDecode(noTags).Trim(); // decode HTML entities (e.g. &#39; → ') and strip surrounding whitespace
     }
 
     // Shared HTTP fetch with rate-limit and error handling.
