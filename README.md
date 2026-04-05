@@ -16,7 +16,7 @@ A full-stack media tracking and collection app built with **React 19** and **ASP
 | Service | URL |
 |---------|-----|
 | Frontend | https://react-dotnet-website-frontend.onrender.com |
-| API Docs (Scalar) | https://react-dotnet-website.onrender.com/scalar/v1 |
+| API Docs (Scalar) | https://react-dotnet-website.onrender.com/scalar/v1 — Interactive API explorer (no login required for browsing) |
 
 ---
 

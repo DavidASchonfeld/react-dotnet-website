@@ -197,24 +197,24 @@ ExternalApiRegistry.ValidateAllPlans();
 
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference(); // Using Scalar
-    // Scalar is a visual UI that makes it easier (don't have to write CURL commands)
-    // to interact with my backend API endpoints
-    // To use this, run the backend, then,
-    // in my internet browser, go to:
-    // http://localhost:5198/scalar/v1
-}
-else
+
+// NOTE: In a real production project, OpenAPI and Scalar docs would typically be restricted to
+// Development only (to avoid exposing API internals). These are intentionally enabled in all
+// environments here so that recruiters can explore the live API at /scalar/v1 without any local setup.
+app.MapOpenApi();
+app.MapScalarApiReference(); // Using Scalar
+// Scalar is a visual UI that makes it easier (don't have to write CURL commands)
+// to interact with my backend API endpoints
+// To use this, run the backend, then,
+// in my internet browser, go to:
+// http://localhost:5198/scalar/v1
+
+if (!app.Environment.IsDevelopment())
 {
     // Only in Production, redirect to HTTPS (since it will have a real HTTPS certificate)
 
     // If we kept this in Development, it would intercept requests before the requests reach the controllers
     // which result in POST endpoints getting 404s.
-    // HOW WOULD THAT BE DIFFERENT Once I set this up in Production?
-
     app.UseHttpsRedirection();
 }
 
