@@ -241,6 +241,20 @@ Three accessibility and mobile-friendliness fixes applied to the Settings page.
 
 ---
 
+## 17. ManageLinkModal — Reason Textarea Focus Steal Fix (`useFocusTrap.ts`)
+
+Typing in the "Reason" textarea inside `ManageLinkModal` was causing the cursor to jump back to the search bar after every keystroke.
+
+**Root cause:** Every keystroke updated `note` state → re-rendered the modal → `DialogOverlay`/`DrawerModal` passed a new inline `onEsc` function reference → `useFocusTrap`'s `useEffect` (which listed `onEsc` as a dependency) re-ran → the autofocus logic fired again and moved focus to the `[data-autofocus]` search input.
+
+**Fix:** `onEsc` is now stored in a `useRef` (`onEscRef`) and synced via a lightweight `useEffect`. The main focus-trap effect removes `onEsc` from its dependency array and calls `onEscRef.current?.()` instead. This is the standard React "stable handler ref" pattern — the Escape key still works correctly because the ref always holds the latest callback, but re-renders that change the callback reference no longer trigger the autofocus side-effect.
+
+**Code location:** `frontend/src/hooks/useFocusTrap.ts`
+
+**Who it helps:** All users — the textarea is now fully typeable without focus being stolen. The fix is behaviorally transparent for keyboard/screen-reader users: Escape still closes the modal and Tab still cycles focus correctly.
+
+---
+
 ## Keyboard Navigation Guide
 
 This site is fully navigable without a mouse. The sections below describe what keys do in each area.
@@ -331,3 +345,4 @@ On any page, press **Tab** once as soon as it loads. A "Skip to content" pill ap
 | ManageLinkModal | ✓ | ✓ | ✓ | | |
 | ManageLinkModal Enter fix | ✓ | ✓ | | | |
 | Settings page | | ✓ | ✓ | | |
+| ManageLinkModal Reason focus fix | ✓ | ✓ | | | |

@@ -1,6 +1,9 @@
 // a11y: useFocusTrap — traps keyboard focus inside a modal/dialog so users can't Tab out accidentally
 import { useEffect, useRef } from 'react';
 
+// NOTE: onEsc is stored in a ref (not a dep) so re-renders with new inline callbacks
+// don't cause the effect to re-run and steal focus back to the autofocus target.
+
 // Selectors for all naturally focusable HTML elements
 const FOCUSABLE = [
     'a[href]',
@@ -24,6 +27,10 @@ export function useFocusTrap({ containerRef, enabled, onEsc }: UseFocusTrapOptio
     // a11y: track the element that was focused before the modal opened so we can restore it on close
     const previousFocusRef = useRef<Element | null>(null);
 
+    // Stable ref for onEsc — always holds the latest callback without being a useEffect dep
+    const onEscRef = useRef(onEsc);
+    useEffect(() => { onEscRef.current = onEsc; }, [onEsc]);
+
     useEffect(() => {
         if (!enabled) return;
 
@@ -45,7 +52,7 @@ export function useFocusTrap({ containerRef, enabled, onEsc }: UseFocusTrapOptio
 
             // a11y: close the modal on Escape key press
             if (e.key === 'Escape') {
-                onEsc?.();
+                onEscRef.current?.();
                 return;
             }
 
@@ -82,5 +89,5 @@ export function useFocusTrap({ containerRef, enabled, onEsc }: UseFocusTrapOptio
                 previousFocusRef.current.focus();
             }
         };
-    }, [enabled, onEsc, containerRef]);
+    }, [enabled, containerRef]); // onEsc intentionally omitted — accessed via onEscRef to prevent re-triggering autofocus
 }
