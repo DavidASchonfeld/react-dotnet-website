@@ -48,6 +48,35 @@ To fully wipe the database and start fresh:
 docker compose down -v
 ```
 
+### Shutting down between sessions
+
+**How Docker stores data — the short version:**
+
+- The `docker-compose.yml` file is just a config script. It tells Docker what image to use, what ports to expose, and where to store data. It is not a container itself.
+- When you run `docker compose up -d`, Docker creates a **container** — a running isolated process — from the PostgreSQL 16 image.
+- The container's data is stored in a **named volume** called `postgres_data`. A named volume is a chunk of storage that Docker manages separately from the container. It is **not** a folder inside your repo. It lives inside Docker Desktop's internal storage on your Mac (a Linux VM that Docker Desktop runs in the background — you can't browse to it directly in Finder).
+- Because the volume exists independently of the container, stopping or even deleting the container does **not** delete your data. Only `docker compose down -v` deletes the volume (and with it, all data).
+
+Your data is safe across shutdowns. You do **not** need to keep the container running 24/7.
+
+The container stops automatically when you shut down your laptop (Docker Desktop stops all containers on shutdown). After restarting your laptop, just run `docker compose up -d` again before starting the backend.
+
+**Shutdown options — what the commands actually do:**
+
+Think of the container and the volume as two separate things:
+- The **container** is the running PostgreSQL process — it's disposable. Docker can recreate it from scratch in seconds using the config in `docker-compose.yml`.
+- The **volume** (`postgres_data`) is your actual database data — all the tables, rows, and user accounts. This is what you care about not losing.
+
+Docker keeps these two things intentionally separate so you can freely stop/delete/recreate the container without ever touching your data.
+
+| Command | Effect on the container | Effect on the volume (your data) | When to use it |
+|---------|------------------------|----------------------------------|----------------|
+| `docker compose stop` | Pauses it (process stops, container still exists) | Untouched | End of session if you want the fastest possible restart next time |
+| `docker compose down` | Deletes it entirely | Untouched | End of session, or when you want a clean slate for the container itself. `docker compose up -d` recreates it automatically next time — no difference to you in practice |
+| `docker compose down -v` | Deletes it entirely | **Deleted — all data gone** | Only when you deliberately want to wipe the database and start completely fresh |
+
+In practice, `stop` and `down` are equivalent for day-to-day use — both are safe, and `docker compose up -d` handles either case when you come back. The only command to be careful about is `down -v`.
+
 ### Connection string
 
 `appsettings.Development.json` already has the matching connection string:
@@ -61,6 +90,41 @@ EF Core migrations run automatically on startup (`db.Database.Migrate()` in `Pro
 ### dotnet ef CLI (generating migrations)
 
 `AppDbContextDesignTimeFactory.cs` hardcodes the same local connection string so `dotnet ef migrations add` works without extra flags.
+
+
+## Starting the Dev Environment
+
+Run these three steps in order each time you start a new work session.
+
+**Step 1 — Database** (from repo root):
+
+```bash
+docker compose up -d
+```
+
+**Step 2 — Backend** (from `backend/MyDotNetWebsiteApi/`):
+
+```bash
+dotnet run
+```
+
+Runs at `http://localhost:5198`. First time only: run `dotnet restore` before `dotnet run`.
+
+**Step 3 — Frontend** (from `frontend/`):
+
+```bash
+npm run dev
+```
+
+Runs at `http://localhost:5173`. First time only: run `npm install` before `npm run dev`.
+
+See `frontend/README.md` and `backend/MyDotNetWebsiteApi/README.md` for more detail on each.
+
+**Scalar API Explorer** (interactive API docs, available once the backend is running):
+
+```
+http://localhost:5198/scalar/v1
+```
 
 
 ## Development - use "dotnet user-secrets"
